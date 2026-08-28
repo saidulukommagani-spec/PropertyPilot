@@ -49,3 +49,35 @@
 | document_name | String |
 | document_url | String |
 | uploaded_at | Timestamp |
+agents
+
+clusters
+
+coverage_areas
+
+service_requests
+
+service_assignments
+
+pricing_rules
+
+payout_rules
+
+notifications
+
+service_reports
+
+photos
+
+videos
+
+subscriptions
+
+payments
+
+payment_transactions
+latitude
+
+longitude
+
+cluster_id
