@@ -1009,6 +1009,278 @@ Security Dashboard
 Automated Threat Detection
 
 ---
+# API Security
+
+Integrates With:
+
+API_Design.md
+
+Supports:
+
+JWT Authentication
+
+API Rate Limiting
+
+Request Validation
+
+Payload Validation
+
+API Versioning
+
+API Audit Logging
+
+Future Support:
+
+IP Restrictions
+
+API Key Rotation
+
+OAuth Integration
+
+Purpose:
+
+Protect PropertyPilot APIs from unauthorized access, abuse, and malicious requests.
+---
+# Encryption Standards
+
+## Data At Rest
+
+Supports:
+
+Database Encryption
+
+Object Storage Encryption
+
+Document Encryption
+
+Media Evidence Encryption
+
+Backup Encryption
+
+## Data In Transit
+
+Supports:
+
+HTTPS
+
+TLS
+
+Secure API Communication
+
+Encrypted File Transfers
+
+## Future Support
+
+Field Level Encryption
+
+End-to-End Encryption
+
+Customer Managed Keys
+
+Purpose:
+
+Ensure confidentiality and integrity of customer and operational data.
+---
+# Session Management
+
+Supports:
+
+Session Timeout
+
+Forced Logout
+
+Password Reset Logout
+
+Concurrent Session Limits
+
+Device Tracking
+
+Session Expiry
+
+Suspicious Session Detection
+
+Future Support:
+
+Trusted Devices
+
+Multi-Device Policies
+
+Purpose:
+
+Reduce account compromise risks and improve account security.
+---
+# Security Monitoring
+
+The platform shall continuously monitor:
+
+Failed Login Attempts
+
+OTP Abuse Attempts
+
+Unauthorized Access Attempts
+
+Repeated API Failures
+
+Suspicious Downloads
+
+Evidence Tampering Attempts
+
+Report Access Violations
+
+Payment Fraud Attempts
+
+Account Takeover Attempts
+
+Monitoring Events shall generate alerts and audit logs.
+---
+# Security Incident Management
+
+Security Incident Lifecycle
+
+Incident Detected
+
+↓
+
+Investigation
+
+↓
+
+Impact Assessment
+
+↓
+
+Mitigation
+
+↓
+
+Resolution
+
+↓
+
+Audit Closure
+
+Incident Types
+
+Unauthorized Access
+
+Data Leakage
+
+Fraud Attempt
+
+Credential Theft
+
+API Abuse
+
+Evidence Tampering
+
+Malware Detection
+
+Purpose:
+
+Provide structured handling of security incidents.
+---
+# Compliance Support
+
+Future Support:
+
+DPDP Act (India)
+
+GDPR
+
+SOC2
+
+ISO 27001
+
+Support Areas:
+
+Consent Management
+
+Data Retention
+
+Data Deletion Requests
+
+Privacy Requests
+
+Audit Trails
+
+Security Reviews
+
+Purpose:
+
+Prepare PropertyPilot for future compliance and regulatory requirements.
+---
+# Secrets Management
+
+Protect:
+
+Google Maps API Keys
+
+Payment Gateway Keys
+
+SMS Gateway Credentials
+
+Email Service Credentials
+
+Cloud Storage Credentials
+
+Third Party API Keys
+
+Business Rules:
+
+Secrets shall never be stored in source code.
+
+Secrets shall be encrypted.
+
+Secrets access shall be audit logged.
+
+Secrets rotation policies shall be configurable.
+---
+# Backup & Recovery Security
+
+Supports:
+
+Encrypted Backups
+
+Backup Validation
+
+Disaster Recovery
+
+Recovery Testing
+
+Geo-Redundant Storage
+
+Backup Audit Logs
+
+Purpose:
+
+Protect business continuity and customer data.
+---
+# Security Dashboard
+
+Admin Portal shall display:
+
+Failed Login Attempts
+
+Blocked Users
+
+OTP Failure Trends
+
+Suspicious Activities
+
+Fraud Alerts
+
+Security Incidents
+
+Access Violations
+
+Audit Statistics
+
+Data Access Trends
+
+Purpose:
+
+Provide centralized visibility into platform security.
+---
 
 # Business Rules
 

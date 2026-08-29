@@ -389,3 +389,110 @@ Gold
 Platinum
 
 Future payout rules may vary based on agent grade.
+# Payout Recipient Types
+
+AGENT
+
+VENDOR
+
+PARTNER
+
+Future Support
+# Payout Approval Authority
+
+Agent Payouts may be approved by:
+
+Cluster Manager
+
+Operations Team
+
+Admin
+
+Based on configurable rules.
+
+# Hold Reasons
+
+Missing Evidence
+
+Missing GPS Validation
+
+Customer Complaint
+
+Quality Review Pending
+
+Fraud Investigation
+
+Manual Audit
+
+Payment Verification Pending
+# Adjustments
+
+The system shall support:
+
+Positive Adjustment
+
+Negative Adjustment
+
+Recovery
+
+Manual Correction
+
+Incentive Adjustment
+
+Penalty Adjustment
+
+All adjustments shall be audit logged.
+# Service Workflow Integration
+
+Integrates With:
+
+Service_Workflow.md
+
+Supports:
+
+Completion Validation
+
+Approval Workflow
+
+Payout Eligibility
+# Review & Rating Integration
+
+Integrates With:
+
+Review_Rating_Management.md
+
+Supports:
+
+Performance Incentives
+
+Rating Based Bonuses
+# Vendor Management Integration
+
+Integrates With:
+
+Vendor_Management.md
+
+Supports:
+
+Future Vendor Payouts
+# Business Rules
+
+1. Customer pricing and agent payout shall be independent.
+
+2. Payout eligibility requires service completion.
+
+3. Payouts shall be auditable.
+
+4. Incentives and penalties shall be configurable.
+
+5. Payout rules shall not require code deployment.
+
+6. Payment status changes shall be audit logged.
+
+7. Future vendor payouts shall use the same framework.
+
+8. ETA calculations shall not directly impact payouts.
+
+9. Payout calculations shall support future grade-based rules.
+
+10. Agent earnings history shall be permanently maintained.

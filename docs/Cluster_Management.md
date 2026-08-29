@@ -86,18 +86,29 @@ District
 
 ↓
 
-Cluster
-
-↓
-
 Coverage Zone
 
 ↓
 
+Cluster
+
+↓
+
 Agent
-
 ---
+# Cluster Types by Business Function
 
+Operations Cluster
+
+Verification Cluster
+
+Monitoring Cluster
+
+Construction Cluster
+
+Agriculture Cluster
+
+Premium Services Cluster
 # Cluster Types
 
 ## Urban Cluster
@@ -212,6 +223,24 @@ Created Date
 
 Modified Date
 
+---
+# Cluster Ownership
+
+Every cluster shall belong to:
+
+Country
+
+State
+
+District
+
+Operations Region
+
+Coverage Zones
+
+Cluster Manager
+
+Cluster ownership shall be auditable.
 ---
 
 # Cluster Coordinates
@@ -446,6 +475,28 @@ Requires:
 Legal Verification Specialist
 
 ---
+# Cluster Service Capability
+
+Clusters may support different service capabilities.
+
+Examples
+
+Urban Cluster
+
+- Property Verification
+- Rental Services
+- Construction Services
+- Drone Services
+
+Agriculture Cluster
+
+- Land Verification
+- Crop Monitoring
+- Borewell Verification
+
+Service availability shall be configurable.
+
+Assignment Engine shall only assign services supported by the cluster.
 
 # Backup Assignment
 
@@ -636,6 +687,25 @@ Customer Satisfaction Score
 SLA Compliance Percentage
 
 ---
+# Cluster Revenue Metrics
+
+Track:
+
+Customer Revenue
+
+Agent Payouts
+
+Travel Costs
+
+Subscription Revenue
+
+Project Revenue
+
+Quotation Revenue
+
+Cluster Profitability
+
+Revenue trends shall be available for reporting and analytics.
 
 # Cluster Health Score
 
@@ -680,6 +750,25 @@ Top Performing Clusters
 Underperforming Clusters
 
 ---
+# Access Control
+
+Agent
+
+Assigned Services Only
+
+Cluster Manager
+
+Own Cluster Data
+
+Operations Team
+
+Assigned Regions
+
+Admin
+
+All Clusters
+
+Permissions shall be role-based and configurable.
 
 # Admin Configuration
 

@@ -118,7 +118,43 @@ TECHNICAL_ISSUE
 FRAUD_REPORT
 
 OTHER
+---
 
+# Fraud Severity
+
+LOW
+
+MEDIUM
+
+HIGH
+
+CRITICAL
+
+Examples
+
+LOW
+
+Misleading Information
+
+MEDIUM
+
+Incorrect Property Details
+
+HIGH
+
+Fake Property Listing
+
+CRITICAL
+
+Identity Fraud
+
+Document Forgery
+
+Payment Fraud
+
+Business Rules
+
+HIGH and CRITICAL fraud complaints shall automatically escalate.
 ---
 
 # Complaint Priority
@@ -292,7 +328,68 @@ Root Cause Analysis
 ↓
 
 Resolution Proposal
+---
 
+# Root Cause Analysis
+
+Investigations may capture:
+
+Process Failure
+
+Agent Error
+
+Vendor Error
+
+Customer Misunderstanding
+
+System Issue
+
+Training Gap
+
+Policy Gap
+
+Fraud Activity
+
+Purpose:
+
+Identify recurring operational issues and improve service quality.
+
+RCA data shall be available for analytics and reporting.
+---
+
+# Complaint Assignment
+
+Every complaint shall have an owner.
+
+Assignment Types:
+
+Customer Support Agent
+
+Operations Executive
+
+Cluster Manager
+
+Vendor Manager
+
+Fraud Investigation Team
+
+Admin Team
+
+Assignment Rules:
+
+Category Based
+
+Priority Based
+
+Cluster Based
+
+Service Based
+
+Business Rules
+
+Every complaint shall have exactly one active owner.
+
+Ownership changes shall be audit logged.
 ---
 # Appeals Process
 
@@ -441,6 +538,28 @@ RESOLVED
 CLOSED
 
 All reopening actions shall be audit logged.
+
+---
+
+# Complaint Feedback
+
+After complaint closure:
+
+Customers may rate:
+
+Resolution Quality
+
+Response Time
+
+Communication Quality
+
+Overall Satisfaction
+
+Rating Scale
+
+1 - 5 Stars
+
+Feedback shall contribute to support team performance metrics.
 ---
 
 # Refund Integration
@@ -614,7 +733,39 @@ Agent Complaints
 Vendor Complaints
 
 Marketplace Complaints
+---
 
+# Complaint Relationships
+
+A complaint may be linked to:
+
+Customer
+
+Property
+
+Service Request
+
+Property Report
+
+Service Summary
+
+Subscription
+
+Quotation
+
+Vendor
+
+Agent
+
+Marketplace Listing
+
+Payment Transaction
+
+Refund Request
+
+Purpose:
+
+Enable complete traceability across PropertyPilot modules.
 ---
 
 # Analytics
@@ -709,6 +860,25 @@ Automated Escalations
 
 Sentiment Analysis
 
+---
+
+# Complaint Status History
+
+The system shall maintain complete status history.
+
+Track:
+
+Previous Status
+
+New Status
+
+Changed By
+
+Timestamp
+
+Reason
+
+Status history shall be visible to authorized users.
 ---
 
 # Business Rules

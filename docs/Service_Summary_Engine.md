@@ -60,6 +60,33 @@ Customer Delivery
 Future AI Enhancements
 
 ---
+# Summary Template Management
+
+The system shall support configurable summary templates.
+
+Examples:
+
+Property Verification Template
+
+Plot Inspection Template
+
+Agriculture Inspection Template
+
+Construction Monitoring Template
+
+Rental Inspection Template
+
+Drone Survey Template
+
+Templates may define:
+
+- Sections
+- Mandatory Fields
+- Recommendations
+- Risk Rules
+- Service-Specific Findings
+
+No code deployment required.
 
 # Summary Types
 
@@ -378,6 +405,33 @@ Range
 0 - 100
 
 ---
+# Summary Quality Score
+
+Purpose
+
+Measure summary completeness and readability.
+
+Factors
+
+- Mandatory Fields Completed
+- Evidence Coverage
+- Recommendations Present
+- Risk Assessment Present
+- Review Approval
+
+Range
+
+0 - 100
+
+Classification
+
+Excellent
+
+Good
+
+Average
+
+Needs Improvement
 
 # Health Score Factors
 
@@ -528,6 +582,25 @@ PDF Download
 Future WhatsApp Delivery
 
 ---
+# Customer Acknowledgement
+
+Customers may acknowledge summary receipt.
+
+Statuses
+
+NOT_VIEWED
+
+VIEWED
+
+ACKNOWLEDGED
+
+FOLLOW_UP_REQUESTED
+
+Purpose
+
+- Confirm delivery
+- Measure engagement
+- Trigger follow-up workflows
 
 # Notification Integration
 
@@ -682,6 +755,37 @@ DELIVERED
 ARCHIVED
 
 ---
+# Summary Version Management
+
+Summaries may be revised.
+
+Examples
+
+Version 1.0
+
+Initial Summary
+
+Version 1.1
+
+Correction Applied
+
+Version 2.0
+
+Major Update
+
+Track:
+
+Version Number
+
+Updated By
+
+Updated Date
+
+Reason
+
+Previous Versions
+
+All versions shall be retained for audit purposes.
 
 # Audit Requirements
 

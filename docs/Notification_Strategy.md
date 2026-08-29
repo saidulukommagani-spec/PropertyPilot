@@ -660,7 +660,47 @@ Monitoring Cycle Due
 Monitoring Cycle Missed
 
 ---
+# Notification Event Master
 
+Every notification shall originate from a business event.
+
+Examples:
+
+BOOKING_CREATED
+
+PAYMENT_SUCCESS
+
+PAYMENT_FAILED
+
+AGENT_ASSIGNED
+
+SERVICE_STARTED
+
+SERVICE_COMPLETED
+
+REPORT_READY
+
+SUBSCRIPTION_RENEWAL_DUE
+
+QUOTATION_RECEIVED
+
+QUOTATION_APPROVED
+
+PROJECT_CREATED
+
+PAYOUT_PROCESSED
+
+SLA_BREACH
+
+CLUSTER_OVERLOADED
+
+Each event shall be mapped to:
+
+- Notification Template
+- Channels
+- Priority
+- Escalation Rules
+---
 # Notification Templates
 
 Each notification shall use templates.
@@ -706,6 +746,53 @@ Variables:
 - ServiceName
 
 ---
+# Notification Preference Hierarchy
+
+Users may configure notification preferences at:
+
+Global Level
+
+Service Level
+
+Subscription Level
+
+Property Level
+
+Examples
+
+Receive Push Notifications
+
+YES
+
+Receive Marketing Notifications
+
+NO
+
+Receive Monitoring Notifications
+
+YES
+
+Receive Subscription Reminders
+
+YES
+---
+# Quiet Hours
+
+Users may configure quiet hours.
+
+Examples
+
+10 PM to 7 AM
+
+Non-critical notifications shall be deferred.
+
+Critical notifications shall bypass quiet hours.
+
+Applicable Channels:
+
+- Push
+- SMS
+- WhatsApp
 
 # Multi-Language Support
 
@@ -776,6 +863,33 @@ After 1 Hour
 Failure Logged
 
 ---
+# Notification Queue Management
+
+Notifications shall be processed through queues.
+
+Priorities:
+
+CRITICAL
+
+HIGH
+
+MEDIUM
+
+LOW
+
+High priority notifications shall be processed first.
+
+# Notification Throttling
+
+The system shall prevent notification flooding.
+
+Examples:
+
+Maximum 5 reminders per day
+
+Maximum 3 payment reminders
+
+Duplicate notifications suppressed
 
 # Delivery Tracking
 
@@ -834,6 +948,24 @@ Channel Performance
 Customer Engagement
 
 ---
+# Business Notification Analytics
+
+Track:
+
+Notification to Action Rate
+
+Payment Recovery Rate
+
+Renewal Conversion Rate
+
+Quotation Approval Conversion Rate
+
+Reminder Effectiveness
+
+Customer Engagement Score
+
+Channel Conversion Rate
+
 
 # Admin Configuration
 
@@ -882,6 +1014,36 @@ Notification Personalization
 Predictive Communication Engine
 
 ---
+# Notification Deduplication
+
+The system shall prevent duplicate notifications.
+
+Examples:
+
+Same event triggered multiple times
+
+↓
+
+Only one notification sent
+
+Duplicate Window:
+
+Configurable
+
+Examples:
+
+5 Minutes
+
+15 Minutes
+
+1 Hour
+
+Applicable Events:
+
+- Payment Success
+- Booking Created
+- Assignment Notifications
+- Report Ready
 
 # Business Rules
 

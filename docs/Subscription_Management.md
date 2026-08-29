@@ -203,6 +203,25 @@ Billing Cycle
 Status
 
 ---
+# Subscription Ownership
+
+Every subscription shall belong to:
+
+Customer
+
+Property
+
+Subscription Plan
+
+Created By
+
+Coverage Zone
+
+Cluster
+
+Assigned Agent (Optional)
+
+All ownership relationships shall be auditable.
 
 # Service Scheduling
 
@@ -229,6 +248,42 @@ Agent Assigned
 Service Executed
 
 ---
+# Service Generation Rules
+
+Subscriptions shall automatically generate service requests based on plan frequency.
+
+## Generation Workflow
+
+Subscription
+
+↓
+
+Next Schedule Date
+
+↓
+
+Service Request Created
+
+↓
+
+Assignment Triggered
+
+↓
+
+Service Executed
+
+↓
+
+Report Generated
+
+## Rules
+
+- Only ACTIVE subscriptions may generate service requests.
+- PAUSED subscriptions shall not generate service requests.
+- CANCELLED subscriptions shall not generate service requests.
+- EXPIRED subscriptions shall not generate service requests.
+- Duplicate schedules shall not generate duplicate service requests.
+- Generation failures shall be audit logged.
 
 # Renewal Management
 
@@ -359,6 +414,25 @@ Subscription Revenue
 Plan Adoption Reports
 
 ---
+# Access Control
+
+Customer
+
+Own Subscriptions Only
+
+Agent
+
+Assigned Subscription Services
+
+Cluster Manager
+
+Cluster Subscriptions
+
+Admin
+
+All Subscriptions
+
+Access shall be governed by role-based permissions.
 
 # Admin Configuration
 
@@ -397,6 +471,147 @@ AI Renewal Recommendations
 Predictive Churn Analysis
 
 ---
+# Subscription Plan Master
+
+Plan ID
+
+Plan Name
+
+Plan Type
+
+Monthly Price
+
+Quarterly Price
+
+Annual Price
+
+Included Services
+
+Service Frequency
+
+Add-On Eligibility
+
+Status
+# Subscription Add-Ons
+
+Drone Survey
+
+Live Video Inspection
+
+Extra Monitoring Visit
+
+Premium Report
+
+AI Property Analysis
+
+Emergency Visit
+
+Weekend Visit
+# Portfolio Plans
+
+Support subscriptions for:
+
+Single Property
+
+Multiple Properties
+
+Corporate Property Portfolios
+
+NRI Portfolios
+# Missed Schedule Management
+
+Reasons
+
+Agent Unavailable
+
+Weather
+
+Property Access Issue
+
+Customer Request
+
+System shall:
+
+Reschedule Visit
+
+Notify Customer
+
+Track Missed Visits
+# Renewal Workflow
+
+30 Days Before Expiry
+
+↓
+
+Renewal Reminder
+
+↓
+
+Payment
+
+↓
+
+Renewal Confirmation
+
+↓
+
+Next Cycle Created
+---
+Track:
+
+MRR (Monthly Recurring Revenue)
+
+ARR (Annual Recurring Revenue)
+
+Renewal Rate
+
+Cancellation Rate
+
+Plan Popularity
+
+Revenue Per Property
+
+Revenue Per Cluster
+Track:
+
+Subscription Creation
+
+Renewal
+
+Upgrade
+
+Downgrade
+
+Pause
+
+Resume
+
+Cancellation
+
+Plan Change
+
+Payment Status Change
+---
+Property may have:
+
+0..N Subscriptions
+
+Subscription must belong to:
+
+Customer
+Property
+Plan
+# Suspension
+
+Reasons
+
+Payment Failure
+
+Fraud Detection
+
+Admin Action
+
+Policy Violation
 
 # Business Rules
 

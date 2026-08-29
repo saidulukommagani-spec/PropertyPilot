@@ -10,6 +10,48 @@ This document defines all services offered through PropertyPilot.
 Each service belongs to a category and may have different pricing, SLA, agent skill requirements, and workflows.
 
 ---
+# Service Lifecycle
+
+Service Created
+
+↓
+
+Service Configuration
+
+↓
+
+Activation
+
+↓
+
+Booking
+
+↓
+
+Assignment
+
+↓
+
+Execution
+
+↓
+
+Completion
+
+↓
+
+Review
+
+↓
+
+Retirement
+
+↓
+
+Archive
+
+All service changes shall be audit logged.
+---
 
 # Property Types
 
@@ -445,6 +487,98 @@ Support obtaining water connection.
 ### AI Recommendation Engine
 
 ---
+# Service Status
+
+DRAFT
+
+ACTIVE
+
+INACTIVE
+
+SUSPENDED
+
+RETIRED
+
+ARCHIVED
+---
+# Service Skill Requirements
+
+Each service may define:
+
+Required Skills
+
+Minimum Skill Level
+
+Required Certifications
+
+Examples
+
+Drone Survey
+
+Required Skill:
+Drone Operation
+
+Required Certification:
+Drone License
+
+Minimum Level:
+Advanced
+
+Boundary Verification
+
+Required Skill:
+Property Inspection
+
+Minimum Level:
+Intermediate
+# Service SLA Configuration
+
+Each service may define:
+
+Expected Start Time
+
+Expected Completion Time
+
+Review Time
+
+Escalation Rules
+
+Examples
+
+Property Verification
+
+Completion:
+1 Business Day
+
+Plot Monitoring
+
+Completion:
+2 Business Days
+
+Drone Survey
+
+Completion:
+3 Business Days
+
+All SLA rules shall be configurable.
+# Service Pricing Configuration
+
+Each service may define:
+
+Base Price
+
+Travel Cost Rules
+
+Food Allowance Rules
+
+Add-On Support
+
+Discount Eligibility
+
+Subscription Eligibility
+
+Pricing Source:
+Pricing_Engine.md
 
 # Service Deliverables
 
@@ -474,6 +608,60 @@ Every field service should capture:
 - Videos (Optional)
 
 ---
+# Service Audit Requirements
+
+Track:
+
+Service Creation
+
+Service Updates
+
+Category Changes
+
+Pricing Changes
+
+SLA Changes
+
+Eligibility Changes
+
+Activation
+
+Deactivation
+
+Audit Fields
+
+User
+
+Timestamp
+
+Action
+
+Old Value
+
+New Value
+
+Reason
+# Service Analytics
+
+Track:
+
+Most Booked Services
+
+Revenue By Service
+
+Completion Rate
+
+Cancellation Rate
+
+Average SLA Compliance
+
+Average Rating
+
+Average Evidence Score
+
+Cluster Wise Demand
+
+Agent Utilization
 
 # Future Services Backlog
 
@@ -485,27 +673,56 @@ Every field service should capture:
 - Smart Home Installation
 - WhatsApp Based Services
 - Drone Monitoring Subscription
-Property Verification
 
-Default Completion Duration:
-1 Day
-Agent Skill Level
-
-Basic
-
-Intermediate
-
-Advanced
-Subscription Supported
-
-Yes / No
-Plot Monitoring
-
-Subscription Supported:
-Yes
 # Service Execution Models
 
 PropertyPilot services shall support multiple execution models.
+# Service Eligibility Rules
+
+Services may define eligibility criteria.
+
+Examples:
+
+Property Type
+
+Coverage Availability
+
+Cluster Availability
+
+Agent Availability
+
+Vendor Availability
+
+Subscription Status
+
+Customer Verification Status
+
+Required Documentation
+
+Services may be restricted when eligibility requirements are not satisfied.
+# Service Dependencies
+
+A service may depend on:
+
+Coverage Management
+
+Cluster Management
+
+Agent Management
+
+Vendor Management
+
+Pricing Engine
+
+ETA Management
+
+Media Evidence Management
+
+Property Report Engine
+
+Notification Strategy
+
+Dependencies shall be validated before service activation and booking.
 
 ## Verification Services
 

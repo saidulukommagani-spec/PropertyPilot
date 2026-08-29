@@ -31,6 +31,39 @@ The Property Management module shall:
 - Support future property intelligence capabilities
 
 ---
+# Property Lifecycle
+
+Property Created
+
+↓
+
+Property Registration
+
+↓
+
+Property Verification
+
+↓
+
+Monitoring
+
+↓
+
+Marketplace Listing
+
+↓
+
+Development Activities
+
+↓
+
+Property Updates
+
+↓
+
+Archive
+
+All property lifecycle events shall be audit logged.
 
 # Property Overview
 
@@ -151,6 +184,22 @@ INACTIVE
 ARCHIVED
 
 ---
+# Property Verification Status
+
+NOT_VERIFIED
+
+PENDING_VERIFICATION
+
+UNDER_VERIFICATION
+
+VERIFIED
+
+PARTIALLY_VERIFIED
+
+REJECTED
+
+EXPIRED
+
 
 # Property Information
 
@@ -228,6 +277,18 @@ Contact Information
 
 ---
 
+# Multiple Ownership Support
+
+A property may have one or more owners.
+
+Examples:
+
+Single Owner
+
+Property A
+    ↓
+Owner 1
+
 # Ownership Types
 
 Individual
@@ -243,6 +304,18 @@ Trust Ownership
 Partnership Ownership
 
 ---
+# Ownership Status
+
+PRIMARY_OWNER
+
+CO_OWNER
+
+FORMER_OWNER
+
+LEGAL_REPRESENTATIVE
+
+AUTHORIZED_CONTACT
+
 
 # Property Documents
 
@@ -345,6 +418,34 @@ Reports
 GPS Evidence
 
 ---
+# Property Relationships
+
+A property may be associated with:
+
+Customers
+
+Owners
+
+Services
+
+Subscriptions
+
+Marketplace Listings
+
+Quotations
+
+Vendor Projects
+
+Reports
+
+Media Evidence
+
+Complaints
+
+Reviews
+
+All relationships shall be traceable through Property ID.
+
 
 # Property Timeline
 
@@ -503,6 +604,17 @@ Development Projects
 Property Type Distribution
 
 Location Distribution
+Average Verification Time
+
+Average Monitoring Frequency
+
+Property Growth Rate
+
+Marketplace Conversion Rate
+
+Development Project Count
+
+Property Type Trends
 
 ---
 
@@ -581,6 +693,33 @@ Marketplace Status
 Tags
 
 ---
+# Property Access Control
+
+Customer
+
+Own Properties
+
+---
+
+Agent
+
+Assigned Properties
+
+---
+
+Cluster Manager
+
+Cluster Properties
+
+---
+
+Admin
+
+All Properties
+
+---
+
+Access shall be enforced through role-based permissions.
 
 # Audit Requirements
 
@@ -599,6 +738,15 @@ Verification Updates
 Marketplace Actions
 
 Development Activities
+Verification Status Changes
+
+Property Status Changes
+
+Ownership Status Changes
+
+Property Merge Events
+
+Property Archive Events
 
 ---
 
@@ -701,6 +849,7 @@ Smart Property Profiles
 9. Property activities shall be audit logged.
 
 10. Property configuration shall not require code deployment.
+
 # Multiple Ownership Support
 
 A property may have one or more owners.

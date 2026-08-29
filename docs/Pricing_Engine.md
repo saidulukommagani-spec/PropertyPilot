@@ -20,6 +20,45 @@ Goals:
 - No code changes required for pricing updates
 
 ---
+# Pricing Lifecycle
+
+Service Selected
+
+↓
+
+Coverage Validation
+
+↓
+
+Distance Calculation
+
+↓
+
+Base Price Calculation
+
+↓
+
+Add-On Calculation
+
+↓
+
+Discount Evaluation
+
+↓
+
+Final Price Calculation
+
+↓
+
+Payment
+
+↓
+
+Pricing Audit
+
+All pricing calculations shall be traceable and auditable.
+---
+
 # Pricing Engine
 
 The system shall support dynamic pricing based on:
@@ -33,6 +72,32 @@ The system shall support dynamic pricing based on:
 - Profit Margin
 
 All pricing values shall be configurable through Admin Portal.
+# Pricing Components
+
+The Pricing Engine shall support:
+
+Service Charges
+
+Travel Charges
+
+Food Allowances
+
+Add-On Charges
+
+Platform Fees
+
+Administrative Overhead
+
+Profit Margins
+
+Discounts
+
+Coupons
+
+Subscription Benefits
+
+Taxes (Future Support)
+
 # Pricing Formula
 
 Final Price =
@@ -66,7 +131,51 @@ Profit Margin
 Final Customer Price
 
 ---
+# Pricing Status
 
+ESTIMATED
+
+CALCULATED
+
+CONFIRMED
+
+DISCOUNT_APPLIED
+
+PAID
+
+REFUNDED
+
+CANCELLED
+---
+
+# Pricing Rule Master
+
+Every pricing rule shall be configurable.
+
+Fields:
+
+Rule ID
+
+Rule Name
+
+Service Type
+
+Coverage Zone
+
+Cluster
+
+Effective Date
+
+Expiry Date
+
+Priority
+
+Status
+
+Description
+
+Pricing rules may be activated or deactivated without code deployment.
+---
 # Service Charge
 
 Base charge for performing a service.
@@ -173,6 +282,54 @@ Travel Time
 Round Trip Distance
 
 ---
+# Coverage Based Pricing
+
+Integrates With:
+
+Coverage_Management.md
+
+Coverage may influence:
+
+Remote Area Charges
+
+Extended Travel Charges
+
+Special Coverage Fees
+
+Priority Coverage Discounts
+
+Coverage pricing rules shall be configurable.
+---
+
+# Cluster Based Pricing
+
+Integrates With:
+
+Cluster_Management.md
+
+Pricing may vary by cluster.
+
+Examples:
+
+Hyderabad Cluster
+
+Property Verification
+
+₹500
+
+Remote Village Cluster
+
+Property Verification
+
+₹700
+
+Premium Cluster
+
+Property Verification
+
+₹900
+
+Cluster pricing rules shall be configurable.
 
 # Food Allowance
 
@@ -326,6 +483,141 @@ Default:
 Admin configurable.
 
 ---
+# Discount Management
+
+The system shall support:
+
+Percentage Discounts
+
+Fixed Amount Discounts
+
+Promotional Discounts
+
+Festival Offers
+
+Referral Discounts
+
+Admin Discounts
+
+Examples:
+
+10% Off
+
+₹100 Off
+
+First Service Discount
+
+All discount rules shall be configurable.
+---
+
+# Surge Pricing
+
+Future Support
+
+Pricing may increase based on:
+
+High Demand
+
+Low Agent Availability
+
+Remote Locations
+
+Emergency Services
+
+Weekend Services
+
+Holiday Services
+
+Surge rules shall be configurable.
+
+Examples:
+
+Weekend Service
+
++10%
+
+Holiday Service
+
++20%
+
+Emergency Service
+
++30%
+---
+# Coupon Management
+
+Coupons may support:
+
+Percentage Discounts
+
+Fixed Discounts
+
+Service Specific Coupons
+
+Location Specific Coupons
+
+Customer Specific Coupons
+
+Coupon Attributes:
+
+Coupon Code
+
+Validity Period
+
+Usage Limits
+
+Discount Type
+
+Discount Value
+
+Status
+---
+
+# Vendor Quotation Pricing
+
+Integrates With:
+
+Quotation_Management.md
+
+Vendor_Management.md
+
+Supports:
+
+Vendor Quotes
+
+Material Cost
+
+Labor Cost
+
+Equipment Cost
+
+Transportation Cost
+
+Vendor Margins
+
+Customer Final Price
+
+Pricing Engine may calculate customer pricing using vendor quotations.
+---
+# Subscription Pricing
+
+Integrates With:
+
+Subscription_Management.md
+
+Subscription plans may provide:
+
+Discounted Pricing
+
+Free Monitoring Visits
+
+Priority Services
+
+Reduced Travel Charges
+
+Exclusive Service Packages
+
+Subscription benefits shall be configurable.
 
 # Final Formula
 
@@ -368,6 +660,90 @@ Final Customer Price
 ₹1128
 
 ---
+# Pricing Analytics
+
+Track:
+
+Average Service Price
+
+Revenue By Service
+
+Revenue By Coverage Zone
+
+Discount Usage
+
+Coupon Usage
+
+Profit Margins
+
+Travel Cost Trends
+
+Subscription Savings
+
+Pricing Conversion Rates
+Track:
+
+Estimated Cost
+
+Actual Cost
+
+Customer Revenue
+
+Vendor Cost
+
+Agent Cost
+
+Gross Margin
+
+Net Margin
+
+Profitability By Service
+
+Profitability By Cluster
+---
+
+# Pricing Transparency
+
+The system shall store:
+
+Base Price
+
+Travel Charges
+
+Food Allowance
+
+Add-On Charges
+
+Discounts
+
+Platform Fee
+
+Administrative Overhead
+
+Profit Margin
+
+Final Price
+
+Every pricing component shall be visible in pricing audit records.
+# Pricing Dashboard
+
+Admin shall view:
+
+Pricing Rules
+
+Revenue Trends
+
+Discount Usage
+
+Coupon Usage
+
+Profit Margins
+
+Top Revenue Services
+
+Coverage Based Revenue
+
+Pricing Exceptions
 
 # Future Enhancements
 
@@ -386,7 +762,13 @@ AI Optimized Pricing
 Weather Based Pricing
 
 Subscription Pricing
+Vendor Quotation Pricing
 
+Marketplace Service Pricing
+
+AI Cost Prediction
+
+Regional Pricing Models
 ---
 
 # Admin Configurable Parameters
@@ -424,6 +806,39 @@ Price Calculator shall:
 - Calculate Estimated Charges
 
 No login required.
+---
+
+# Pricing Approval Workflow
+
+Certain pricing changes may require approval.
+
+Examples:
+
+Discount > 25%
+
+Manual Price Override
+
+Emergency Pricing
+
+Special Customer Pricing
+
+Workflow
+
+Price Change
+
+↓
+
+Review
+
+↓
+
+Approval
+
+↓
+
+Activation
+
+All approval activities shall be audit logged.
 # Pricing Audit Trail
 
 Every pricing change shall store:
@@ -433,3 +848,24 @@ Every pricing change shall store:
 - Changed By
 - Changed Date
 - Reason
+# Business Rules
+
+1. Every service shall have a pricing model.
+
+2. Distance calculations shall influence travel charges.
+
+3. Food allowance rules shall be configurable.
+
+4. Discounts and coupons shall be configurable.
+
+5. Coverage may influence pricing.
+
+6. Subscription plans may influence pricing.
+
+7. Pricing calculations shall be auditable.
+
+8. Pricing rules shall not require code deployment.
+
+9. Pricing shall integrate with Coverage Management, Service Workflow, Agent Payout, Subscription Management, and Payment modules.
+
+10. Final customer price shall be transparently calculated.

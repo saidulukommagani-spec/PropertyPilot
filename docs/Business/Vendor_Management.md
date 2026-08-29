@@ -204,7 +204,37 @@ VERIFIED
 TRUSTED
 
 PREMIUM_VENDOR
+---
 
+# Vendor Agreement Management
+
+The system shall support:
+
+Vendor Agreements
+
+NDA Documents
+
+Service Contracts
+
+Rate Cards
+
+Compliance Documents
+
+Track:
+
+Agreement Number
+
+Start Date
+
+End Date
+
+Status
+
+Renewal Date
+
+Business Rules
+
+Expired agreements may restrict assignments.
 ---
 
 # Vendor Verification Checks
@@ -309,7 +339,43 @@ Village
 Cluster
 
 Radius Coverage
+---
 
+# Vendor Service Eligibility
+
+Vendors may support specific services only.
+
+Examples
+
+Vendor A
+
+Compound Wall
+
+Precast Wall
+
+Fencing
+
+Vendor B
+
+Borewell
+
+Farm Development
+
+Irrigation
+
+Business Rules
+
+Vendor assignment shall validate:
+
+Coverage
+
+Service Eligibility
+
+Verification Status
+
+Availability
+
+Capacity
 ---
 
 # Vendor Service Mapping
@@ -387,7 +453,31 @@ Execution Starts
 ↓
 
 Execution Completes
+---
 
+# Project Execution Integration
+
+Approved quotations may generate projects.
+
+Vendor Responsibilities:
+
+Project Acceptance
+
+Resource Allocation
+
+Execution Updates
+
+Milestone Completion
+
+Evidence Submission
+
+Completion Confirmation
+
+Integrates With:
+
+Quotation_Management.md
+
+Future Project_Management.md
 ---
 
 # Vendor Availability
@@ -514,7 +604,35 @@ Policy Violations
 Fake Documentation
 
 Repeated Project Failures
+---
 
+# Vendor Complaint Tracking
+
+Track:
+
+Total Complaints
+
+Open Complaints
+
+Resolved Complaints
+
+Escalated Complaints
+
+Complaint Rate
+
+Complaint Severity
+
+Business Rules
+
+Complaint history may influence:
+
+Vendor Rating
+
+Trust Score
+
+Assignment Eligibility
+
+Verification Status
 ---
 
 Actions
@@ -611,7 +729,35 @@ Bank Details
 Internal Notes
 
 Performance Flags
+---
 
+# Vendor Relationships
+
+A vendor may be linked to:
+
+Coverage Zones
+
+Clusters
+
+Service Categories
+
+Quotations
+
+Projects
+
+Assignments
+
+Payments
+
+Complaints
+
+Ratings
+
+Marketplace Listings
+
+Purpose:
+
+Enable complete traceability across PropertyPilot modules.
 ---
 
 # Vendor Analytics
@@ -797,28 +943,6 @@ Multi-Vendor Quotations
 Vendor Recommendation Engine
 
 ---
-
-# Business Rules
-
-1. Vendors shall be categorized.
-
-2. Vendors shall support verification levels.
-
-3. Vendor assignments shall be tracked.
-
-4. Vendor performance shall be measurable.
-
-5. Vendor ratings shall be supported.
-
-6. Vendor activities shall be audit logged.
-
-7. Vendor configuration shall not require code deployment.
-
-8. Vendor Management shall support future execution services.
-
-9. Vendor Management shall integrate with Marketplace and Quotation modules.
-
-10. Vendor information shall be protected according to Security Design.
 # Vendor Capacity
 
 Vendor Capacity defines how much work a vendor can handle.
@@ -842,3 +966,81 @@ AVAILABLE
 LIMITED
 
 FULLY_BOOKED
+---
+
+Track:
+
+Current Active Projects
+
+Maximum Concurrent Projects
+
+Available Workforce
+
+Available Equipment
+
+Upcoming Commitments
+
+Utilization Percentage
+
+Examples
+
+Vendor Capacity = 20 Projects
+
+Current Projects = 15
+
+Utilization = 75%
+
+Business Rules
+
+Assignments shall consider vendor capacity before allocation.
+
+Overloaded vendors may be excluded from new assignments.
+---
+
+# Vendor Status History
+
+The system shall maintain vendor status history.
+
+Track:
+
+Previous Status
+
+New Status
+
+Changed By
+
+Timestamp
+
+Reason
+
+Examples
+
+ACTIVE → SUSPENDED
+
+SUSPENDED → ACTIVE
+
+ACTIVE → BLACKLISTED
+
+All status changes shall be audit logged.
+
+# Business Rules
+
+1. Vendors shall be categorized.
+
+2. Vendors shall support verification levels.
+
+3. Vendor assignments shall be tracked.
+
+4. Vendor performance shall be measurable.
+
+5. Vendor ratings shall be supported.
+
+6. Vendor activities shall be audit logged.
+
+7. Vendor configuration shall not require code deployment.
+
+8. Vendor Management shall support future execution services.
+
+9. Vendor Management shall integrate with Marketplace and Quotation modules.
+
+10. Vendor information shall be protected according to Security Design.

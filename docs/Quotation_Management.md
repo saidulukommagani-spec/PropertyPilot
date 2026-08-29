@@ -672,6 +672,13 @@ Project Conversion Rate
 Vendor Success Rate
 
 Revenue Contribution
+Average Project Value
+
+Approved Quotation Value
+
+Rejected Quotation Value
+
+Vendor Revenue Contribution
 
 ---
 
@@ -755,3 +762,147 @@ Customer Approval
 
 Quotation > ₹5,00,000
 Customer + Admin Approval
+# Quotation Line Items
+
+Each quotation may contain one or more line items.
+
+Fields:
+
+Line Item ID
+
+Description
+
+Category
+
+Quantity
+
+Unit
+
+Unit Price
+
+Amount
+
+Remarks
+
+Examples:
+
+Cement
+50 Bags
+₹450
+₹22,500
+
+Precast Panels
+100 Units
+₹1,200
+₹1,20,000
+# Quotation Types
+
+STANDARD_QUOTATION
+
+SITE_ASSESSMENT_QUOTATION
+
+VENDOR_QUOTATION
+
+COMPARISON_QUOTATION
+
+REVISED_QUOTATION
+
+PROJECT_QUOTATION
+
+BOQ_QUOTATION
+# Quotation Validity
+
+Every quotation shall have a validity period.
+
+Examples:
+
+7 Days
+
+15 Days
+
+30 Days
+
+60 Days
+
+Expired quotations cannot be approved unless revalidated.
+
+# Payment Integration
+
+Integrates With:
+
+Pricing_Engine.md
+
+Supports:
+
+Advance Payments
+
+Milestone Payments
+
+Final Settlement
+
+Payment Tracking
+# Property Integration
+
+Integrates With:
+
+Property_Management.md
+
+Supports:
+
+Property Based Quotations
+
+Property Development Services
+
+Project Tracking
+
+Property History Updates
+# Service Workflow Integration
+
+Integrates With:
+
+Service_Workflow.md
+
+Supports:
+
+Assessment Workflow
+
+Quotation Workflow
+
+Execution Workflow
+
+Completion Workflow
+# Quotation Lifecycle
+
+DRAFT
+
+↓
+
+REQUESTED
+
+↓
+
+RECEIVED
+
+↓
+
+UNDER_REVIEW
+
+↓
+
+NEGOTIATION
+
+↓
+
+APPROVED
+
+↓
+
+CONVERTED_TO_PROJECT
+
+OR
+
+REJECTED
+
+OR
+
+EXPIRED
