@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/propertypilot}
+    username: ${DB_USERNAME:propertypilot}
+    password: ${DB_PASSWORD:propertypilot}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.propertypilot: DEBUG

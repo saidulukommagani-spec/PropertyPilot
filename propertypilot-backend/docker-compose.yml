@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: propertypilot
+      POSTGRES_USER: propertypilot
+      POSTGRES_PASSWORD: propertypilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - propertypilot_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U propertypilot -d propertypilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/propertypilot
+      DB_USERNAME: propertypilot
+      DB_PASSWORD: propertypilot
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  propertypilot_postgres_data:
