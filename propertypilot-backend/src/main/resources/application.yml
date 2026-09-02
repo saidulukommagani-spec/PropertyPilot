@@ -43,3 +43,9 @@ springdoc:
 logging:
   level:
     root: INFO
+    org.springframework.security: DEBUG
+
+security:
+  jwt:
+    secret: "PropertyPilotJwtSecretKeyMustBeAtLeast32CharactersLong2026"
+    expiration: 900000
