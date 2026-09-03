@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.propertypilot.web.exception.DuplicateResourceException;
 
 import java.util.UUID;
+import java.util.List;
+
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -59,4 +61,35 @@ public class UserServiceImpl implements UserService {
                 savedUser.getStatus().name()
         );
     }
+    @Override
+public List<UserResponse> getAllUsers() {
+
+    return userJpaRepository.findAll()
+            .stream()
+            .map(user -> new UserResponse(
+                    user.getUserId(),
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getMobileNumber(),
+                    user.getStatus().name()
+            ))
+            .toList();
+}
+
+@Override
+public UserResponse getUserById(UUID userId) {
+
+    UserEntity user = userJpaRepository.findById(userId)
+            .orElseThrow(() ->
+                    new RuntimeException(
+                            "User not found: " + userId));
+
+    return new UserResponse(
+            user.getUserId(),
+            user.getFullName(),
+            user.getEmail(),
+            user.getMobileNumber(),
+            user.getStatus().name()
+    );
+}
 }
