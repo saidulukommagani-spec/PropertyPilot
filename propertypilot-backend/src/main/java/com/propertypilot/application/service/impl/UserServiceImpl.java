@@ -1,5 +1,5 @@
 package com.propertypilot.application.service.impl;
-
+import com.propertypilot.application.dto.UserUpdateRequest;
 import com.propertypilot.application.dto.UserCreateRequest;
 import com.propertypilot.application.dto.UserResponse;
 import com.propertypilot.application.service.UserService;
@@ -91,5 +91,41 @@ public UserResponse getUserById(UUID userId) {
             user.getMobileNumber(),
             user.getStatus().name()
     );
+}
+@Override
+public UserResponse updateUser(
+        UUID userId,
+        UserUpdateRequest request) {
+
+    UserEntity user = userJpaRepository.findById(userId)
+            .orElseThrow(() ->
+                    new RuntimeException(
+                            "User not found: " + userId));
+
+    user.setFullName(request.fullName());
+    user.setEmail(request.email());
+    user.setMobileNumber(request.mobileNumber());
+
+    UserEntity updatedUser =
+            userJpaRepository.save(user);
+
+    return new UserResponse(
+            updatedUser.getUserId(),
+            updatedUser.getFullName(),
+            updatedUser.getEmail(),
+            updatedUser.getMobileNumber(),
+            updatedUser.getStatus().name()
+    );
+}
+
+@Override
+public void deleteUser(UUID userId) {
+
+    UserEntity user = userJpaRepository.findById(userId)
+            .orElseThrow(() ->
+                    new RuntimeException(
+                            "User not found: " + userId));
+
+    userJpaRepository.delete(user);
 }
 }

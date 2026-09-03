@@ -6,6 +6,7 @@ import com.propertypilot.application.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.propertypilot.application.dto.UserUpdateRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,4 +41,21 @@ public class UserController {
 
         return userService.getUserById(userId);
     }
+    @PutMapping("/{userId}")
+public UserResponse updateUser(
+        @PathVariable UUID userId,
+        @Valid @RequestBody UserUpdateRequest request) {
+
+    return userService.updateUser(
+            userId,
+            request);
+}
+
+@DeleteMapping("/{userId}")
+@ResponseStatus(HttpStatus.NO_CONTENT)
+public void deleteUser(
+        @PathVariable UUID userId) {
+
+    userService.deleteUser(userId);
+}
 }
