@@ -6,6 +6,7 @@ import com.propertypilot.application.service.PropertyService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/properties")
@@ -28,4 +29,12 @@ public class PropertyController {
         return propertyService.createProperty(
                 request);
     }
+    @GetMapping("/{propertyId}")
+    public PropertyResponse getPropertyById(
+        @PathVariable
+        UUID propertyId) {
+
+        return propertyService.getPropertyById(
+            propertyId);
+}
 }

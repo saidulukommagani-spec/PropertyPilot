@@ -6,6 +6,8 @@ import com.propertypilot.application.service.PropertyService;
 import com.propertypilot.domain.entity.Property;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
 import org.springframework.stereotype.Service;
+import com.propertypilot.web.exception.ResourceNotFoundException;
+import java.util.UUID;
 
 @Service
 public class PropertyServiceImpl
@@ -84,4 +86,46 @@ public class PropertyServiceImpl
 
         return response;
     }
+    @Override
+public PropertyResponse getPropertyById(
+        UUID propertyId) {
+
+    Property property =
+            propertyRepository.findById(propertyId)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Property not found"));
+
+    PropertyResponse response =
+            new PropertyResponse();
+
+    response.setPropertyId(
+            property.getPropertyId());
+
+    response.setPropertyName(
+            property.getPropertyName());
+
+    response.setPropertyType(
+            property.getPropertyType());
+
+    response.setAddressLine1(
+            property.getAddressLine1());
+
+    response.setAddressLine2(
+            property.getAddressLine2());
+
+    response.setCity(
+            property.getCity());
+
+    response.setState(
+            property.getState());
+
+    response.setPostalCode(
+            property.getPostalCode());
+
+    response.setCountry(
+            property.getCountry());
+
+    return response;
+}
 }
