@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import com.propertypilot.application.dto.UserUpdateRequest;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +26,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createUser(
             @Valid @RequestBody UserCreateRequest request) {
+System.out.println("CONTROLLER HIT");
 
         return userService.createUser(request);
     }
@@ -41,7 +43,7 @@ public class UserController {
 
         return userService.getUserById(userId);
     }
-    @PutMapping("/{userId}")
+        @PutMapping("/{userId}")
 public UserResponse updateUser(
         @PathVariable UUID userId,
         @Valid @RequestBody UserUpdateRequest request) {
@@ -50,7 +52,13 @@ public UserResponse updateUser(
             userId,
             request);
 }
+@GetMapping("/me")
+public UserResponse getCurrentUser(
+        Authentication authentication) {
 
+    return userService.getCurrentUser(
+            authentication.getName());
+}
 @DeleteMapping("/{userId}")
 @ResponseStatus(HttpStatus.NO_CONTENT)
 public void deleteUser(

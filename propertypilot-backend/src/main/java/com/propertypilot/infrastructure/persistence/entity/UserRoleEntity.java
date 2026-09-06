@@ -10,60 +10,69 @@ import java.util.UUID;
 public class UserRoleEntity extends AuditableEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_role_id")
     private UUID userRoleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "role_id", nullable = false)
     private RoleEntity role;
 
-    @Column(name = "effective_from")
+    @Column(name = "effective_from", nullable = false)
     private OffsetDateTime effectiveFrom;
 
     @Column(name = "effective_to")
     private OffsetDateTime effectiveTo;
 
+    @PrePersist
+    protected void onCreateUserRole() {
+
+        if (effectiveFrom == null) {
+            effectiveFrom = OffsetDateTime.now();
+        }
+    }
+
     public UUID getUserRoleId() {
-    return userRoleId;
-}
+        return userRoleId;
+    }
 
-public void setUserRoleId(UUID userRoleId) {
-    this.userRoleId = userRoleId;
-}
+    public void setUserRoleId(UUID userRoleId) {
+        this.userRoleId = userRoleId;
+    }
 
-public UserEntity getUser() {
-    return user;
-}
+    public UserEntity getUser() {
+        return user;
+    }
 
-public void setUser(UserEntity user) {
-    this.user = user;
-}
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
 
-public RoleEntity getRole() {
-    return role;
-}
+    public RoleEntity getRole() {
+        return role;
+    }
 
-public void setRole(RoleEntity role) {
-    this.role = role;
-}
+    public void setRole(RoleEntity role) {
+        this.role = role;
+    }
 
-public OffsetDateTime getEffectiveFrom() {
-    return effectiveFrom;
-}
+    public OffsetDateTime getEffectiveFrom() {
+        return effectiveFrom;
+    }
 
-public void setEffectiveFrom(OffsetDateTime effectiveFrom) {
-    this.effectiveFrom = effectiveFrom;
-}
+    public void setEffectiveFrom(OffsetDateTime effectiveFrom) {
+        this.effectiveFrom = effectiveFrom;
+    }
 
-public OffsetDateTime getEffectiveTo() {
-    return effectiveTo;
-}
+    public OffsetDateTime getEffectiveTo() {
+        return effectiveTo;
+    }
 
-public void setEffectiveTo(OffsetDateTime effectiveTo) {
-    this.effectiveTo = effectiveTo;
-}
+    public void setEffectiveTo(OffsetDateTime effectiveTo) {
+        this.effectiveTo = effectiveTo;
+    }
 }

@@ -4,30 +4,21 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 public class PropertyCreateRequest {
 
-    @NotBlank
-    private String propertyName;
+    @NotBlank(message = "Title is required")
+    private String title;
 
-    @NotBlank
+    @NotBlank(message = "Property Type is required")
     private String propertyType;
 
-    @NotBlank
-    private String addressLine1;
+    private String listingStatus;
 
-    private String addressLine2;
+    private BigDecimal price;
 
-    @NotBlank
-    private String city;
-
-    @NotBlank
-    private String state;
-
-    @NotBlank
-    private String postalCode;
-
-    @NotBlank
-    private String country;
+    private String status;
 }

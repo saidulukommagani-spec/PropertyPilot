@@ -4,11 +4,12 @@ import com.propertypilot.application.dto.auth.LoginRequest;
 import com.propertypilot.application.dto.auth.LoginResponse;
 import com.propertypilot.application.service.AuthService;
 import com.propertypilot.security.JwtService;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -26,23 +27,22 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(
+                        request.email().trim().toLowerCase(),
+                        request.password()
+                )
+        );
 
-        authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(
-                request.email(),
-                request.password()
-        )
-);
+        String token = jwtService.generateToken(
+                authentication.getName(),
+                Map.of()
+        );
 
-String token = jwtService.generateToken(
-        request.email(),
-        new HashMap<>()
-);
-
-return new LoginResponse(
-        token,
-        "Bearer",
-        900000L
-);
+        return new LoginResponse(
+                token,
+                "Bearer",
+                jwtService.getExpiration()
+        );
     }
 }

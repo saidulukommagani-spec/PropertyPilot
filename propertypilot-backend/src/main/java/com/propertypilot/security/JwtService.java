@@ -58,6 +58,10 @@ public class JwtService {
         );
     }
 
+    public long getExpiration() {
+        return expiration;
+    }
+
     private Claims extractClaims(String token) {
 
         return Jwts.parser()

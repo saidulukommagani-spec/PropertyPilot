@@ -1,34 +1,38 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
+import com.propertypilot.domain.enums.UserStatus;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import com.propertypilot.domain.enums.UserStatus;
 
 @Entity
 @Table(name = "users")
 public class UserEntity extends AuditableEntity {
 
+    public UserEntity() {
+    }
+
     @Id
-    @Column(name = "user_id")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "mobile_number")
     private String mobileNumber;
 
-    @Column(name = "password_hash")
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-       @Enumerated(EnumType.STRING)
-@Column(name = "status", nullable = false)
-private UserStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status;
 
     @Column(name = "email_verified_at")
     private OffsetDateTime emailVerifiedAt;
@@ -39,76 +43,93 @@ private UserStatus status;
     @Column(name = "last_login_at")
     private OffsetDateTime lastLoginAt;
 
-   public UserStatus getStatus() {
-    return status;
-}
+    /*
+     * IMPORTANT:
+     * Keep version in the concrete entity.
+     * This avoids Hibernate treating new entities
+     * as detached when UUID generation is used.
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
-public void setStatus(UserStatus status) {
-    this.status = status;
-}
+    public UserStatus getStatus() {
+        return status;
+    }
 
-public UUID getUserId() {
-    return userId;
-}
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
 
-public void setUserId(UUID userId) {
-    this.userId = userId;
-}
+    public UUID getUserId() {
+        return userId;
+    }
 
-public String getFullName() {
-    return fullName;
-}
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
 
-public void setFullName(String fullName) {
-    this.fullName = fullName;
-}
+    public String getFullName() {
+        return fullName;
+    }
 
-public String getEmail() {
-    return email;
-}
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
 
-public void setEmail(String email) {
-    this.email = email;
-}
+    public String getEmail() {
+        return email;
+    }
 
-public String getMobileNumber() {
-    return mobileNumber;
-}
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-public void setMobileNumber(String mobileNumber) {
-    this.mobileNumber = mobileNumber;
-}
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
 
-public String getPasswordHash() {
-    return passwordHash;
-}
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
 
-public void setPasswordHash(String passwordHash) {
-    this.passwordHash = passwordHash;
-}
+    public String getPasswordHash() {
+        return passwordHash;
+    }
 
-public OffsetDateTime getEmailVerifiedAt() {
-    return emailVerifiedAt;
-}
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 
-public void setEmailVerifiedAt(OffsetDateTime emailVerifiedAt) {
-    this.emailVerifiedAt = emailVerifiedAt;
-}
+    public OffsetDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
 
-public OffsetDateTime getMobileVerifiedAt() {
-    return mobileVerifiedAt;
-}
+    public void setEmailVerifiedAt(OffsetDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
+    }
 
-public void setMobileVerifiedAt(OffsetDateTime mobileVerifiedAt) {
-    this.mobileVerifiedAt = mobileVerifiedAt;
-}
+    public OffsetDateTime getMobileVerifiedAt() {
+        return mobileVerifiedAt;
+    }
 
-public OffsetDateTime getLastLoginAt() {
-    return lastLoginAt;
-}
+    public void setMobileVerifiedAt(OffsetDateTime mobileVerifiedAt) {
+        this.mobileVerifiedAt = mobileVerifiedAt;
+    }
 
-public void setLastLoginAt(OffsetDateTime lastLoginAt) {
-    this.lastLoginAt = lastLoginAt;
-}
+    public OffsetDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
 
+    public void setLastLoginAt(OffsetDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
 }

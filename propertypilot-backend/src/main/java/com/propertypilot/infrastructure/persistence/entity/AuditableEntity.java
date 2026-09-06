@@ -1,6 +1,10 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -19,19 +23,11 @@ public abstract class AuditableEntity extends BaseEntity {
     @Column(name = "updated_by")
     private UUID updatedBy;
 
-    @Version
-    @Column(name = "version", nullable = false)
-    private Long version;
-
     @PrePersist
     protected void onCreate() {
         OffsetDateTime now = OffsetDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-
-        if (version == null) {
-            version = 0L;
-        }
     }
 
     @PreUpdate
@@ -43,7 +39,31 @@ public abstract class AuditableEntity extends BaseEntity {
         return createdAt;
     }
 
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public UUID getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(UUID createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public UUID getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(UUID updatedBy) {
+        this.updatedBy = updatedBy;
     }
 }

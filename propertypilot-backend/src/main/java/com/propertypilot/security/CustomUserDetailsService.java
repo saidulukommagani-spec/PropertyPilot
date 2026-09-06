@@ -22,6 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public CustomUserDetailsService(
             UserRepository userRepository,
             UserRoleRepository userRoleRepository) {
+
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
     }

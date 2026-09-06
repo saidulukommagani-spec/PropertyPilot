@@ -2,92 +2,197 @@ package com.propertypilot.application.service.impl;
 
 import com.propertypilot.application.dto.PropertyCreateRequest;
 import com.propertypilot.application.dto.PropertyResponse;
+import com.propertypilot.application.dto.PropertyUpdateRequest;
 import com.propertypilot.application.service.PropertyService;
-import com.propertypilot.domain.entity.Property;
+import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
+import com.propertypilot.infrastructure.persistence.entity.Property;
+import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
-import org.springframework.stereotype.Service;
+import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
 
 @Service
 public class PropertyServiceImpl
         implements PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final CustomerRepository customerRepository;
+    private final SecurityService securityService;
 
     public PropertyServiceImpl(
-            PropertyRepository propertyRepository) {
+            PropertyRepository propertyRepository,
+            CustomerRepository customerRepository,
+            SecurityService securityService) {
 
         this.propertyRepository = propertyRepository;
+        this.customerRepository = customerRepository;
+        this.securityService = securityService;
     }
 
     @Override
     public PropertyResponse createProperty(
             PropertyCreateRequest request) {
 
+        CustomerEntity customer =
+                securityService.getCurrentCustomer();
+
         Property property = new Property();
 
-        property.setPropertyName(
-                request.getPropertyName());
+        property.setCustomer(customer);
+
+        property.setTitle(
+                request.getTitle());
 
         property.setPropertyType(
                 request.getPropertyType());
 
-        property.setAddressLine1(
-                request.getAddressLine1());
+        property.setListingStatus(
+                request.getListingStatus());
 
-        property.setAddressLine2(
-                request.getAddressLine2());
+        property.setPrice(
+                request.getPrice());
 
-        property.setCity(
-                request.getCity());
-
-        property.setState(
-                request.getState());
-
-        property.setPostalCode(
-                request.getPostalCode());
-
-        property.setCountry(
-                request.getCountry());
+        property.setStatus(
+                request.getStatus());
 
         Property savedProperty =
                 propertyRepository.save(property);
 
-        PropertyResponse response =
-                new PropertyResponse();
-
-        response.setPropertyId(
-                savedProperty.getPropertyId());
-
-        response.setPropertyName(
-                savedProperty.getPropertyName());
-
-        response.setPropertyType(
-                savedProperty.getPropertyType());
-
-        response.setAddressLine1(
-                savedProperty.getAddressLine1());
-
-        response.setAddressLine2(
-                savedProperty.getAddressLine2());
-
-        response.setCity(
-                savedProperty.getCity());
-
-        response.setState(
-                savedProperty.getState());
-
-        response.setPostalCode(
-                savedProperty.getPostalCode());
-
-        response.setCountry(
-                savedProperty.getCountry());
-
-        return response;
+        return buildResponse(savedProperty);
     }
+
     @Override
-public PropertyResponse getPropertyById(
+    public PropertyResponse getPropertyById(
+            UUID propertyId) {
+
+        Property property =
+                propertyRepository.findById(propertyId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Property not found"));
+
+        validatePropertyOwnership(property);
+
+        /*
+         * Admin can view archived properties.
+         * Customers cannot.
+         */
+        if (!securityService.isAdmin()
+                && "ARCHIVED".equalsIgnoreCase(
+                        property.getStatus())) {
+
+            throw new ResourceNotFoundException(
+                    "Property not found");
+        }
+
+        return buildResponse(property);
+    }
+
+    @Override
+    public List<PropertyResponse> getAllProperties() {
+
+        /*
+         * Admin sees everything.
+         */
+        if (securityService.isAdmin()) {
+
+            return propertyRepository.findAll()
+                    .stream()
+                    .map(this::buildResponse)
+                    .toList();
+        }
+
+        UUID currentCustomerId =
+                securityService.getCurrentCustomer()
+                        .getCustomerId();
+
+        return propertyRepository.findAll()
+                .stream()
+                 .filter(property ->
+                  property.getCustomer()
+                        .getCustomerId()
+                        .equals(currentCustomerId))
+                .map(this::buildResponse)
+                 .toList();
+    }
+@Override
+public List<PropertyResponse> getArchivedProperties() {
+
+    if (!securityService.isAdmin()) {
+
+        throw new AccessDeniedException(
+                "Only administrators can view archived properties");
+    }
+
+    return propertyRepository
+            .findByStatus("ARCHIVED")
+            .stream()
+            .map(this::buildResponse)
+            .toList();
+}
+    @Override
+    public PropertyResponse updateProperty(
+            UUID propertyId,
+            PropertyUpdateRequest request) {
+
+        Property property =
+                propertyRepository.findById(propertyId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Property not found"));
+
+        validatePropertyOwnership(property);
+
+        /*
+         * Archived properties cannot be modified.
+         */
+        if ("ARCHIVED".equalsIgnoreCase(
+                property.getStatus())) {
+
+            throw new IllegalStateException(
+                    "Archived properties cannot be updated");
+        }
+
+        property.setTitle(
+                request.getTitle());
+
+        property.setPropertyType(
+                request.getPropertyType());
+
+        property.setListingStatus(
+                request.getListingStatus());
+
+        property.setPrice(
+                request.getPrice());
+
+        property.setStatus(
+                request.getStatus());
+
+        Property updatedProperty =
+                propertyRepository.save(property);
+
+        return buildResponse(updatedProperty);
+    }
+
+    /*
+     * Legacy DELETE endpoint.
+     * Convert delete into archive.
+     */
+    @Override
+    public void deleteProperty(
+            UUID propertyId) {
+
+        archiveProperty(propertyId);
+    }
+
+@Override
+public PropertyResponse archiveProperty(
         UUID propertyId) {
 
     Property property =
@@ -96,36 +201,126 @@ public PropertyResponse getPropertyById(
                             new ResourceNotFoundException(
                                     "Property not found"));
 
-    PropertyResponse response =
-            new PropertyResponse();
+    validatePropertyOwnership(property);
 
-    response.setPropertyId(
-            property.getPropertyId());
+    if ("ARCHIVED".equalsIgnoreCase(
+            property.getStatus())) {
 
-    response.setPropertyName(
-            property.getPropertyName());
+        throw new IllegalStateException(
+                "Property is already archived");
+    }
 
-    response.setPropertyType(
-            property.getPropertyType());
+    property.setStatus("ARCHIVED");
 
-    response.setAddressLine1(
-            property.getAddressLine1());
+    property.setArchivedAt(
+            Instant.now());
 
-    response.setAddressLine2(
-            property.getAddressLine2());
+    if (securityService.isAdmin()) {
 
-    response.setCity(
-            property.getCity());
+        property.setArchivedBy(null);
 
-    response.setState(
-            property.getState());
+    } else {
 
-    response.setPostalCode(
-            property.getPostalCode());
+        property.setArchivedBy(
+                securityService.getCurrentCustomer()
+                        .getCustomerId());
+    }
 
-    response.setCountry(
-            property.getCountry());
+    Property archivedProperty =
+            propertyRepository.save(property);
 
-    return response;
+    return buildResponse(
+            archivedProperty);
 }
+    @Override
+public PropertyResponse restoreProperty(
+        UUID propertyId) {
+
+    if (!securityService.isAdmin()) {
+
+        throw new AccessDeniedException(
+                "Only admin can restore properties");
+    }
+
+    
+    Property property =
+            propertyRepository.findById(propertyId)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Property not found"));
+           if (!"ARCHIVED".equalsIgnoreCase(
+            property.getStatus())) {
+
+        throw new IllegalStateException(
+                "Property is not archived");
+    }
+    property.setStatus("AVAILABLE");
+
+    /*
+     * Optional:
+     * clear archive audit fields
+     */
+    property.setArchivedAt(null);
+    property.setArchivedBy(null);
+
+    Property restoredProperty =
+            propertyRepository.save(property);
+
+    return buildResponse(
+            restoredProperty);
+}
+
+    private void validatePropertyOwnership(
+            Property property) {
+
+        if (securityService.isAdmin()) {
+            return;
+        }
+
+        UUID loggedInCustomerId =
+                securityService.getCurrentCustomer()
+                        .getCustomerId();
+
+        UUID propertyCustomerId =
+                property.getCustomer()
+                        .getCustomerId();
+
+        if (!loggedInCustomerId.equals(
+                propertyCustomerId)) {
+
+            throw new AccessDeniedException(
+                    "You do not have permission to access this property");
+        }
+    }
+
+    private PropertyResponse buildResponse(
+            Property property) {
+
+        PropertyResponse response =
+                new PropertyResponse();
+
+        response.setPropertyId(
+                property.getPropertyId());
+
+        response.setCustomerId(
+                property.getCustomer()
+                        .getCustomerId());
+
+        response.setTitle(
+                property.getTitle());
+
+        response.setPropertyType(
+                property.getPropertyType());
+
+        response.setListingStatus(
+                property.getListingStatus());
+
+        response.setPrice(
+                property.getPrice());
+
+        response.setStatus(
+                property.getStatus());
+
+        return response;
+    }
 }
