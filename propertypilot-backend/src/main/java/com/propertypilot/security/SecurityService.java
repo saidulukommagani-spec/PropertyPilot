@@ -1,12 +1,15 @@
 package com.propertypilot.security;
 
 import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
+import com.propertypilot.infrastructure.persistence.entity.Document;
+import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.UserEntity;
 import com.propertypilot.infrastructure.persistence.entity.UserRoleEntity;
 import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRoleRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -17,7 +20,9 @@ import java.util.UUID;
 public class SecurityService {
 
     private final UserRepository userRepository;
+
     private final CustomerRepository customerRepository;
+
     private final UserRoleRepository userRoleRepository;
 
     public SecurityService(
@@ -62,11 +67,6 @@ public class SecurityService {
     }
 
     public CustomerEntity getCurrentCustomer() {
-            String username = getCurrentUsername();
-
-    System.out.println(
-            "Looking for customer with email = "
-                    + username);
 
         return customerRepository.findByUser_Email(
                         getCurrentUsername())
@@ -86,4 +86,50 @@ public class SecurityService {
                         "ADMIN".equalsIgnoreCase(
                                 role.getRoleCode()));
     }
+
+    /**
+     * Property Ownership Validation
+     */
+    public void validatePropertyOwnership(
+            Property property) {
+
+        if (isAdmin()) {
+            return;
+        }
+
+        UUID currentCustomerId =
+                getCurrentCustomer()
+                        .getCustomerId();
+
+        UUID ownerCustomerId =
+                property.getCustomer()
+                        .getCustomerId();
+
+        if (!currentCustomerId.equals(
+                ownerCustomerId)) {
+
+            throw new AccessDeniedException(
+                    "You do not have access to this property");
+        }
+    }
+
+    /**
+     * Document Ownership Validation
+     * Reuses property ownership validation.
+     */
+    public void validateDocumentOwnership(
+            Document document) {
+
+        validatePropertyOwnership(
+                document.getProperty());
+    }
+
+    public void validateAdminAccess() {
+
+    if (!isAdmin()) {
+
+        throw new AccessDeniedException(
+                "Admin access required");
+    }
+}
 }

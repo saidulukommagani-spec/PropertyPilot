@@ -1,0 +1,32 @@
+/src
+  /api
+    - apiClient.js
+  /components
+    - Button.js
+    - Input.js
+    - Modal.js
+  /layouts
+    - MainLayout.js
+    - AuthLayout.js
+  /pages
+    - HomePage.js
+    - LoginPage.js
+    - DashboardPage.js
+    - NotFoundPage.js
+  /redux
+    - store.js
+    - slices/
+      - userSlice.js
+      - dataSlice.js
+  /hooks
+    - useAuth.js
+    - useFetch.js
+  /utils
+    - constants.js
+    - helpers.js
+  /styles
+    - App.css
+  /tests
+    - App.test.js
+  - App.js
+  - index.js

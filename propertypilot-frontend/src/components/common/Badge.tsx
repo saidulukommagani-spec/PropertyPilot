@@ -1,0 +1,1 @@
+    npm install react-router-dom redux react-redux @reduxjs/toolkit react-query axios formik yup

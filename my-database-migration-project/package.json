@@ -1,0 +1,27 @@
+{
+  "name": "my-database-migration-project",
+  "version": "1.0.0",
+  "description": "A project for managing database migrations using Flyway.",
+  "main": "index.js",
+  "scripts": {
+    "validate": "bash scripts/validate-flyway.sh",
+    "migrate": "flyway migrate",
+    "info": "flyway info",
+    "clean": "flyway clean"
+  },
+  "dependencies": {
+    "flyway": "^8.0.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/my-database-migration-project.git"
+  },
+  "keywords": [
+    "database",
+    "migration",
+    "flyway"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

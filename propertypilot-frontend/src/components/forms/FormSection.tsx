@@ -1,0 +1,10 @@
+  /src
+    /components
+    /layouts
+    /pages
+    /redux
+    /hooks
+    /api
+    /utils
+    /styles
+    /tests

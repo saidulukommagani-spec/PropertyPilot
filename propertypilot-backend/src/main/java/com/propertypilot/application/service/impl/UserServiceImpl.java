@@ -4,10 +4,14 @@ import com.propertypilot.application.dto.UserCreateRequest;
 import com.propertypilot.application.dto.UserResponse;
 import com.propertypilot.application.dto.UserUpdateRequest;
 import com.propertypilot.application.service.UserService;
+import com.propertypilot.domain.enums.CustomerStatus;
+import com.propertypilot.domain.enums.CustomerType;
 import com.propertypilot.domain.enums.UserStatus;
+import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
 import com.propertypilot.infrastructure.persistence.entity.RoleEntity;
 import com.propertypilot.infrastructure.persistence.entity.UserEntity;
 import com.propertypilot.infrastructure.persistence.entity.UserRoleEntity;
+import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.RoleRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRoleRepository;
@@ -28,17 +32,20 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final CustomerRepository customerRepository;
 
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             RoleRepository roleRepository,
-            UserRoleRepository userRoleRepository) {
+            UserRoleRepository userRoleRepository,
+            CustomerRepository customerRepository) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.userRoleRepository = userRoleRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Override
@@ -97,6 +104,25 @@ public class UserServiceImpl implements UserService {
                 OffsetDateTime.now());
 
         userRoleRepository.save(userRole);
+
+        /*
+         * Automatically create Customer record
+         */
+        CustomerEntity customer =
+                new CustomerEntity();
+
+        customer.setCustomerId(
+                UUID.randomUUID());
+
+        customer.setUser(savedUser);
+
+        customer.setCustomerType(
+                CustomerType.INDIVIDUAL);
+
+        customer.setStatus(
+                CustomerStatus.ACTIVE);
+
+        customerRepository.save(customer);
 
         System.out.println(
                 "USER SAVED = "
@@ -163,6 +189,7 @@ public class UserServiceImpl implements UserService {
                 request.email().trim().toLowerCase();
 
         user.setEmail(normalizedEmail);
+
         user.setMobileNumber(
                 request.mobileNumber());
 

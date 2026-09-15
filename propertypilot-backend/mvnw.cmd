@@ -15,5 +15,5 @@ IF NOT EXIST "%WRAPPER_JAR%" (
   EXIT /B 1
 )
 
-"%JAVA_EXEC%" %MAVEN_OPTS% -classpath "%WRAPPER_JAR%" "-Dmaven.multiModuleProjectDirectory=%BASE_DIR%" org.apache.maven.wrapper.MavenWrapperMain %*
+"%JAVA_EXEC%" %MAVEN_OPTS% -classpath "%WRAPPER_JAR%" "-Dmaven.multiModuleProjectDirectory=%BASE_DIR%." org.apache.maven.wrapper.MavenWrapperMain %*
 EXIT /B %ERRORLEVEL%

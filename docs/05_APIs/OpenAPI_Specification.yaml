@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: PropertyPilot API
+  version: 1.0.0
+  description: OpenAPI contract for the PropertyPilot backend platform.
+servers:
+  - url: https://api.propertypilot.example.com/v1
+paths:
+  /customers:
+    get:
+      summary: List customers
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+    post:
+      summary: Create customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: Created
+  /properties:
+    get:
+      summary: List properties
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Property'
+  /service-requests:
+    get:
+      summary: List service requests
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceRequest'
+    post:
+      summary: Create service request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequestRequest'
+      responses:
+        '201':
+          description: Created
+  /reports:
+    get:
+      summary: List reports
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        mobile_number:
+          type: string
+        email:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CreateCustomerRequest:
+      type: object
+      required:
+        - first_name
+        - email
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        mobile_number:
+          type: string
+        email:
+          type: string
+    Property:
+      type: object
+      properties:
+        property_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        property_type:
+          type: string
+        city:
+          type: string
+        price:
+          type: number
+        status:
+          type: string
+    ServiceRequest:
+      type: object
+      properties:
+        service_request_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        property_id:
+          type: string
+          format: uuid
+        request_type:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CreateServiceRequestRequest:
+      type: object
+      required:
+        - customer_id
+        - property_id
+        - request_type
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        property_id:
+          type: string
+          format: uuid
+        request_type:
+          type: string
+        priority:
+          type: string
+    Report:
+      type: object
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        report_type:
+          type: string
+        generated_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
