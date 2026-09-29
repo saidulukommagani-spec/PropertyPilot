@@ -2,25 +2,32 @@ name: PropertyPilot Build
 
 on:
   push:
+    branches:
+      - phase1-database-foundation
+      - main
+      - develop
+
   pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: propertypilot-backend
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
+
+      - name: Grant execute permission
+        run: chmod +x mvnw
 
       - name: Build
         run: ./mvnw clean verify
