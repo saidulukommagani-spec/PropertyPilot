@@ -9,7 +9,8 @@ import com.propertypilot.infrastructure.persistence.repository.EvidenceRepositor
 import com.propertypilot.infrastructure.persistence.repository.VisitRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
-
+import com.propertypilot.infrastructure.persistence.entity.EvidenceTypeEntity;
+import com.propertypilot.infrastructure.persistence.repository.EvidenceTypeRepository;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -20,15 +21,22 @@ public class EvidenceServiceImpl
     private final EvidenceRepository evidenceRepository;
 
     private final VisitRepository visitRepository;
-
+private final EvidenceTypeRepository
+        evidenceTypeRepository;
     public EvidenceServiceImpl(
-            EvidenceRepository evidenceRepository,
-            VisitRepository visitRepository) {
+        EvidenceRepository evidenceRepository,
+        VisitRepository visitRepository,
+        EvidenceTypeRepository evidenceTypeRepository) {
 
-        this.evidenceRepository = evidenceRepository;
-        this.visitRepository = visitRepository;
-    }
+    this.evidenceRepository =
+            evidenceRepository;
 
+    this.visitRepository =
+            visitRepository;
+
+    this.evidenceTypeRepository =
+            evidenceTypeRepository;
+}
     @Override
     public EvidenceResponse createEvidence(
             CreateEvidenceRequest request) {
@@ -45,8 +53,15 @@ public class EvidenceServiceImpl
 
         evidence.setVisit(visit);
 
-        evidence.setEvidenceType(
-                request.getEvidenceType());
+      EvidenceTypeEntity evidenceType =
+        evidenceTypeRepository.findById(
+                request.getEvidenceTypeId())
+        .orElseThrow(() ->
+                new ResourceNotFoundException(
+                        "Evidence type not found"));
+
+evidence.setEvidenceType(
+        evidenceType);
 
         evidence.setFileUrl(
                 request.getFileUrl());
@@ -90,8 +105,17 @@ public class EvidenceServiceImpl
                 evidence.getVisit()
                         .getVisitId());
 
-        response.setEvidenceType(
-                evidence.getEvidenceType());
+      response.setEvidenceTypeId(
+        evidence.getEvidenceType()
+                .getEvidenceTypeId());
+
+response.setEvidenceTypeCode(
+        evidence.getEvidenceType()
+                .getCode());
+
+response.setEvidenceTypeName(
+        evidence.getEvidenceType()
+                .getName());
 
         response.setFileUrl(
                 evidence.getFileUrl());

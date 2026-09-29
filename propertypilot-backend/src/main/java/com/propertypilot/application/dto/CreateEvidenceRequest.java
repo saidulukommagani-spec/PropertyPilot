@@ -6,7 +6,7 @@ public class CreateEvidenceRequest {
 
     private UUID visitId;
 
-    private String evidenceType;
+    private UUID evidenceTypeId;
 
     private String fileUrl;
 
@@ -22,19 +22,21 @@ public class CreateEvidenceRequest {
         this.visitId = visitId;
     }
 
-    public String getEvidenceType() {
-        return evidenceType;
+    public UUID getEvidenceTypeId() {
+        return evidenceTypeId;
     }
 
-    public void setEvidenceType(String evidenceType) {
-        this.evidenceType = evidenceType;
+    public void setEvidenceTypeId(
+            UUID evidenceTypeId) {
+        this.evidenceTypeId = evidenceTypeId;
     }
 
     public String getFileUrl() {
         return fileUrl;
     }
 
-    public void setFileUrl(String fileUrl) {
+    public void setFileUrl(
+            String fileUrl) {
         this.fileUrl = fileUrl;
     }
 
@@ -42,7 +44,8 @@ public class CreateEvidenceRequest {
         return mediaType;
     }
 
-    public void setMediaType(String mediaType) {
+    public void setMediaType(
+            String mediaType) {
         this.mediaType = mediaType;
     }
 

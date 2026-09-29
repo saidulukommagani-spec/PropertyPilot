@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "subscription_plan_versions")
@@ -39,12 +43,19 @@ private String currencyCode;
     @Column(name = "status")
     private String status;
 
-  @Column(
+  @JdbcTypeCode(SqlTypes.JSON)
+@Column(
         name = "benefits_json",
-        columnDefinition = "jsonb"
-        )
-        private String benefitsJson;
+        columnDefinition = "jsonb")
+private Map<String, Object> benefitsJson;
+public Map<String, Object> getBenefitsJson() {
+    return benefitsJson;
+}
 
+public void setBenefitsJson(
+        Map<String, Object> benefitsJson) {
+    this.benefitsJson = benefitsJson;
+}
     @Version
     @Column(name = "version")
     private Long version;
@@ -116,11 +127,4 @@ private String currencyCode;
         this.status = status;
     }
 
-    public String getBenefitsJson() {
-        return benefitsJson;
-    }
-
-    public void setBenefitsJson(String benefitsJson) {
-        this.benefitsJson = benefitsJson;
-    }
 }

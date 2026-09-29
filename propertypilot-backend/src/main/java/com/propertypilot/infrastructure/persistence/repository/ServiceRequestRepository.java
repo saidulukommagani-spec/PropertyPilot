@@ -56,4 +56,15 @@ findByIdForAdmin(
         @Param("serviceRequestId")
         UUID serviceRequestId);
 
+        long count();
+
+long countByStatus(
+        String status);
+        long countByCustomer_CustomerId(
+        UUID customerId);
+
+long countByCustomer_CustomerIdAndStatus(
+        UUID customerId,
+        String status);
+
     }

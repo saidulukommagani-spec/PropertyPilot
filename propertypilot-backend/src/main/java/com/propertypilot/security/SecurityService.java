@@ -1,6 +1,7 @@
 package com.propertypilot.security;
 
 import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
+import com.propertypilot.infrastructure.persistence.entity.DealEntity;
 import com.propertypilot.infrastructure.persistence.entity.Document;
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.UserEntity;
@@ -13,7 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
+import com.propertypilot.infrastructure.persistence.entity.LeadEntity;
 import java.util.UUID;
 
 @Service
@@ -74,6 +75,11 @@ public class SecurityService {
                         new ResourceNotFoundException(
                                 "Customer not found"));
     }
+    public UUID getCurrentCustomerId() {
+
+    return getCurrentCustomer()
+            .getCustomerId();
+}
 
     public boolean isAdmin() {
 
@@ -132,4 +138,56 @@ public class SecurityService {
                 "Admin access required");
     }
 }
+
+public void validateLeadOwnership(
+        LeadEntity lead) {
+
+    if (isAdmin()) {
+        return;
+    }
+
+    UUID currentCustomerId =
+            getCurrentCustomer()
+                    .getCustomerId();
+
+    UUID leadCustomerId =
+            lead.getCustomer()
+                    .getCustomerId();
+
+    if (!currentCustomerId.equals(
+            leadCustomerId)) {
+
+        throw new AccessDeniedException(
+                "You do not have access to this lead");
+    }
+}
+
+public void validateDealAccess(
+        DealEntity deal) {
+
+    if (isAdmin()) {
+        return;
+    }
+
+    UUID currentCustomerId =
+            getCurrentCustomerId();
+
+    if (deal.getSeller()
+            .getCustomerId()
+            .equals(currentCustomerId)) {
+
+        return;
+    }
+
+    if (deal.getSelectedBuyerId() != null
+            && deal.getSelectedBuyerId()
+                    .equals(currentCustomerId)) {
+
+        return;
+    }
+
+    throw new AccessDeniedException(
+            "You are not authorized to access this deal");
+}
+
 }

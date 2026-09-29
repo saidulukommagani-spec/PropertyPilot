@@ -14,7 +14,8 @@ public class UpdateCustomerSubscriptionRequest {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(
+            String status) {
         this.status = status;
     }
 
@@ -22,7 +23,8 @@ public class UpdateCustomerSubscriptionRequest {
         return endDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(
+            LocalDate endDate) {
         this.endDate = endDate;
     }
 
@@ -30,7 +32,8 @@ public class UpdateCustomerSubscriptionRequest {
         return autoRenew;
     }
 
-    public void setAutoRenew(Boolean autoRenew) {
+    public void setAutoRenew(
+            Boolean autoRenew) {
         this.autoRenew = autoRenew;
     }
 }

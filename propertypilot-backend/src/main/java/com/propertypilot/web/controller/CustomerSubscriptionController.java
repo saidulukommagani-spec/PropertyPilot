@@ -5,7 +5,10 @@ import com.propertypilot.application.dto.CustomerSubscriptionResponse;
 import com.propertypilot.application.dto.UpdateCustomerSubscriptionRequest;
 import com.propertypilot.application.service.CustomerSubscriptionService;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
+
+
 
 import java.util.List;
 import java.util.UUID;
@@ -73,4 +76,17 @@ public class CustomerSubscriptionController {
                                 subscriptionId,
                                 request));
     }
+   
+@GetMapping("/subscriptions/expiring")
+public ResponseEntity<
+        List<CustomerSubscriptionResponse>>
+getExpiringSubscriptions(
+        @RequestParam(defaultValue = "30")
+        Integer days) {
+
+    return ResponseEntity.ok(
+            customerSubscriptionService
+                    .getExpiringSubscriptions(
+                            days));
+}
 }

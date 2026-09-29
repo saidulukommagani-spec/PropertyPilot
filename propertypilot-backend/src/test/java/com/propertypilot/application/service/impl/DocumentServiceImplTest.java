@@ -9,6 +9,7 @@ import com.propertypilot.infrastructure.persistence.entity.Property;
 
 
 import com.propertypilot.infrastructure.persistence.repository.DocumentRepository;
+import com.propertypilot.infrastructure.persistence.repository.DocumentServiceCatalogRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentTypeRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentVersionRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceImplTest {
     @Mock DocumentRepository documentRepository;
+    @Mock DocumentServiceCatalogRepository documentServiceCatalogRepository;
     @Mock DocumentTypeRepository documentTypeRepository;
     @Mock DocumentVersionRepository documentVersionRepository;
     @Mock PropertyRepository propertyRepository;

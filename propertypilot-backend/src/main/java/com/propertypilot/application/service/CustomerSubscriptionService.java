@@ -22,4 +22,8 @@ public interface CustomerSubscriptionService {
     CustomerSubscriptionResponse updateSubscription(
             UUID customerSubscriptionId,
             UpdateCustomerSubscriptionRequest request);
+
+            List<CustomerSubscriptionResponse>
+getExpiringSubscriptions(
+        Integer days);
 }

@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 @Entity
 @Table(
         name = "service_price_rules",
@@ -58,11 +60,12 @@ public class PricingRuleEntity
      * Stored as JSON string.
      * Avoids vendor lock-in for now.
      */
-    @Column(
-            name = "rule_definition",
-            nullable = false,
-            columnDefinition = "jsonb")
-    private String ruleDefinition;
+   @JdbcTypeCode(SqlTypes.JSON)
+@Column(
+        name = "rule_definition",
+        nullable = false,
+        columnDefinition = "jsonb")
+private String ruleDefinition;
 
     @Column(
             name = "effective_from",

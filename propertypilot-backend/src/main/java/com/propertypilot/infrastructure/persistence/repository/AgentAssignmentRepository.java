@@ -29,6 +29,11 @@ public interface AgentAssignmentRepository
     List<AgentAssignmentEntity>
     findByAssignmentStatus(String assignmentStatus);
 
-    
-    
+    Optional<AgentAssignmentEntity>
+findByServiceRequest_ServiceRequestIdAndAssignmentStatus(
+        UUID serviceRequestId,
+        String assignmentStatus);
+    long countByAssignmentStatus(
+        String assignmentStatus);
+
 }

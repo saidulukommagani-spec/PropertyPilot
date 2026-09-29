@@ -9,7 +9,11 @@ public class EvidenceResponse {
 
     private UUID visitId;
 
-    private String evidenceType;
+    private UUID evidenceTypeId;
+
+    private String evidenceTypeCode;
+
+    private String evidenceTypeName;
 
     private String fileUrl;
 
@@ -23,7 +27,8 @@ public class EvidenceResponse {
         return evidenceId;
     }
 
-    public void setEvidenceId(UUID evidenceId) {
+    public void setEvidenceId(
+            UUID evidenceId) {
         this.evidenceId = evidenceId;
     }
 
@@ -31,23 +36,44 @@ public class EvidenceResponse {
         return visitId;
     }
 
-    public void setVisitId(UUID visitId) {
+    public void setVisitId(
+            UUID visitId) {
         this.visitId = visitId;
     }
 
-    public String getEvidenceType() {
-        return evidenceType;
+    public UUID getEvidenceTypeId() {
+        return evidenceTypeId;
     }
 
-    public void setEvidenceType(String evidenceType) {
-        this.evidenceType = evidenceType;
+    public void setEvidenceTypeId(
+            UUID evidenceTypeId) {
+        this.evidenceTypeId = evidenceTypeId;
+    }
+
+    public String getEvidenceTypeCode() {
+        return evidenceTypeCode;
+    }
+
+    public void setEvidenceTypeCode(
+            String evidenceTypeCode) {
+        this.evidenceTypeCode = evidenceTypeCode;
+    }
+
+    public String getEvidenceTypeName() {
+        return evidenceTypeName;
+    }
+
+    public void setEvidenceTypeName(
+            String evidenceTypeName) {
+        this.evidenceTypeName = evidenceTypeName;
     }
 
     public String getFileUrl() {
         return fileUrl;
     }
 
-    public void setFileUrl(String fileUrl) {
+    public void setFileUrl(
+            String fileUrl) {
         this.fileUrl = fileUrl;
     }
 
@@ -55,7 +81,8 @@ public class EvidenceResponse {
         return mediaType;
     }
 
-    public void setMediaType(String mediaType) {
+    public void setMediaType(
+            String mediaType) {
         this.mediaType = mediaType;
     }
 

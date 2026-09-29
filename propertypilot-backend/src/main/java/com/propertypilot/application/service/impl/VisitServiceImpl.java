@@ -3,6 +3,7 @@ package com.propertypilot.application.service.impl;
 import com.propertypilot.application.dto.CreateVisitRequest;
 import com.propertypilot.application.dto.VisitResponse;
 import com.propertypilot.application.service.VisitService;
+import com.propertypilot.domain.enums.VisitStatus;
 import com.propertypilot.infrastructure.persistence.entity.AgentAssignmentEntity;
 import com.propertypilot.infrastructure.persistence.entity.VisitEntity;
 import com.propertypilot.infrastructure.persistence.repository.AgentAssignmentRepository;
@@ -38,12 +39,47 @@ public class VisitServiceImpl implements VisitService {
                                 new ResourceNotFoundException(
                                         "Assignment not found"));
 
+        if (!"ACCEPTED".equals(
+        assignment.getAssignmentStatus())
+        &&
+        !"IN_PROGRESS".equals(
+                assignment.getAssignmentStatus())) {
+
+    throw new IllegalStateException(
+            "Visit can only be created for accepted assignments");
+}
+String requestStatus =
+        assignment.getServiceRequest()
+                .getStatus();
+
+if (!"ACCEPTED".equals(requestStatus)
+        &&
+        !"IN_PROGRESS".equals(requestStatus)) {
+
+    throw new IllegalStateException(
+            "Visit cannot be created for request status "
+                    + requestStatus);
+}
         if (visitRepository.existsByAssignment_AssignmentId(
                 assignment.getAssignmentId())) {
 
             throw new IllegalStateException(
                     "Visit already exists for assignment");
         }
+
+        if (request.getScheduledAt() == null) {
+
+    throw new IllegalArgumentException(
+            "Scheduled date is required");
+}
+
+if (request.getScheduledAt()
+        .isBefore(
+                OffsetDateTime.now())) {
+
+    throw new IllegalArgumentException(
+            "Scheduled date cannot be in the past");
+}
 
         VisitEntity visit = new VisitEntity();
 
@@ -62,7 +98,7 @@ public class VisitServiceImpl implements VisitService {
                 request.getNotes());
 
         visit.setStatus(
-                "SCHEDULED");
+        VisitStatus.SCHEDULED.name());
 
         VisitEntity savedVisit =
                 visitRepository.save(visit);
@@ -93,20 +129,39 @@ public class VisitServiceImpl implements VisitService {
                                 new ResourceNotFoundException(
                                         "Visit not found"));
 
-        if (!"SCHEDULED".equalsIgnoreCase(
-                visit.getStatus())) {
+       validateVisitTransition(
+        visit.getStatus(),
+        VisitStatus.IN_PROGRESS.name());
 
-            throw new IllegalStateException(
-                    "Only scheduled visits can be started");
-        }
-
-        visit.setStatus(
-                "IN_PROGRESS");
+                visit.setStatus(
+        VisitStatus.IN_PROGRESS.name());
 
         visit.setStartedAt(
                 OffsetDateTime.now());
+AgentAssignmentEntity assignment =
+        visit.getAssignment();
 
-        VisitEntity updatedVisit =
+if (assignment == null) {
+    throw new IllegalStateException(
+            "Visit is not linked to an assignment");
+}
+
+if (!"ACCEPTED".equals(
+        assignment.getAssignmentStatus())
+        &&
+    !"IN_PROGRESS".equals(
+            assignment.getAssignmentStatus())) {
+
+    throw new IllegalStateException(
+            "Assignment is not active");
+}
+
+assignment.setAssignmentStatus(
+        "IN_PROGRESS");
+
+assignmentRepository.save(
+        assignment);
+               VisitEntity updatedVisit =
                 visitRepository.save(visit);
 
         return buildResponse(updatedVisit);
@@ -122,19 +177,44 @@ public class VisitServiceImpl implements VisitService {
                                 new ResourceNotFoundException(
                                         "Visit not found"));
 
-        if (!"IN_PROGRESS".equalsIgnoreCase(
+        if (!VisitStatus.IN_PROGRESS.name().equalsIgnoreCase(
                 visit.getStatus())) {
 
             throw new IllegalStateException(
                     "Visit must be in progress");
         }
 
-        visit.setStatus(
-                "COMPLETED");
+validateVisitTransition(
+        visit.getStatus(),
+        VisitStatus.COMPLETED.name());
 
-        visit.setEndedAt(
-                OffsetDateTime.now());
+visit.setStatus(
+        VisitStatus.COMPLETED.name());
 
+visit.setEndedAt(
+        OffsetDateTime.now());
+AgentAssignmentEntity assignment =
+        visit.getAssignment();
+
+if (assignment == null) {
+    throw new IllegalStateException(
+            "Visit is not linked to an assignment");
+}
+
+if (!"IN_PROGRESS".equals(
+        assignment.getAssignmentStatus())) {
+
+    throw new IllegalStateException(
+            "Assignment must be IN_PROGRESS");
+}
+assignment.setAssignmentStatus(
+        "COMPLETED");
+
+assignment.setEndedAt(
+        OffsetDateTime.now());
+
+assignmentRepository.save(
+        assignment);
         VisitEntity updatedVisit =
                 visitRepository.save(visit);
 
@@ -152,18 +232,33 @@ public class VisitServiceImpl implements VisitService {
                                 new ResourceNotFoundException(
                                         "Visit not found"));
 
-        if ("COMPLETED".equalsIgnoreCase(
-                visit.getStatus())) {
+      validateVisitTransition(
+        visit.getStatus(),
+        VisitStatus.CANCELLED.name());
 
-            throw new IllegalStateException(
-                    "Completed visit cannot be cancelled");
-        }
-
-        visit.setStatus(
-                "CANCELLED");
+       
+                visit.setStatus(
+        VisitStatus.CANCELLED.name());
 
         visit.setCancellationReason(
                 reason);
+                visit.setEndedAt(
+        OffsetDateTime.now());
+
+                AgentAssignmentEntity assignment =
+        visit.getAssignment();
+
+if (assignment != null) {
+
+    assignment.setAssignmentStatus(
+            "CANCELLED");
+
+    assignment.setEndedAt(
+            OffsetDateTime.now());
+
+    assignmentRepository.save(
+            assignment);
+}
 
         VisitEntity updatedVisit =
                 visitRepository.save(visit);
@@ -218,4 +313,58 @@ public class VisitServiceImpl implements VisitService {
 
         return response;
     }
+
+    private void validateVisitTransition(
+        String currentStatus,
+        String targetStatus) {
+
+    if (VisitStatus.COMPLETED.name()
+            .equals(currentStatus)
+            ||
+        VisitStatus.CANCELLED.name()
+                .equals(currentStatus)
+            ||
+        VisitStatus.FAILED.name()
+                .equals(currentStatus)) {
+
+        throw new IllegalStateException(
+                "Terminal state reached: "
+                        + currentStatus);
+    }
+
+    boolean valid =
+
+            (VisitStatus.SCHEDULED.name()
+                    .equals(currentStatus)
+                    &&
+                    (
+                            VisitStatus.IN_PROGRESS.name()
+                                    .equals(targetStatus)
+                                    ||
+                            VisitStatus.CANCELLED.name()
+                                    .equals(targetStatus)
+                    ))
+
+            ||
+
+            (VisitStatus.IN_PROGRESS.name()
+                    .equals(currentStatus)
+                    &&
+                    (
+                            VisitStatus.COMPLETED.name()
+                                    .equals(targetStatus)
+                                    ||
+                            VisitStatus.FAILED.name()
+                                    .equals(targetStatus)
+                    ));
+
+    if (!valid) {
+
+        throw new IllegalStateException(
+                "Invalid visit transition from "
+                        + currentStatus
+                        + " to "
+                        + targetStatus);
+    }
+}
 }

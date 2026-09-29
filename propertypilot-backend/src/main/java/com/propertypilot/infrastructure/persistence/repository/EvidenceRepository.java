@@ -13,5 +13,6 @@ public interface EvidenceRepository
     findByVisit_VisitId(UUID visitId);
 
     List<EvidenceEntity>
-    findByEvidenceType(String evidenceType);
+findByEvidenceType_Code(
+        String code);
 }

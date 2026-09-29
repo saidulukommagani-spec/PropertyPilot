@@ -1,0 +1,28 @@
+package com.propertypilot.domain.enums;
+
+public enum DealStatus {
+
+    NEW,
+
+    BUYER_SEARCH_IN_PROGRESS,
+
+    BUYER_SHORTLISTED,
+
+    OFFER_RECEIVED,
+
+    NEGOTIATION_IN_PROGRESS,
+
+    BUYER_SELECTED,
+
+    SITE_VISIT_SCHEDULED,
+
+    DOCUMENT_VERIFICATION,
+
+    AGREEMENT_PENDING,
+
+    REGISTRATION_SCHEDULED,
+
+    COMPLETED,
+
+    CANCELLED
+}

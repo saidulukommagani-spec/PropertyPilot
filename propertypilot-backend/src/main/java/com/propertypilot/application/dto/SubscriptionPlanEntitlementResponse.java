@@ -1,0 +1,87 @@
+package com.propertypilot.application.dto;
+
+import java.util.UUID;
+
+public class SubscriptionPlanEntitlementResponse {
+
+    private UUID entitlementId;
+
+    private UUID planVersionId;
+
+    private UUID serviceId;
+
+    private Integer quantity;
+
+    private String periodType;
+
+    private Boolean carryForwardAllowed;
+
+    private String status;
+
+    public UUID getEntitlementId() {
+        return entitlementId;
+    }
+
+    public void setEntitlementId(
+            UUID entitlementId) {
+        this.entitlementId =
+                entitlementId;
+    }
+
+    public UUID getPlanVersionId() {
+        return planVersionId;
+    }
+
+    public void setPlanVersionId(
+            UUID planVersionId) {
+        this.planVersionId =
+                planVersionId;
+    }
+
+    public UUID getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(
+            UUID serviceId) {
+        this.serviceId =
+                serviceId;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(
+            Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public String getPeriodType() {
+        return periodType;
+    }
+
+    public void setPeriodType(
+            String periodType) {
+        this.periodType = periodType;
+    }
+
+    public Boolean getCarryForwardAllowed() {
+        return carryForwardAllowed;
+    }
+
+    public void setCarryForwardAllowed(
+            Boolean carryForwardAllowed) {
+        this.carryForwardAllowed =
+                carryForwardAllowed;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(
+            String status) {
+        this.status = status;
+    }
+}

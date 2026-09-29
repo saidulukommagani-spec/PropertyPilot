@@ -13,5 +13,12 @@ public interface PropertyRepository
 
     List<Property> findByStatusNot(String status);
 
-    
+    long count();
+    long countByCustomer_CustomerId(
+        UUID customerId);
+        List<Property> findByCustomer_CustomerId(
+        UUID customerId);
+        List<Property> findByCustomer_CustomerIdAndStatusNot(
+        UUID customerId,
+        String status);
 }

@@ -39,13 +39,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
-
+security:
+  jwt:
+    secret: "PropertyPilotJwtSecretKeyMustBeAtLeast32CharactersLong2026"
+    expiration: 1800000
 logging:
   level:
     root: INFO
     org.springframework.security: DEBUG
-
-security:
-  jwt:
-    secret: "PropertyPilotJwtSecretKeyMustBeAtLeast32CharactersLong2026"
-    expiration: 900000
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

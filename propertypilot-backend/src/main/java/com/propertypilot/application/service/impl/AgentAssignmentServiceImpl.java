@@ -112,8 +112,8 @@ public class AgentAssignmentServiceImpl
     public AgentAssignmentResponse acceptAssignment(
             UUID assignmentId) {
 
-        throw new UnsupportedOperationException(
-                "Not implemented yet");
+       throw new IllegalStateException(
+        "Assignment lifecycle is managed by ServiceRequestService");
     }
 
     @Override
@@ -121,24 +121,24 @@ public class AgentAssignmentServiceImpl
             UUID assignmentId,
             RejectAgentAssignmentRequest request) {
 
-        throw new UnsupportedOperationException(
-                "Not implemented yet");
+        throw new IllegalStateException(
+        "Assignment lifecycle is managed by ServiceRequestService");
     }
 
     @Override
     public AgentAssignmentResponse startAssignment(
             UUID assignmentId) {
 
-        throw new UnsupportedOperationException(
-                "Not implemented yet");
+      throw new IllegalStateException(
+        "Assignment lifecycle is managed by ServiceRequestService");
     }
 
     @Override
     public AgentAssignmentResponse completeAssignment(
             UUID assignmentId) {
 
-        throw new UnsupportedOperationException(
-                "Not implemented yet");
+     throw new IllegalStateException(
+        "Assignment lifecycle is managed by ServiceRequestService");
     }
 
     private AgentAssignmentResponse buildResponse(
@@ -186,4 +186,12 @@ public class AgentAssignmentServiceImpl
 
         return response;
     }
+/*
+Lifecycle managed by ServiceRequestService
+and VisitService.
+
+Methods intentionally deferred
+to avoid duplicate workflow ownership.
+*/
+
 }

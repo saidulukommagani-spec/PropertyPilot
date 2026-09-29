@@ -1,0 +1,22 @@
+package com.propertypilot.domain.enums;
+
+public enum MilestoneType {
+
+    PROPERTY_LISTED,
+
+    BUYER_IDENTIFIED,
+
+    SITE_VISIT,
+
+    OFFER_SUBMITTED,
+
+    OFFER_ACCEPTED,
+
+    DOCUMENT_VERIFICATION,
+
+    AGREEMENT_SIGNED,
+
+    REGISTRATION_COMPLETED,
+
+    COMMISSION_COLLECTED
+}

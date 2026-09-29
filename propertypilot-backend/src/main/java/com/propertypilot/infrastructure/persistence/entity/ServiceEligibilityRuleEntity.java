@@ -3,6 +3,8 @@ package com.propertypilot.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
@@ -29,12 +31,13 @@ public class ServiceEligibilityRuleEntity extends AuditableEntity {
     @Column(name = "rule_name", nullable = false, length = 150)
     private String ruleName;
 
-    @Column(
-            name = "rule_definition",
-            nullable = false,
-            columnDefinition = "jsonb"
-    )
-    private String ruleDefinition;
+ @Column(
+        name = "rule_definition",
+        nullable = false,
+        columnDefinition = "jsonb"
+)
+@JdbcTypeCode(SqlTypes.JSON)
+private String ruleDefinition;
 
     @Column(name = "priority", nullable = false)
     private Integer priority;

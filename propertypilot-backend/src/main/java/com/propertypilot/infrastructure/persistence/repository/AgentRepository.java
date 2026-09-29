@@ -24,4 +24,9 @@ public interface AgentRepository
             UUID userId,
             String status
     );
+long count();
+
+long countByStatus(
+        String status);
+
 }

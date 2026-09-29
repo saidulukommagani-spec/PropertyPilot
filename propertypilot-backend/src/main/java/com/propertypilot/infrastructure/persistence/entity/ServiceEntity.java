@@ -80,4 +80,31 @@ public class ServiceEntity
     public void setActiveFlag(Boolean activeFlag) {
         this.activeFlag = activeFlag;
     }
+
+    @Column(name = "requires_visit")
+private Boolean requiresVisit = false;
+
+@Column(name = "visit_mandatory")
+private Boolean visitMandatory = false;
+
+@Column(name = "max_visits_allowed")
+private Integer maxVisitsAllowed = 0;
+
+@Column(name = "requires_gps")
+private Boolean requiresGps = false;
+
+@Column(name = "requires_before_photo")
+private Boolean requiresBeforePhoto = false;
+
+@Column(name = "requires_after_photo")
+private Boolean requiresAfterPhoto = false;
+
+@Column(name = "requires_signature")
+private Boolean requiresSignature = false;
+
+@Column(name = "requires_document_upload")
+private Boolean requiresDocumentUpload = false;
+
+
+
 }

@@ -13,9 +13,9 @@ import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.time.Instant;
 
 @Service
 public class PropertyServiceImpl
@@ -105,37 +105,37 @@ public class PropertyServiceImpl
             return propertyRepository.findAll()
                     .stream()
                     .map(this::buildResponse)
-                    .toList();
+                   .toList();
         }
 
         UUID currentCustomerId =
                 securityService.getCurrentCustomer()
                         .getCustomerId();
 
-        return propertyRepository.findAll()
+      return propertyRepository
+        .findByCustomer_CustomerId(
+                currentCustomerId)
+        .stream()
+        .map(this::buildResponse)
+        .toList();
+    }
+
+    @Override
+    public List<PropertyResponse> getArchivedProperties() {
+
+        if (!securityService.isAdmin()) {
+
+            throw new AccessDeniedException(
+                    "Only administrators can view archived properties");
+        }
+
+        return propertyRepository
+                .findByStatus("ARCHIVED")
                 .stream()
-                 .filter(property ->
-                  property.getCustomer()
-                        .getCustomerId()
-                        .equals(currentCustomerId))
                 .map(this::buildResponse)
-                 .toList();
-    }
-@Override
-public List<PropertyResponse> getArchivedProperties() {
-
-    if (!securityService.isAdmin()) {
-
-        throw new AccessDeniedException(
-                "Only administrators can view archived properties");
+                .toList();
     }
 
-    return propertyRepository
-            .findByStatus("ARCHIVED")
-            .stream()
-            .map(this::buildResponse)
-            .toList();
-}
     @Override
     public PropertyResponse updateProperty(
             UUID propertyId,
@@ -191,84 +191,85 @@ public List<PropertyResponse> getArchivedProperties() {
         archiveProperty(propertyId);
     }
 
-@Override
-public PropertyResponse archiveProperty(
-        UUID propertyId) {
+    @Override
+    public PropertyResponse archiveProperty(
+            UUID propertyId) {
 
-    Property property =
-            propertyRepository.findById(propertyId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Property not found"));
+        Property property =
+                propertyRepository.findById(propertyId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Property not found"));
 
-    validatePropertyOwnership(property);
+        validatePropertyOwnership(property);
 
-    if ("ARCHIVED".equalsIgnoreCase(
-            property.getStatus())) {
+        if ("ARCHIVED".equalsIgnoreCase(
+                property.getStatus())) {
 
-        throw new IllegalStateException(
-                "Property is already archived");
+            throw new IllegalStateException(
+                    "Property is already archived");
+        }
+
+        property.setStatus("ARCHIVED");
+
+        property.setArchivedAt(
+                Instant.now());
+
+        if (securityService.isAdmin()) {
+
+            property.setArchivedBy(null);
+
+        } else {
+
+            property.setArchivedBy(
+                    securityService.getCurrentCustomer()
+                            .getCustomerId());
+        }
+
+        Property archivedProperty =
+                propertyRepository.save(property);
+
+        return buildResponse(
+                archivedProperty);
     }
 
-    property.setStatus("ARCHIVED");
+    @Override
+    public PropertyResponse restoreProperty(
+            UUID propertyId) {
 
-    property.setArchivedAt(
-            Instant.now());
+        if (!securityService.isAdmin()) {
 
-    if (securityService.isAdmin()) {
+            throw new AccessDeniedException(
+                    "Only admin can restore properties");
+        }
 
+        Property property =
+                propertyRepository.findById(propertyId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Property not found"));
+        if (!"ARCHIVED".equalsIgnoreCase(
+                property.getStatus())) {
+
+            throw new IllegalStateException(
+                    "Property is not archived");
+        }
+
+        property.setStatus("AVAILABLE");
+
+        /*
+         * Optional:
+         * clear archive audit fields
+         */
+        property.setArchivedAt(null);
         property.setArchivedBy(null);
 
-    } else {
+        Property restoredProperty =
+                propertyRepository.save(property);
 
-        property.setArchivedBy(
-                securityService.getCurrentCustomer()
-                        .getCustomerId());
+        return buildResponse(
+                restoredProperty);
     }
-
-    Property archivedProperty =
-            propertyRepository.save(property);
-
-    return buildResponse(
-            archivedProperty);
-}
-    @Override
-public PropertyResponse restoreProperty(
-        UUID propertyId) {
-
-    if (!securityService.isAdmin()) {
-
-        throw new AccessDeniedException(
-                "Only admin can restore properties");
-    }
-
-    
-    Property property =
-            propertyRepository.findById(propertyId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Property not found"));
-           if (!"ARCHIVED".equalsIgnoreCase(
-            property.getStatus())) {
-
-        throw new IllegalStateException(
-                "Property is not archived");
-    }
-    property.setStatus("AVAILABLE");
-
-    /*
-     * Optional:
-     * clear archive audit fields
-     */
-    property.setArchivedAt(null);
-    property.setArchivedBy(null);
-
-    Property restoredProperty =
-            propertyRepository.save(property);
-
-    return buildResponse(
-            restoredProperty);
-}
 
     private void validatePropertyOwnership(
             Property property) {

@@ -14,4 +14,6 @@ public interface CustomerRepository
 
              Optional<CustomerEntity> findByUser_UserId(
             UUID userId);
+
+            long count();
 }

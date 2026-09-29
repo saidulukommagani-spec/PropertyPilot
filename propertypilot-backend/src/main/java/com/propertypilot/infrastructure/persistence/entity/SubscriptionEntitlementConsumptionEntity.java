@@ -18,6 +18,13 @@ public class SubscriptionEntitlementConsumptionEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
+            name = "entitlement_id",
+            nullable = false
+    )
+    private SubscriptionPlanEntitlementEntity entitlement;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
             name = "customer_subscription_id",
             nullable = false
     )
@@ -36,10 +43,7 @@ public class SubscriptionEntitlementConsumptionEntity
     )
     private LocalDate periodStart;
 
-    @Column(
-            name = "period_end",
-            nullable = false
-    )
+    @Column(name = "period_end")
     private LocalDate periodEnd;
 
     @Column(
@@ -73,6 +77,15 @@ public class SubscriptionEntitlementConsumptionEntity
             UUID entitlementConsumptionId) {
         this.entitlementConsumptionId =
                 entitlementConsumptionId;
+    }
+
+    public SubscriptionPlanEntitlementEntity getEntitlement() {
+        return entitlement;
+    }
+
+    public void setEntitlement(
+            SubscriptionPlanEntitlementEntity entitlement) {
+        this.entitlement = entitlement;
     }
 
     public CustomerSubscriptionEntity getCustomerSubscription() {
@@ -145,5 +158,13 @@ public class SubscriptionEntitlementConsumptionEntity
     public void setExpiredAt(
             OffsetDateTime expiredAt) {
         this.expiredAt = expiredAt;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

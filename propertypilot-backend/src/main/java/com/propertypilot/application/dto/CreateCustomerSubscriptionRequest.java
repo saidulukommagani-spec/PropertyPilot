@@ -1,14 +1,19 @@
 package com.propertypilot.application.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
 public class CreateCustomerSubscriptionRequest {
 
+    @NotNull(message = "Plan Version Id is required")
     private UUID planVersionId;
 
+    @NotNull(message = "Start Date is required")
     private LocalDate startDate;
 
+    @NotNull(message = "End Date is required")
     private LocalDate endDate;
 
     private Boolean autoRenew;
@@ -17,7 +22,8 @@ public class CreateCustomerSubscriptionRequest {
         return planVersionId;
     }
 
-    public void setPlanVersionId(UUID planVersionId) {
+    public void setPlanVersionId(
+            UUID planVersionId) {
         this.planVersionId = planVersionId;
     }
 
@@ -25,7 +31,8 @@ public class CreateCustomerSubscriptionRequest {
         return startDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(
+            LocalDate startDate) {
         this.startDate = startDate;
     }
 
@@ -33,7 +40,8 @@ public class CreateCustomerSubscriptionRequest {
         return endDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(
+            LocalDate endDate) {
         this.endDate = endDate;
     }
 
@@ -41,7 +49,8 @@ public class CreateCustomerSubscriptionRequest {
         return autoRenew;
     }
 
-    public void setAutoRenew(Boolean autoRenew) {
+    public void setAutoRenew(
+            Boolean autoRenew) {
         this.autoRenew = autoRenew;
     }
 }
