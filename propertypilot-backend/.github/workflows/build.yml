@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - phase1-database-foundation
 
   pull_request:
     branches:
       - main
       - develop
+      - phase1-database-foundation
 
 jobs:
   build:
