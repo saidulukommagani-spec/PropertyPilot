@@ -539,7 +539,7 @@ public ServiceRequestResponse startRequest(
                                     "Service request not found"));
 validateTransition(
         request.getStatus(),
-        ServiceRequestStatus.ASSIGNED.name());
+        ServiceRequestStatus.IN_PROGRESS.name());
     AgentAssignmentEntity assignment =
             agentAssignmentRepository
                     .findByServiceRequest_ServiceRequestIdAndAssignmentStatus(

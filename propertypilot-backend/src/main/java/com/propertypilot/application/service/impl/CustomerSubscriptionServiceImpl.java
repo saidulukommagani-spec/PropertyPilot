@@ -15,7 +15,7 @@ import com.propertypilot.web.exception.BusinessException;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.propertypilot.application.service.BillingService;
+
 import com.propertypilot.domain.enums.BillingEntityType;
 import com.propertypilot.domain.enums.InvoiceType;
 

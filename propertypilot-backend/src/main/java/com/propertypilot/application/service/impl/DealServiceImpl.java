@@ -129,7 +129,15 @@ securityService.validateAdminAccess();
 
         entity.setDealStatus(
                 DealStatus.NEW);
+if (request.getDealSource() != null) {
 
+    entity.setDealSource(
+            DealSource.valueOf(
+                    request.getDealSource()));
+}
+
+entity.setExclusiveListing(
+        request.getExclusiveListing());
         entity.setExpectedPrice(
                 request.getExpectedAmount());
 
@@ -295,6 +303,14 @@ securityService.validateAdminAccess();
                                 new ResourceNotFoundException(
                                         "Participant not found"));
 
+
+        if (!selected.getDeal()
+        .getDealId()
+        .equals(dealId)) {
+
+    throw new BusinessException(
+            "Participant does not belong to this deal");
+}
         selected.setSelectedFlag(true);
 
         selected.setParticipantStatus(
@@ -389,7 +405,7 @@ securityService.validateAdminAccess();
         deal.setRemarks(
                 request.getRemarks());
     }
-
+generateDealInvoices(deal);
     DealEntity saved =
             dealRepository.save(deal);
 
@@ -471,8 +487,6 @@ securityService.validateAdminAccess();
 
     deal.setDealStatus(
             DealStatus.COMPLETED);
-
-            generateDealInvoices(deal);
 
     BigDecimal finalAmount =
             request.getFinalDealAmount();
@@ -563,9 +577,10 @@ private DealResponse mapDeal(
             entity.getDealStatus()
                     .name());
 
-    response.setDealSource(
-            entity.getDealSource()
-                    .name());
+  response.setDealSource(
+        entity.getDealSource() != null
+                ? entity.getDealSource().name()
+                : null);
 
     response.setExpectedAmount(
             entity.getExpectedPrice());
@@ -584,7 +599,14 @@ private DealResponse mapDeal(
 
     response.setSellerCommissionAmount(
             entity.getSellerCommissionAmount());
+if (entity.getBuyerCommissionAmount() != null
+        && entity.getSellerCommissionAmount() != null) {
 
+    response.setTotalCommissionAmount(
+            entity.getBuyerCommissionAmount()
+                    .add(
+                            entity.getSellerCommissionAmount()));
+}
     response.setSelectedBuyerCustomerId(
             entity.getSelectedBuyerId());
 
@@ -640,7 +662,7 @@ private void generateDealInvoices(
 public DealResponse completeDeal(
         UUID dealId,
         BigDecimal finalDealAmount) {
-
+securityService.validateAdminAccess();
     DealEntity deal =
             dealRepository
                     .findById(dealId)
@@ -699,14 +721,14 @@ BigDecimal buyerPercent =
     deal.setCompletedAt(
             OffsetDateTime.now());
 
-    dealRepository.save(
-            deal);
+   DealEntity saved =
+        dealRepository.save(
+                deal);
 
     createCommissionInvoices(
             deal);
 
-    return mapDeal(
-            deal);
+    return mapDeal(saved);
 }
 private void createCommissionInvoices(
         DealEntity deal) {

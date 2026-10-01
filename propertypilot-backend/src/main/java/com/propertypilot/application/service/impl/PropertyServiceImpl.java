@@ -94,32 +94,47 @@ public class PropertyServiceImpl
         return buildResponse(property);
     }
 
-    @Override
-    public List<PropertyResponse> getAllProperties() {
+   @Override
+public List<PropertyResponse> getAllProperties() {
 
-        /*
-         * Admin sees everything.
-         */
-        if (securityService.isAdmin()) {
+    if (securityService.isAdmin()) {
 
-            return propertyRepository.findAll()
-                    .stream()
-                    .map(this::buildResponse)
-                   .toList();
-        }
-
-        UUID currentCustomerId =
-                securityService.getCurrentCustomer()
-                        .getCustomerId();
-
-      return propertyRepository
-        .findByCustomer_CustomerId(
-                currentCustomerId)
-        .stream()
-        .map(this::buildResponse)
-        .toList();
+        return propertyRepository.findAll()
+                .stream()
+                .map(this::buildResponse)
+                .toList();
     }
 
+    UUID currentCustomerId =
+            securityService.getCurrentCustomer()
+                    .getCustomerId();
+
+    System.out.println(
+            "Current Customer = "
+                    + currentCustomerId);
+
+    propertyRepository.findAll()
+            .forEach(property -> {
+
+                System.out.println(
+                        "Property = "
+                                + property.getPropertyId()
+                                + " Customer = "
+                                + (property.getCustomer() == null
+                                ? "NULL"
+                                : property.getCustomer()
+                                        .getCustomerId()));
+            });
+
+    return propertyRepository.findAll()
+            .stream()
+            .filter(property ->
+                    property.getCustomer()
+                            .getCustomerId()
+                            .equals(currentCustomerId))
+            .map(this::buildResponse)
+            .toList();
+}
     @Override
     public List<PropertyResponse> getArchivedProperties() {
 
