@@ -184,45 +184,68 @@ public class SubscriptionEntitlementConsumptionServiceImpl
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<SubscriptionUsageResponse> getUsage(
-            UUID customerSubscriptionId) {
+@Transactional(readOnly = true)
+public List<SubscriptionUsageResponse> getUsage(
+        UUID customerSubscriptionId) {
 
-        List<SubscriptionEntitlementConsumptionEntity>
-                consumptions =
+    CustomerSubscriptionEntity subscription =
+            customerSubscriptionRepository
+                    .findById(customerSubscriptionId)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Customer subscription not found"));
+
+    List<SubscriptionPlanEntitlementEntity>
+            entitlements =
+            entitlementRepository
+                    .findByPlanVersion_PlanVersionId(
+                            subscription
+                                    .getPlanVersion()
+                                    .getPlanVersionId());
+
+    List<SubscriptionUsageResponse>
+            responses =
+            new ArrayList<>();
+
+    for (SubscriptionPlanEntitlementEntity entitlement
+            : entitlements) {
+
+        SubscriptionEntitlementConsumptionEntity consumption =
                 consumptionRepository
-                        .findByCustomerSubscription_CustomerSubscriptionId(
-                                customerSubscriptionId);
+                        .findByCustomerSubscription_CustomerSubscriptionIdAndService_ServiceIdAndPeriodEndIsNull(
+                                customerSubscriptionId,
+                                entitlement.getService()
+                                        .getServiceId())
+                        .orElse(null);
 
-        List<SubscriptionUsageResponse>
-                responses =
-                new ArrayList<>();
+        int consumedQty =
+                consumption == null
+                        ? 0
+                        : consumption.getConsumedQuantity();
 
-        for (SubscriptionEntitlementConsumptionEntity c
-                : consumptions) {
+        SubscriptionUsageResponse response =
+                new SubscriptionUsageResponse();
 
-            SubscriptionUsageResponse response =
-                    new SubscriptionUsageResponse();
+        response.setServiceId(
+                entitlement.getService()
+                        .getServiceId());
 
-            response.setServiceId(
-                    c.getService().getServiceId());
+        response.setEntitledQuantity(
+                entitlement.getQuantity());
 
-            response.setEntitledQuantity(
-                    c.getEntitledQuantity());
+        response.setConsumedQuantity(
+                consumedQty);
 
-            response.setConsumedQuantity(
-                    c.getConsumedQuantity());
+        response.setRemainingQuantity(
+                entitlement.getQuantity()
+                        - consumedQty);
 
-            response.setRemainingQuantity(
-                    c.getEntitledQuantity()
-                            - c.getConsumedQuantity());
-
-            responses.add(
-                    response);
-        }
-
-        return responses;
+        responses.add(
+                response);
     }
+
+    return responses;
+}
 
     @Override
     @Transactional(readOnly = true)

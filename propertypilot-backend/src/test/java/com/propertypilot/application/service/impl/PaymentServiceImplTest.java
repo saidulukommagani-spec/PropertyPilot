@@ -60,7 +60,7 @@ class PaymentServiceImplTest {
         invoice.setCustomer(
                 customer);
 
-        invoice.setStatus(InvoiceStatus.ISSUED);
+        invoice.setStatus(InvoiceStatus.PENDING);
 
         invoice.setInvoiceAmount(
                 BigDecimal.valueOf(1000));
@@ -200,7 +200,7 @@ class PaymentServiceImplTest {
         InvoiceEntity invoice =
                 new InvoiceEntity();
 
-        invoice.setStatus(InvoiceStatus.ISSUED);
+        invoice.setStatus(InvoiceStatus.PENDING);
 
         invoice.setInvoiceAmount(
                 BigDecimal.valueOf(1000));

@@ -3,8 +3,13 @@ package com.propertypilot.web.controller;
 import com.propertypilot.application.dto.CreateSubscriptionRenewalRequest;
 import com.propertypilot.application.dto.SubscriptionRenewalResponse;
 import com.propertypilot.application.service.SubscriptionRenewalService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +17,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/subscription-renewals")
+@Tag(
+        name = "Subscription Renewal Management",
+        description = "APIs for subscription renewals"
+)
 public class SubscriptionRenewalController {
 
     private final SubscriptionRenewalService
@@ -25,37 +34,52 @@ public class SubscriptionRenewalController {
     }
 
     @PostMapping
-    public ResponseEntity<SubscriptionRenewalResponse>
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+            summary = "Renew subscription",
+            description =
+                    "Creates a new subscription renewal"
+    )
+    public SubscriptionRenewalResponse
     renewSubscription(
             @Valid
             @RequestBody
             CreateSubscriptionRenewalRequest request) {
 
-        return ResponseEntity.ok(
-                renewalService.renewSubscription(
-                        request));
+        return renewalService
+                .renewSubscription(request);
     }
 
     @GetMapping("/{subscriptionRenewalId}")
-    public ResponseEntity<SubscriptionRenewalResponse>
+    @Operation(
+            summary = "Get renewal",
+            description =
+                    "Returns renewal by identifier"
+    )
+    public SubscriptionRenewalResponse
     getRenewal(
             @PathVariable
             UUID subscriptionRenewalId) {
 
-        return ResponseEntity.ok(
-                renewalService.getRenewal(
-                        subscriptionRenewalId));
+        return renewalService
+                .getRenewal(
+                        subscriptionRenewalId);
     }
 
-    @GetMapping("/subscription/{customerSubscriptionId}")
-    public ResponseEntity<
-            List<SubscriptionRenewalResponse>>
+    @GetMapping(
+            "/subscription/{customerSubscriptionId}")
+    @Operation(
+            summary = "Get renewals by subscription",
+            description =
+                    "Returns all renewals for a customer subscription"
+    )
+    public List<SubscriptionRenewalResponse>
     getRenewalsBySubscription(
             @PathVariable
             UUID customerSubscriptionId) {
 
-        return ResponseEntity.ok(
-                renewalService.getRenewalsBySubscription(
-                        customerSubscriptionId));
+        return renewalService
+                .getRenewalsBySubscription(
+                        customerSubscriptionId);
     }
 }

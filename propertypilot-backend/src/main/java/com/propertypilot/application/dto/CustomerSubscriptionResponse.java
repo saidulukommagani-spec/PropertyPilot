@@ -2,21 +2,30 @@ package com.propertypilot.application.dto;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Customer Subscription Response")
 public class CustomerSubscriptionResponse {
 
+    @Schema(description = "Customer Subscription Id")
     private UUID customerSubscriptionId;
 
+    @Schema(description = "Customer Id")
     private UUID customerId;
 
+    @Schema(description = "Plan Version Id")
     private UUID planVersionId;
 
+    @Schema(description = "Subscription Status")
     private String status;
 
+    @Schema(description = "Start Date")
     private LocalDate startDate;
 
+    @Schema(description = "End Date")
     private LocalDate endDate;
 
+    @Schema(description = "Auto Renewal")
     private Boolean autoRenew;
 
     public UUID getCustomerSubscriptionId() {

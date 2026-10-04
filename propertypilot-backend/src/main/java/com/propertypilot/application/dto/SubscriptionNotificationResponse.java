@@ -1,20 +1,44 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Schema(
+        description =
+                "Subscription Notification Response"
+)
 public class SubscriptionNotificationResponse {
 
+    @Schema(
+            description = "Notification Id"
+    )
     private UUID notificationId;
 
+    @Schema(
+            description = "Customer Subscription Id"
+    )
     private UUID customerSubscriptionId;
 
+    @Schema(
+            description = "Notification Type"
+    )
     private String notificationType;
 
+    @Schema(
+            description = "Notification Message"
+    )
     private String message;
 
+    @Schema(
+            description = "Notification Status"
+    )
     private String status;
 
+    @Schema(
+            description = "Notification Sent Date"
+    )
     private LocalDateTime sentDate;
 
     public UUID getNotificationId() {

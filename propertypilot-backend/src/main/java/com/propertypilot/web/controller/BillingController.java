@@ -4,6 +4,12 @@ import com.propertypilot.application.dto.InvoiceResponse;
 import com.propertypilot.application.service.BillingService;
 import com.propertypilot.domain.enums.BillingEntityType;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import jakarta.validation.constraints.NotNull;
 
 import lombok.RequiredArgsConstructor;
@@ -20,17 +26,32 @@ import java.util.UUID;
 @RequestMapping("/api/v1/billing")
 @RequiredArgsConstructor
 @Validated
+@Tag(
+        name = "Billing Management",
+        description = "Billing and Invoice APIs"
+)
 public class BillingController {
 
     private final BillingService billingService;
 
-    /**
-     * Get invoice by id
-     */
+    @Operation(
+            summary = "Get invoice by id",
+            description = "Returns invoice details for a given invoice id"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200",
+                    description = "Invoice retrieved successfully"),
+            @ApiResponse(responseCode = "404",
+                    description = "Invoice not found")
+    })
     @GetMapping("/invoices/{invoiceId}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<InvoiceResponse>
-    getInvoice(
+    public ResponseEntity<InvoiceResponse> getInvoice(
+
+            @Parameter(
+                    description = "Invoice identifier",
+                    required = true
+            )
             @PathVariable
             @NotNull
             UUID invoiceId) {
@@ -40,9 +61,14 @@ public class BillingController {
                         invoiceId));
     }
 
-    /**
-     * Get all invoices
-     */
+    @Operation(
+            summary = "Get all invoices",
+            description = "Returns all invoices available in the system"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Invoices retrieved successfully"
+    )
     @GetMapping("/invoices")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<InvoiceResponse>>
@@ -52,47 +78,66 @@ public class BillingController {
                 billingService.getAllInvoices());
     }
 
-    /**
-     * Get customer invoices
-     */
-    @GetMapping(
-            "/customers/{customerId}/invoices")
+    @Operation(
+            summary = "Get customer invoices",
+            description =
+                    "Returns all invoices belonging to a customer"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Customer invoices retrieved successfully"
+    )
+    @GetMapping("/customers/{customerId}/invoices")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<InvoiceResponse>>
     getCustomerInvoices(
+
+            @Parameter(
+                    description = "Customer identifier",
+                    required = true
+            )
             @PathVariable
             @NotNull
             UUID customerId) {
 
         return ResponseEntity.ok(
-                billingService
-                        .getInvoicesByCustomer(
-                                customerId));
+                billingService.getInvoicesByCustomer(
+                        customerId));
     }
 
-    /**
-     * Get invoices by entity
-     * Examples:
-     * DEAL
-     * SERVICE_REQUEST
-     * SUBSCRIPTION
-     */
+    @Operation(
+            summary = "Get invoices by entity",
+            description =
+                    "Returns invoices generated for a business entity"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Entity invoices retrieved successfully"
+    )
     @GetMapping(
             "/invoices/entity/{entityType}/{entityId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<InvoiceResponse>>
     getEntityInvoices(
+
+            @Parameter(
+                    description =
+                            "Entity Type. Supported values: DEAL, SERVICE_REQUEST, SUBSCRIPTION"
+            )
             @PathVariable
             BillingEntityType entityType,
 
+            @Parameter(
+                    description = "Entity identifier",
+                    required = true
+            )
             @PathVariable
             @NotNull
             UUID entityId) {
 
         return ResponseEntity.ok(
-                billingService
-                        .getInvoicesByEntity(
-                                entityType,
-                                entityId));
+                billingService.getInvoicesByEntity(
+                        entityType,
+                        entityId));
     }
 }

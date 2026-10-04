@@ -7,6 +7,7 @@ import com.propertypilot.infrastructure.persistence.entity.EvidenceEntity;
 import com.propertypilot.infrastructure.persistence.entity.VisitEntity;
 import com.propertypilot.infrastructure.persistence.repository.EvidenceRepository;
 import com.propertypilot.infrastructure.persistence.repository.VisitRepository;
+import com.propertypilot.web.exception.BusinessException;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import com.propertypilot.infrastructure.persistence.entity.EvidenceTypeEntity;
@@ -47,11 +48,16 @@ private final EvidenceTypeRepository
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Visit not found"));
+if (!"IN_PROGRESS".equals(
+        visit.getStatus())
+        &&
+        !"COMPLETED".equals(
+                visit.getStatus())) {
 
-        EvidenceEntity evidence =
-                new EvidenceEntity();
+    throw new BusinessException(
+        "Evidence can only be uploaded for active visits");
+}
 
-        evidence.setVisit(visit);
 
       EvidenceTypeEntity evidenceType =
         evidenceTypeRepository.findById(
@@ -60,8 +66,22 @@ private final EvidenceTypeRepository
                 new ResourceNotFoundException(
                         "Evidence type not found"));
 
+                        if (evidenceRepository
+        .existsByVisit_VisitIdAndEvidenceType_EvidenceTypeId(
+                visit.getVisitId(),
+                evidenceType.getEvidenceTypeId())) {
+
+    throw new BusinessException(
+        "Evidence already uploaded for this visit");
+}
+EvidenceEntity evidence =
+        new EvidenceEntity();
+evidence.setVisit(
+        visit);
+
 evidence.setEvidenceType(
         evidenceType);
+
 
         evidence.setFileUrl(
                 request.getFileUrl());

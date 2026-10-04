@@ -49,7 +49,7 @@ public class RevenueDashboardServiceImpl
                 invoices.stream()
                         .filter(i ->
                                 i.getStatus()
-                                        == InvoiceStatus.ISSUED)
+                                        == InvoiceStatus.PENDING)
                         .count());
 
         BigDecimal totalRevenue =
@@ -90,7 +90,7 @@ public class RevenueDashboardServiceImpl
             }
 
             if (invoice.getStatus()
-                    == InvoiceStatus.ISSUED) {
+                    == InvoiceStatus.PENDING) {
 
                 outstandingRevenue =
                         outstandingRevenue.add(amount);

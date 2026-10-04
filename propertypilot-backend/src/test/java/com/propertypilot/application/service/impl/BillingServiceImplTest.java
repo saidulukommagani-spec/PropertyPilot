@@ -74,7 +74,7 @@ class BillingServiceImplTest {
                 BigDecimal.ZERO);
 
         invoice.setStatus(
-                InvoiceStatus.ISSUED);
+                InvoiceStatus.PENDING);
 
         invoice.setDescription(
                 "Test Invoice");

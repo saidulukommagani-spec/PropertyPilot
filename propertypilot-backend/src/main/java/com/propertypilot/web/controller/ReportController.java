@@ -3,6 +3,10 @@ package com.propertypilot.web.controller;
 import com.propertypilot.application.dto.CreateReportRequest;
 import com.propertypilot.application.dto.ReportResponse;
 import com.propertypilot.application.service.ReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +14,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/reports")
+@Tag(
+        name = "Report Management",
+        description = "APIs for report lifecycle management"
+)
 public class ReportController {
 
     private final ReportService reportService;
@@ -20,6 +28,15 @@ public class ReportController {
         this.reportService = reportService;
     }
 
+    @Operation(
+            summary = "Create report",
+            description =
+                    "Creates a report for a service request"
+    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "Report created successfully"
+    )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ReportResponse createReport(
@@ -30,6 +47,15 @@ public class ReportController {
                 request);
     }
 
+    @Operation(
+            summary = "Get report",
+            description =
+                    "Retrieves report by report id"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Report retrieved successfully"
+    )
     @GetMapping("/{reportId}")
     public ReportResponse getReport(
             @PathVariable
@@ -39,6 +65,15 @@ public class ReportController {
                 reportId);
     }
 
+    @Operation(
+            summary = "Submit report",
+            description =
+                    "Submits report for approval"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Report submitted successfully"
+    )
     @PutMapping("/{reportId}/submit")
     public ReportResponse submitReport(
             @PathVariable
@@ -48,6 +83,15 @@ public class ReportController {
                 reportId);
     }
 
+    @Operation(
+            summary = "Approve report",
+            description =
+                    "Approves submitted report"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Report approved successfully"
+    )
     @PutMapping("/{reportId}/approve")
     public ReportResponse approveReport(
             @PathVariable
@@ -57,6 +101,15 @@ public class ReportController {
                 reportId);
     }
 
+    @Operation(
+            summary = "Deliver report",
+            description =
+                    "Marks report as delivered"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Report delivered successfully"
+    )
     @PutMapping("/{reportId}/deliver")
     public ReportResponse deliverReport(
             @PathVariable

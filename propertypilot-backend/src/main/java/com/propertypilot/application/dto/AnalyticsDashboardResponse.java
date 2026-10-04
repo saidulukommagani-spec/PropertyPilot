@@ -1,17 +1,40 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(
+        description = "Analytics Dashboard Response"
+)
 public class AnalyticsDashboardResponse {
 
+    @Schema(
+            description = "Total Customers"
+    )
     private long totalCustomers;
 
+    @Schema(
+            description = "Total Properties"
+    )
     private long totalProperties;
 
+    @Schema(
+            description = "Total Leads"
+    )
     private long totalLeads;
 
+    @Schema(
+            description = "Total Deals"
+    )
     private long totalDeals;
 
+    @Schema(
+            description = "Total Service Requests"
+    )
     private long totalServiceRequests;
 
+    @Schema(
+            description = "Active Subscriptions"
+    )
     private long activeSubscriptions;
 
     public long getTotalCustomers() {
@@ -56,7 +79,8 @@ public class AnalyticsDashboardResponse {
 
     public void setTotalServiceRequests(
             long totalServiceRequests) {
-        this.totalServiceRequests = totalServiceRequests;
+        this.totalServiceRequests =
+                totalServiceRequests;
     }
 
     public long getActiveSubscriptions() {

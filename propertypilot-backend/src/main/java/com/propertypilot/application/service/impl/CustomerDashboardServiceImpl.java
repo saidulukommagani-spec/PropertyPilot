@@ -78,7 +78,7 @@ public class CustomerDashboardServiceImpl
                 invoiceRepository
                         .countByCustomerCustomerIdAndStatus(
                                 customerId,
-                                InvoiceStatus.ISSUED));
+                                InvoiceStatus.PENDING));
 
         response.setPaidInvoices(
                 invoiceRepository

@@ -12,12 +12,13 @@ public interface SubscriptionPlanEntitlementRepository
                 SubscriptionPlanEntitlementEntity,
                 UUID> {
 
-    List<SubscriptionPlanEntitlementEntity>
-    findByPlanVersion_PlanVersionId(
-            UUID planVersionId);
-
-    Optional<SubscriptionPlanEntitlementEntity>
+     Optional<SubscriptionPlanEntitlementEntity>
     findByPlanVersion_PlanVersionIdAndService_ServiceId(
             UUID planVersionId,
             UUID serviceId);
+List<SubscriptionPlanEntitlementEntity>
+findByPlanVersion_PlanVersionId(
+        UUID planVersionId);
+
+
 }

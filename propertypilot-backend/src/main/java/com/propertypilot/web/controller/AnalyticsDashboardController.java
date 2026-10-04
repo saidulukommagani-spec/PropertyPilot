@@ -2,12 +2,23 @@ package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.AnalyticsDashboardResponse;
 import com.propertypilot.application.service.AnalyticsDashboardService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/analytics")
+@Validated
+@PreAuthorize("hasRole('ADMIN')")
+@Tag(
+        name = "Analytics Dashboard",
+        description = "Administrative analytics and KPI dashboard APIs"
+)
 public class AnalyticsDashboardController {
 
     private final AnalyticsDashboardService
@@ -21,10 +32,16 @@ public class AnalyticsDashboardController {
     }
 
     @GetMapping
-    public AnalyticsDashboardResponse
+    @Operation(
+            summary = "Get Analytics Dashboard",
+            description =
+                    "Returns PropertyPilot system level analytics dashboard metrics."
+    )
+    public ResponseEntity<AnalyticsDashboardResponse>
     getAnalyticsDashboard() {
 
-        return analyticsDashboardService
-                .getAnalyticsDashboard();
+        return ResponseEntity.ok(
+                analyticsDashboardService
+                        .getAnalyticsDashboard());
     }
 }

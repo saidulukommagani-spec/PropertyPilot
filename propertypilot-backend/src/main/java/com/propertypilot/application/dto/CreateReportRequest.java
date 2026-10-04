@@ -1,15 +1,37 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.UUID;
 
+@Schema(
+        description =
+                "Request used to create a report"
+)
 public class CreateReportRequest {
 
+    @Schema(
+            description =
+                    "Associated service request id"
+    )
     private UUID serviceRequestId;
 
+    @Schema(
+            description =
+                    "Report type"
+    )
     private String reportType;
 
+    @Schema(
+            description =
+                    "Report summary"
+    )
     private String summary;
 
+    @Schema(
+            description =
+                    "Generated document url"
+    )
     private String documentUrl;
 
     public UUID getServiceRequestId() {

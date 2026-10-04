@@ -65,8 +65,8 @@ invoice.setInvoiceType(
         invoice.setTaxAmount(
                 BigDecimal.ZERO);
 
-        invoice.setStatus(
-                InvoiceStatus.ISSUED);
+    invoice.setStatus(
+        InvoiceStatus.PENDING);
 
         invoice.setDescription(
                 description);

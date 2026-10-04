@@ -15,4 +15,9 @@ public interface EvidenceRepository
     List<EvidenceEntity>
 findByEvidenceType_Code(
         String code);
+
+boolean existsByVisit_VisitIdAndEvidenceType_EvidenceTypeId(
+        UUID visitId,
+        UUID evidenceTypeId);
+
 }

@@ -1,9 +1,14 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Schema(
+        name = "GpsVerificationResponse",
+        description = "GPS verification details")
 public class GpsVerificationResponse {
 
     private UUID gpsVerificationId;
@@ -28,7 +33,8 @@ public class GpsVerificationResponse {
         return gpsVerificationId;
     }
 
-    public void setGpsVerificationId(UUID gpsVerificationId) {
+    public void setGpsVerificationId(
+            UUID gpsVerificationId) {
         this.gpsVerificationId = gpsVerificationId;
     }
 
@@ -36,7 +42,8 @@ public class GpsVerificationResponse {
         return visitId;
     }
 
-    public void setVisitId(UUID visitId) {
+    public void setVisitId(
+            UUID visitId) {
         this.visitId = visitId;
     }
 
@@ -44,23 +51,28 @@ public class GpsVerificationResponse {
         return propertyLocationId;
     }
 
-    public void setPropertyLocationId(UUID propertyLocationId) {
-        this.propertyLocationId = propertyLocationId;
+    public void setPropertyLocationId(
+            UUID propertyLocationId) {
+        this.propertyLocationId =
+                propertyLocationId;
     }
 
     public String getValidationStatus() {
         return validationStatus;
     }
 
-    public void setValidationStatus(String validationStatus) {
-        this.validationStatus = validationStatus;
+    public void setValidationStatus(
+            String validationStatus) {
+        this.validationStatus =
+                validationStatus;
     }
 
     public BigDecimal getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(BigDecimal latitude) {
+    public void setLatitude(
+            BigDecimal latitude) {
         this.latitude = latitude;
     }
 
@@ -68,7 +80,8 @@ public class GpsVerificationResponse {
         return longitude;
     }
 
-    public void setLongitude(BigDecimal longitude) {
+    public void setLongitude(
+            BigDecimal longitude) {
         this.longitude = longitude;
     }
 
@@ -76,15 +89,18 @@ public class GpsVerificationResponse {
         return distanceFromExpectedKm;
     }
 
-    public void setDistanceFromExpectedKm(BigDecimal distanceFromExpectedKm) {
-        this.distanceFromExpectedKm = distanceFromExpectedKm;
+    public void setDistanceFromExpectedKm(
+            BigDecimal distanceFromExpectedKm) {
+        this.distanceFromExpectedKm =
+                distanceFromExpectedKm;
     }
 
     public OffsetDateTime getCapturedAt() {
         return capturedAt;
     }
 
-    public void setCapturedAt(OffsetDateTime capturedAt) {
+    public void setCapturedAt(
+            OffsetDateTime capturedAt) {
         this.capturedAt = capturedAt;
     }
 
@@ -92,7 +108,8 @@ public class GpsVerificationResponse {
         return validatedAt;
     }
 
-    public void setValidatedAt(OffsetDateTime validatedAt) {
+    public void setValidatedAt(
+            OffsetDateTime validatedAt) {
         this.validatedAt = validatedAt;
     }
 }

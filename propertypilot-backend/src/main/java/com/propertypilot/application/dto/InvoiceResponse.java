@@ -4,36 +4,67 @@ import com.propertypilot.domain.enums.BillingEntityType;
 import com.propertypilot.domain.enums.InvoiceStatus;
 import com.propertypilot.domain.enums.InvoiceType;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Schema(
+        name = "InvoiceResponse",
+        description = "Invoice response payload"
+)
 public class InvoiceResponse {
 
+    @Schema(description = "Invoice identifier")
     private UUID invoiceId;
 
+    @Schema(description = "Customer identifier")
     private UUID customerId;
 
+    @Schema(
+            description = "Invoice number",
+            example = "INV-2026-00001"
+    )
     private String invoiceNumber;
 
+    @Schema(description = "Billing entity type")
     private BillingEntityType entityType;
 
+    @Schema(description = "Entity identifier")
     private UUID entityId;
 
+    @Schema(description = "Invoice type")
     private InvoiceType invoiceType;
 
+    @Schema(
+            description = "Invoice amount",
+            example = "1500.00"
+    )
     private BigDecimal invoiceAmount;
 
+    @Schema(
+            description = "Tax amount",
+            example = "270.00"
+    )
     private BigDecimal taxAmount;
 
+    @Schema(description = "Invoice status")
     private InvoiceStatus status;
 
+    @Schema(description = "Invoice issue date")
     private OffsetDateTime issuedAt;
 
+    @Schema(description = "Invoice due date")
     private OffsetDateTime dueAt;
 
+    @Schema(description = "Invoice paid date")
     private OffsetDateTime paidAt;
 
+    @Schema(
+            description = "Invoice description",
+            example = "Property inspection service invoice"
+    )
     private String description;
 
     public UUID getInvoiceId() {

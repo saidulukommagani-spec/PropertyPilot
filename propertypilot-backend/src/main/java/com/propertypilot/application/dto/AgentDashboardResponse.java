@@ -1,17 +1,40 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(
+        name = "AgentDashboardResponse",
+        description = "Agent dashboard statistics")
 public class AgentDashboardResponse {
 
+    @Schema(
+            description = "Total registered agents",
+            example = "150")
     private long totalAgents;
 
+    @Schema(
+            description = "Currently active agents",
+            example = "120")
     private long activeAgents;
 
+    @Schema(
+            description = "Agents currently assigned to work",
+            example = "90")
     private long assignedAgents;
 
+    @Schema(
+            description = "Total completed assignments",
+            example = "2500")
     private long completedAssignments;
 
+    @Schema(
+            description = "Total rejected assignments",
+            example = "35")
     private long rejectedAssignments;
 
+    @Schema(
+            description = "Active assignments currently in progress",
+            example = "75")
     private long activeAssignments;
 
     public long getTotalAgents() {
@@ -43,7 +66,8 @@ public class AgentDashboardResponse {
     }
 
     public void setCompletedAssignments(long completedAssignments) {
-        this.completedAssignments = completedAssignments;
+        this.completedAssignments =
+                completedAssignments;
     }
 
     public long getRejectedAssignments() {
@@ -51,7 +75,8 @@ public class AgentDashboardResponse {
     }
 
     public void setRejectedAssignments(long rejectedAssignments) {
-        this.rejectedAssignments = rejectedAssignments;
+        this.rejectedAssignments =
+                rejectedAssignments;
     }
 
     public long getActiveAssignments() {
@@ -59,8 +84,7 @@ public class AgentDashboardResponse {
     }
 
     public void setActiveAssignments(long activeAssignments) {
-        this.activeAssignments = activeAssignments;
+        this.activeAssignments =
+                activeAssignments;
     }
-
-   
 }

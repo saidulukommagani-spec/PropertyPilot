@@ -1,27 +1,41 @@
 package com.propertypilot.application.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 public class CreatePricingEstimateRequest {
 
-    @NotNull
+    @NotNull(
+            message = "Customer Id is required")
     private UUID customerId;
 
-    @NotNull
+    @NotNull(
+            message = "Property Id is required")
     private UUID propertyId;
 
-    @NotNull
+    @NotNull(
+            message = "Service Id is required")
     private UUID serviceId;
 
-    @NotNull
+    @NotNull(
+            message = "One way distance is required")
+    @Positive(
+            message = "Distance must be greater than zero")
     private Double oneWayDistanceKm;
 
-    @NotNull
+    @NotNull(
+            message = "Vendor cost is required")
+    @Positive(
+            message = "Vendor cost must be greater than zero")
     private BigDecimal vendorCost;
 
+    @Min(
+            value = 0,
+            message = "ETA days cannot be negative")
     private Integer etaDays;
 
     public UUID getCustomerId() {
@@ -74,14 +88,4 @@ public class CreatePricingEstimateRequest {
             Integer etaDays) {
         this.etaDays = etaDays;
     }
-
-/*
- * TODO:
- * Vendor cost should eventually be derived from
- * Service Pricing Catalog based on:
- * - Service
- * - Property Type
- * - Property Size
- * - Locality
- */
 }

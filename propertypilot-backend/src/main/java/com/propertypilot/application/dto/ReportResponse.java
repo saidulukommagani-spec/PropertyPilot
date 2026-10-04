@@ -1,8 +1,14 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Schema(
+        description =
+                "Report response"
+)
 public class ReportResponse {
 
     private UUID reportId;

@@ -1,31 +1,45 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Schema(description = "Subscription renewal response")
 public class SubscriptionRenewalResponse {
 
+    @Schema(description = "Renewal identifier")
     private UUID subscriptionRenewalId;
 
+    @Schema(description = "Customer subscription identifier")
     private UUID customerSubscriptionId;
 
+    @Schema(description = "New customer subscription identifier")
     private UUID newCustomerSubscriptionId;
 
+    @Schema(description = "Payment identifier")
     private UUID paymentId;
 
+    @Schema(description = "Renewal date")
     private LocalDate renewalDate;
 
+    @Schema(description = "Period start date")
     private LocalDate periodStart;
 
+    @Schema(description = "Period end date")
     private LocalDate periodEnd;
 
+    @Schema(description = "Renewal type")
     private String renewalType;
 
+    @Schema(description = "Renewal amount")
     private BigDecimal renewalAmount;
 
+    @Schema(description = "Remarks")
     private String remarks;
 
+    @Schema(description = "Renewal status")
     private String status;
 
     public UUID getSubscriptionRenewalId() {

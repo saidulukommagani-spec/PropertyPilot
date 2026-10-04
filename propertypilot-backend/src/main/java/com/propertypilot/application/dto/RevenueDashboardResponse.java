@@ -1,33 +1,47 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 
+@Schema(
+        description =
+                "Revenue dashboard analytics response"
+)
 public class RevenueDashboardResponse {
 
+    @Schema(example = "250")
     private long totalInvoices;
 
+    @Schema(example = "200")
     private long paidInvoices;
 
+    @Schema(example = "50")
     private long pendingInvoices;
 
+    @Schema(example = "2500000.00")
     private BigDecimal totalRevenue;
 
+    @Schema(example = "2200000.00")
     private BigDecimal collectedRevenue;
 
+    @Schema(example = "300000.00")
     private BigDecimal outstandingRevenue;
 
+    @Schema(example = "1500000.00")
     private BigDecimal serviceRevenue;
 
+    @Schema(example = "700000.00")
     private BigDecimal subscriptionRevenue;
 
+    @Schema(example = "300000.00")
     private BigDecimal dealRevenue;
 
     public long getTotalInvoices() {
         return totalInvoices;
     }
 
-    public void setTotalInvoices(
-            long totalInvoices) {
+    public void setTotalInvoices(long totalInvoices) {
         this.totalInvoices = totalInvoices;
     }
 
@@ -35,8 +49,7 @@ public class RevenueDashboardResponse {
         return paidInvoices;
     }
 
-    public void setPaidInvoices(
-            long paidInvoices) {
+    public void setPaidInvoices(long paidInvoices) {
         this.paidInvoices = paidInvoices;
     }
 
@@ -44,8 +57,7 @@ public class RevenueDashboardResponse {
         return pendingInvoices;
     }
 
-    public void setPendingInvoices(
-            long pendingInvoices) {
+    public void setPendingInvoices(long pendingInvoices) {
         this.pendingInvoices = pendingInvoices;
     }
 
@@ -53,8 +65,7 @@ public class RevenueDashboardResponse {
         return totalRevenue;
     }
 
-    public void setTotalRevenue(
-            BigDecimal totalRevenue) {
+    public void setTotalRevenue(BigDecimal totalRevenue) {
         this.totalRevenue = totalRevenue;
     }
 
@@ -73,7 +84,8 @@ public class RevenueDashboardResponse {
 
     public void setOutstandingRevenue(
             BigDecimal outstandingRevenue) {
-        this.outstandingRevenue = outstandingRevenue;
+        this.outstandingRevenue =
+                outstandingRevenue;
     }
 
     public BigDecimal getServiceRevenue() {
@@ -91,7 +103,8 @@ public class RevenueDashboardResponse {
 
     public void setSubscriptionRevenue(
             BigDecimal subscriptionRevenue) {
-        this.subscriptionRevenue = subscriptionRevenue;
+        this.subscriptionRevenue =
+                subscriptionRevenue;
     }
 
     public BigDecimal getDealRevenue() {

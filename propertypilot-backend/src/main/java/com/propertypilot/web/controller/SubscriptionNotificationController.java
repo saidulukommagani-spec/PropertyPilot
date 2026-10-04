@@ -1,36 +1,62 @@
-        package com.propertypilot.web.controller;
+package com.propertypilot.web.controller;
 
-        import com.propertypilot.application.dto.SubscriptionNotificationResponse;
-        import com.propertypilot.application.service.SubscriptionNotificationService;
-        import org.springframework.http.ResponseEntity;
-        import org.springframework.web.bind.annotation.*;
+import com.propertypilot.application.dto.SubscriptionNotificationResponse;
+import com.propertypilot.application.service.SubscriptionNotificationService;
 
-        import java.util.List;
-        import java.util.UUID;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-        @RestController
-        @RequestMapping("/api/subscription-notifications")
-        public class SubscriptionNotificationController {
+import jakarta.validation.constraints.NotNull;
 
-        private final SubscriptionNotificationService
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/subscription-notifications")
+@Validated
+@Tag(
+        name = "Subscription Notifications",
+        description =
+                "Subscription notification retrieval APIs"
+)
+public class SubscriptionNotificationController {
+
+    private final SubscriptionNotificationService
+            notificationService;
+
+    public SubscriptionNotificationController(
+            SubscriptionNotificationService notificationService) {
+
+        this.notificationService =
                 notificationService;
+    }
 
-        public SubscriptionNotificationController(
-                SubscriptionNotificationService notificationService) {
+    @GetMapping("/{customerSubscriptionId}")
+    @Operation(
+            summary = "Get Subscription Notifications",
+            description =
+                    "Returns all notifications generated for a customer subscription."
+    )
+    public ResponseEntity<
+            List<SubscriptionNotificationResponse>>
+    getNotifications(
 
-                this.notificationService =
-                        notificationService;
-        }
+            @Parameter(
+                    description =
+                            "Customer Subscription Id",
+                    required = true
+            )
+            @PathVariable
+            @NotNull
+            UUID customerSubscriptionId) {
 
-        @GetMapping("/{customerSubscriptionId}")
-        public ResponseEntity<
-                List<SubscriptionNotificationResponse>>
-        getNotifications(
-                @PathVariable
-                UUID customerSubscriptionId) {
-
-                return ResponseEntity.ok(
-                        notificationService.getNotifications(
-                                customerSubscriptionId));
-        }
-        }
+        return ResponseEntity.ok(
+                notificationService.getNotifications(
+                        customerSubscriptionId));
+    }
+}

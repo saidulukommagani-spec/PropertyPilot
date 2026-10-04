@@ -1,16 +1,38 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Schema(
+        description =
+                "Request used to create a task"
+)
 public class CreateTaskRequest {
 
+    @Schema(
+            description =
+                    "Associated service request id"
+    )
     private UUID serviceRequestId;
 
+    @Schema(
+            description =
+                    "Assigned user id"
+    )
     private UUID assigneeUserId;
 
+    @Schema(
+            description =
+                    "Task name"
+    )
     private String taskName;
 
+    @Schema(
+            description =
+                    "Task due date/time"
+    )
     private OffsetDateTime dueAt;
 
     public UUID getServiceRequestId() {

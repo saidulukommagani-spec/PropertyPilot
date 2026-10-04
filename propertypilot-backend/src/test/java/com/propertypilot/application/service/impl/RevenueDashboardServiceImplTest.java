@@ -76,7 +76,7 @@ void getRevenueDashboard_success() {
                             BigDecimal.valueOf(1000)),
 
                     invoice(
-                            InvoiceStatus.ISSUED,
+                            InvoiceStatus.PENDING,
                             BillingEntityType.SUBSCRIPTION,
                             BigDecimal.valueOf(2000)),
 

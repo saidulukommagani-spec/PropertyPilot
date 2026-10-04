@@ -1,26 +1,22 @@
 package com.propertypilot.application.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Schema(
+        description = "Customer subscription add-on response")
 public class CustomerSubscriptionAddOnResponse {
 
     private UUID customerSubscriptionAddOnId;
-
     private UUID customerSubscriptionId;
-
     private UUID subscriptionAddOnId;
-
     private String addOnName;
-
     private UUID pricingEstimateId;
-
     private Integer quantity;
-
     private String status;
-
     private OffsetDateTime startsAt;
-
     private OffsetDateTime endsAt;
 
     public UUID getCustomerSubscriptionAddOnId() {

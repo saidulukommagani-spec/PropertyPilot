@@ -1,21 +1,49 @@
 package com.propertypilot.application.dto;
 
-import java.util.UUID;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.util.UUID;
+
+@Schema(
+        name = "CreateConsumptionRequest",
+        description = "Request used to consume subscription entitlement"
+)
 public class CreateConsumptionRequest {
 
-   @NotNull
+    @Schema(
+            description = "Customer Subscription Id",
+            example = "550e8400-e29b-41d4-a716-446655440000",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    @NotNull(message =
+            "Customer Subscription Id is required")
     private UUID customerSubscriptionId;
 
-    @NotNull
+    @Schema(
+            description = "Service Id",
+            example = "550e8400-e29b-41d4-a716-446655440001",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    @NotNull(message =
+            "Service Id is required")
     private UUID serviceId;
 
+    @Schema(
+            description = "Service Request Id",
+            example = "550e8400-e29b-41d4-a716-446655440002")
     private UUID serviceRequestId;
 
-    @Positive
+    @Schema(
+            description = "Quantity to consume",
+            example = "1",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    @NotNull(message =
+            "Quantity is required")
+    @Positive(message =
+            "Quantity must be greater than zero")
     private Integer quantity;
 
     public UUID getCustomerSubscriptionId() {
