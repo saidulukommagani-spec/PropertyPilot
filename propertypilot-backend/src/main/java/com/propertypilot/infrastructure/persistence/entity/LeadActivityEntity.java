@@ -40,6 +40,10 @@ public class LeadActivityEntity extends AuditableEntity {
     @Column(name = "outcome", length = 100)
     private String outcome;
 
+    /** Null is retained for legacy rows and is treated as internal. */
+    @Column(name = "visibility", length = 20)
+    private String visibility;
+
     @Version
     @Column(name = "version")
     private Long version;
@@ -115,6 +119,10 @@ public class LeadActivityEntity extends AuditableEntity {
     public void setOutcome(String outcome) {
         this.outcome = outcome;
     }
+
+    public String getVisibility() { return visibility; }
+
+    public void setVisibility(String visibility) { this.visibility = visibility; }
 
     public Long getVersion() {
         return version;

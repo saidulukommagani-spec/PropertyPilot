@@ -10,11 +10,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
@@ -34,8 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        System.out.println("JWT FILTER HIT");
-
         String path = request.getServletPath();
 
         if (path.startsWith("/api/v1/auth")
@@ -50,16 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader =
                 request.getHeader("Authorization");
 
-        System.out.println(
-                "Authorization Header = "
-                        + authHeader);
-
         if (authHeader == null
                 || !authHeader.startsWith("Bearer ")) {
-
-            System.out.println(
-                    "No Bearer token found");
-
             filterChain.doFilter(request, response);
             return;
         }
@@ -67,17 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt =
                 authHeader.substring(7);
 
-        System.out.println(
-                "JWT Token Received");
-
         try {
 
             String username =
                     jwtService.extractUsername(jwt);
-
-            System.out.println(
-                    "Username From Token = "
-                            + username);
 
             if (username != null
                     && SecurityContextHolder
@@ -89,18 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 .loadUserByUsername(
                                         username);
 
-                System.out.println(
-                        "User Loaded = "
-                                + userDetails.getUsername());
-
                 boolean valid =
                         jwtService.isTokenValid(
                                 jwt,
                                 userDetails.getUsername());
-
-                System.out.println(
-                        "Token Valid = "
-                                + valid);
 
                 if (valid) {
 
@@ -118,18 +97,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             .getContext()
                             .setAuthentication(authToken);
 
-                    System.out.println(
-                            "JWT AUTH SUCCESS");
                 }
             }
 
         } catch (Exception ex) {
-
-            System.out.println(
-                    "JWT AUTH ERROR : "
-                            + ex.getMessage());
-
-            ex.printStackTrace();
+            SecurityContextHolder.clearContext();
+            log.debug("Rejected invalid bearer token for request path {}", path);
         }
 
         filterChain.doFilter(

@@ -3,6 +3,7 @@ package com.propertypilot.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,21 @@ public class JwtService {
 
     @Value("${security.jwt.expiration}")
     private long expiration;
+
+    @PostConstruct
+    private void validateConfiguration() {
+        if (secret == null
+                || secret.isBlank()
+                || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must contain at least 32 UTF-8 bytes");
+        }
+
+        if (expiration <= 0) {
+            throw new IllegalStateException(
+                    "JWT expiration must be a positive number of milliseconds");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(

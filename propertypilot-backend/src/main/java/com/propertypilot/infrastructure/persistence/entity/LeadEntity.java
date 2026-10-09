@@ -43,9 +43,9 @@ private LeadStatus status;
         return leadId;
     }
 
-    // public void setLeadId(UUID leadId) {
-    //     this.leadId = leadId;
-    // }
+    public void setLeadId(UUID leadId) {
+        this.leadId = leadId;
+    }
 
     public CustomerEntity getCustomer() {
         return customer;

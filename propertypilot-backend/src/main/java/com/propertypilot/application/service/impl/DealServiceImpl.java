@@ -7,6 +7,7 @@ import com.propertypilot.domain.constants.PricingParameterCodes;
 import com.propertypilot.domain.enums.*;
 import com.propertypilot.infrastructure.persistence.entity.*;
 import com.propertypilot.infrastructure.persistence.repository.*;
+import com.propertypilot.infrastructure.persistence.entity.LeadActivityEntity;
 import com.propertypilot.web.exception.BusinessException;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -40,11 +41,14 @@ public class DealServiceImpl
     private final LeadRepository
             leadRepository;
 
+    private final LeadActivityRepository leadActivityRepository;
+
 private final SecurityService securityService;
 
 private final BillingService billingService;
 
 private final PricingConfigurationService pricingConfigurationService;
+private final InvoiceRepository invoiceRepository;
 
     public DealServiceImpl(
             DealRepository dealRepository,
@@ -52,9 +56,11 @@ private final PricingConfigurationService pricingConfigurationService;
             CustomerRepository customerRepository,
             PropertyRepository propertyRepository,
                         LeadRepository leadRepository,
+            LeadActivityRepository leadActivityRepository,
         SecurityService securityService,
 BillingService billingService,
-PricingConfigurationService pricingConfigurationService) {
+PricingConfigurationService pricingConfigurationService,
+InvoiceRepository invoiceRepository) {
 
         this.dealRepository =
                 dealRepository;
@@ -70,18 +76,32 @@ PricingConfigurationService pricingConfigurationService) {
 
         this.leadRepository =
                 leadRepository;
+        this.leadActivityRepository = leadActivityRepository;
         this.securityService = securityService;
 
         this.billingService = billingService;
 
         this.pricingConfigurationService = pricingConfigurationService;
+        this.invoiceRepository = invoiceRepository;
 
     }
 
     @Override
     public DealResponse createDeal(
             CreateDealRequest request) {
-securityService.validateAdminAccess();
+        securityService.validateAdminAccess();
+        if (request == null || request.getPropertyId() == null || request.getSellerCustomerId() == null
+                || request.getDealType() == null || request.getDealType().isBlank()) {
+            throw new BusinessException("Property, seller, and deal type are required");
+        }
+        if (request.getExpectedAmount() == null || request.getExpectedAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Expected amount must be greater than zero");
+        }
+        validateCommission(request.getSellerCommissionPercent(), "Seller");
+        validateCommission(request.getBuyerCommissionPercent(), "Buyer");
+        if (request.getLeadId() != null) {
+            throw new BusinessException("Create lead-linked deals through the lead conversion workflow");
+        }
         Property property =
                 propertyRepository
                         .findById(
@@ -98,18 +118,12 @@ securityService.validateAdminAccess();
                                 new ResourceNotFoundException(
                                         "Seller not found"));
 
-        LeadEntity lead = null;
-
-        if (request.getLeadId() != null) {
-
-            lead =
-                    leadRepository
-                            .findById(
-                                    request.getLeadId())
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Lead not found"));
+        if (property.getCustomer() == null
+                || !java.util.Objects.equals(property.getCustomer().getCustomerId(), seller.getCustomerId())) {
+            throw new BusinessException("The selected seller must own the selected property");
         }
+
+        LeadEntity lead = null;
 
         DealEntity entity =
                 new DealEntity();
@@ -123,9 +137,11 @@ securityService.validateAdminAccess();
         entity.setLead(
                 lead);
 
-        entity.setDealType(
-                DealType.valueOf(
-                        request.getDealType()));
+        try {
+            entity.setDealType(DealType.valueOf(request.getDealType()));
+        } catch (IllegalArgumentException exception) {
+            throw new BusinessException("Unsupported deal type");
+        }
 
         entity.setDealStatus(
                 DealStatus.NEW);
@@ -162,17 +178,144 @@ entity.setExclusiveListing(
     }
 
     @Override
+    public DealResponse convertLeadToDeal(UUID leadId, LeadDealConversionRequest request) {
+        securityService.validateAdminAccess();
+        LeadEntity lead = leadRepository.findByLeadId(leadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lead not found"));
+
+        String duplicateReason = request.duplicateOpportunityReason() == null
+                ? null : request.duplicateOpportunityReason().trim();
+        boolean alreadyConverted = lead.getStatus() == LeadStatus.DEAL_CONVERTED
+                || lead.getStatus() == LeadStatus.CONVERTED;
+        if (lead.getStatus() != LeadStatus.QUALIFIED
+                && lead.getStatus() != LeadStatus.READY_FOR_DEAL
+                && !alreadyConverted) {
+            throw new BusinessException("Lead must be qualified or marked READY_FOR_DEAL before conversion");
+        }
+        if (alreadyConverted && isBlank(duplicateReason)) {
+            throw new BusinessException("Provide an authorized reason to create another deal from an already converted lead");
+        }
+        if (lead.getCustomer() == null) {
+            throw new BusinessException("A customer must be linked to the lead before conversion");
+        }
+
+        DealType dealType;
+        try {
+            dealType = DealType.valueOf(request.dealType());
+        } catch (IllegalArgumentException exception) {
+            throw new BusinessException("Unsupported deal type");
+        }
+        if (dealType == DealType.SERVICE_CONTRACT || dealType == DealType.SUBSCRIPTION_RENEWAL) {
+            throw new BusinessException("Lead conversion supports property transaction deals only");
+        }
+        if (request.expectedAmount() == null || request.expectedAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Expected amount must be greater than zero");
+        }
+        validateCommission(request.sellerCommissionPercent(), "Seller");
+        validateCommission(request.buyerCommissionPercent(), "Buyer");
+
+        Property property = null;
+        if (request.propertyId() != null) {
+            property = propertyRepository.findById(request.propertyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+            if (!property.getCustomer().getCustomerId().equals(lead.getCustomer().getCustomerId())) {
+                throw new BusinessException("Selected property must belong to the lead customer");
+            }
+        } else if (isBlank(lead.getPropertyType()) || isBlank(lead.getLocation())) {
+            throw new BusinessException("Select a customer property or provide prospective property type and location on the lead");
+        }
+
+        List<DealStatus> activeStatuses = List.of(
+                DealStatus.NEW, DealStatus.BUYER_SEARCH_IN_PROGRESS, DealStatus.BUYER_SHORTLISTED,
+                DealStatus.OFFER_RECEIVED, DealStatus.NEGOTIATION_IN_PROGRESS, DealStatus.BUYER_SELECTED,
+                DealStatus.SITE_VISIT_SCHEDULED, DealStatus.DOCUMENT_VERIFICATION,
+                DealStatus.AGREEMENT_PENDING, DealStatus.REGISTRATION_SCHEDULED);
+        boolean duplicate = dealRepository.existsByLead_LeadIdAndDealTypeAndDealStatusIn(
+                leadId, dealType, activeStatuses);
+        if (duplicate && isBlank(duplicateReason)) {
+            throw new BusinessException("An active deal of this type already exists; provide an authorized duplicate opportunity reason");
+        }
+
+        // Direct conversion records the readiness decision as a distinct, durable audit event.
+        if (lead.getStatus() == LeadStatus.QUALIFIED) {
+            lead.setStatus(LeadStatus.READY_FOR_DEAL);
+            recordLeadActivity(lead, "STATUS_CHANGE", "Lead marked ready for deal",
+                    "Readiness confirmed as part of direct conversion.");
+        }
+
+        DealEntity deal = new DealEntity();
+        deal.setLead(lead);
+        deal.setSeller(lead.getCustomer());
+        deal.setProperty(property);
+        deal.setDealType(dealType);
+        deal.setDealStatus(DealStatus.NEW);
+        deal.setDealSource(DealSource.LEAD);
+        deal.setExpectedPrice(request.expectedAmount());
+        deal.setSellerCommissionPercent(request.sellerCommissionPercent());
+        deal.setBuyerCommissionPercent(request.buyerCommissionPercent());
+        deal.setRemarks(appendDuplicateReason(request.remarks(), duplicateReason));
+        DealEntity saved = dealRepository.save(deal);
+
+        lead.setStatus(LeadStatus.DEAL_CONVERTED);
+        if (lead.getConvertedAt() == null) {
+            lead.setConvertedAt(OffsetDateTime.now());
+        }
+        leadRepository.save(lead);
+        String auditDetails = "Deal " + saved.getDealId() + " created as " + dealType.name()
+                + (duplicateReason == null ? "" : ". Additional opportunity reason: " + duplicateReason);
+        recordLeadActivity(lead, "CONVERSION", "Lead converted to deal", auditDetails);
+        return mapResponse(saved);
+    }
+
+    @Override
+    public List<DealResponse> getDealsByLead(UUID leadId) {
+        LeadEntity lead = leadRepository.findByLeadId(leadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lead not found"));
+        securityService.validateLeadOwnership(lead);
+        return dealRepository.findByLead_LeadIdOrderByCreatedAtDesc(leadId)
+                .stream().map(this::mapResponse).toList();
+    }
+
+    private void recordLeadActivity(LeadEntity lead, String type, String subject, String details) {
+        LeadActivityEntity activity = new LeadActivityEntity();
+        activity.setLead(lead);
+        activity.setActivityType(type);
+        activity.setSubject(subject);
+        activity.setDetails(details);
+        activity.setVisibility("INTERNAL");
+        activity.setOccurredAt(OffsetDateTime.now());
+        activity.setPerformedBy(securityService.getCurrentUser());
+        leadActivityRepository.save(activity);
+    }
+
+    private void validateCommission(BigDecimal percent, String party) {
+        if (percent != null && (percent.compareTo(BigDecimal.ZERO) < 0
+                || percent.compareTo(BigDecimal.valueOf(100)) > 0)) {
+            throw new BusinessException(party + " commission percent must be between 0 and 100");
+        }
+    }
+
+    private String appendDuplicateReason(String remarks, String reason) {
+        if (isBlank(reason)) return remarks;
+        return (isBlank(remarks) ? "" : remarks.trim() + "\n\n")
+                + "Additional opportunity authorization: " + reason;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    @Override
     public DealResponse getDeal(
             UUID dealId) {
-               
-        return mapResponse(
-                dealRepository
+        DealEntity deal = dealRepository
                         .findById(dealId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-    
-                                        "Deal not found")));
-                    }
+                                        "Deal not found"));
+        securityService.validateDealAccess(deal);
+        return mapResponse(deal);
+    }
     
 
     @Override
@@ -200,6 +343,9 @@ entity.setExclusiveListing(
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Deal not found"));
+        if (deal.getDealStatus() == DealStatus.COMPLETED || deal.getDealStatus() == DealStatus.CANCELLED) {
+            throw new BusinessException("Participants cannot be added to a completed or cancelled deal");
+        }
         
         CustomerEntity customer =
                 customerRepository
@@ -254,6 +400,10 @@ entity.setExclusiveListing(
     getParticipants(
             UUID dealId) {
 
+        DealEntity deal = dealRepository.findById(dealId)
+                .orElseThrow(() -> new ResourceNotFoundException("Deal not found"));
+        securityService.validateDealAccess(deal);
+
         return participantRepository
                 .findByDeal_DealId(
                         dealId)
@@ -274,6 +424,9 @@ securityService.validateAdminAccess();
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Deal not found"));
+        if (deal.getDealStatus() != DealStatus.NEGOTIATION_IN_PROGRESS) {
+            throw new BusinessException("A buyer can be selected only during negotiation");
+        }
 
         List<DealParticipantEntity>
                 participants =
@@ -342,9 +495,8 @@ securityService.validateAdminAccess();
         response.setDealId(
                 entity.getDealId());
 
-        response.setPropertyId(
-                entity.getProperty()
-                        .getPropertyId());
+        response.setPropertyId(entity.getProperty() == null
+                ? null : entity.getProperty().getPropertyId());
 
         response.setSellerCustomerId(
                 entity.getSeller()
@@ -397,19 +549,43 @@ securityService.validateAdminAccess();
                             new ResourceNotFoundException(
                                     "Deal not found"));
 
-    deal.setDealStatus(
-            DealStatus.valueOf(
-                    request.getDealStatus()));
+    DealStatus nextStatus;
+    try {
+        nextStatus = DealStatus.valueOf(request.getDealStatus());
+    } catch (IllegalArgumentException | NullPointerException exception) {
+        throw new BusinessException("Unsupported deal status");
+    }
+    if (!isValidStageTransition(deal.getDealStatus(), nextStatus)) {
+        throw new BusinessException("Deal status transition is not allowed; use the dedicated complete or cancel action");
+    }
+    deal.setDealStatus(nextStatus);
 
     if (request.getRemarks() != null) {
         deal.setRemarks(
                 request.getRemarks());
     }
-generateDealInvoices(deal);
     DealEntity saved =
             dealRepository.save(deal);
 
     return mapDeal(saved);
+}
+
+private boolean isValidStageTransition(DealStatus current, DealStatus next) {
+    if (current == null || next == null || current == next
+            || current == DealStatus.COMPLETED || current == DealStatus.CANCELLED
+            || next == DealStatus.COMPLETED || next == DealStatus.CANCELLED) return false;
+    return switch (current) {
+        case NEW -> next == DealStatus.BUYER_SEARCH_IN_PROGRESS || next == DealStatus.BUYER_SHORTLISTED;
+        case BUYER_SEARCH_IN_PROGRESS -> next == DealStatus.BUYER_SHORTLISTED || next == DealStatus.OFFER_RECEIVED;
+        case BUYER_SHORTLISTED -> next == DealStatus.OFFER_RECEIVED || next == DealStatus.NEGOTIATION_IN_PROGRESS;
+        case OFFER_RECEIVED -> next == DealStatus.NEGOTIATION_IN_PROGRESS;
+        case NEGOTIATION_IN_PROGRESS -> next == DealStatus.BUYER_SELECTED;
+        case BUYER_SELECTED -> next == DealStatus.SITE_VISIT_SCHEDULED || next == DealStatus.DOCUMENT_VERIFICATION;
+        case SITE_VISIT_SCHEDULED -> next == DealStatus.DOCUMENT_VERIFICATION;
+        case DOCUMENT_VERIFICATION -> next == DealStatus.AGREEMENT_PENDING;
+        case AGREEMENT_PENDING -> next == DealStatus.REGISTRATION_SCHEDULED;
+        case REGISTRATION_SCHEDULED, COMPLETED, CANCELLED -> false;
+    };
 }
 
     private DealParticipantResponse
@@ -471,10 +647,18 @@ public DealResponse finalizeDeal(
 securityService.validateAdminAccess();
     DealEntity deal =
             dealRepository
-                    .findById(dealId)
+                    .findByIdForUpdate(dealId)
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "Deal not found"));
+
+    if (deal.getDealStatus() == DealStatus.COMPLETED) return mapDeal(deal);
+    if (deal.getDealStatus() != DealStatus.REGISTRATION_SCHEDULED || deal.getSelectedBuyerId() == null) {
+        throw new BusinessException("Deal must have a selected buyer and be registration-scheduled before completion");
+    }
+    if (request.getFinalDealAmount() == null || request.getFinalDealAmount().signum() <= 0) {
+        throw new BusinessException("Final deal amount must be greater than zero");
+    }
 
     deal.setFinalDealAmount(
             request.getFinalDealAmount());
@@ -517,6 +701,8 @@ securityService.validateAdminAccess();
     DealEntity saved =
             dealRepository.save(deal);
 
+    ensureCommissionInvoices(saved);
+
     return mapDeal(saved);
 }
 
@@ -531,6 +717,10 @@ securityService.validateAdminAccess();
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "Deal not found"));
+
+    if (deal.getDealStatus() == DealStatus.COMPLETED || deal.getDealStatus() == DealStatus.CANCELLED) {
+        throw new BusinessException("A completed or cancelled deal cannot be cancelled");
+    }
 
     deal.setDealStatus(
             DealStatus.CANCELLED);
@@ -555,9 +745,8 @@ private DealResponse mapDeal(
     response.setDealId(
             entity.getDealId());
 
-    response.setPropertyId(
-            entity.getProperty()
-                    .getPropertyId());
+    response.setPropertyId(entity.getProperty() == null
+            ? null : entity.getProperty().getPropertyId());
 
     response.setSellerCustomerId(
             entity.getSeller()
@@ -624,40 +813,6 @@ if (entity.getBuyerCommissionAmount() != null
 
     return response;
 }
-private void generateDealInvoices(
-        DealEntity deal) {
-
-    if (deal.getSellerCommissionAmount() != null
-            && deal.getSellerCommissionAmount()
-                    .compareTo(BigDecimal.ZERO) > 0) {
-
-        billingService.createInvoice(
-                BillingEntityType.DEAL,
-                deal.getDealId(),
-                deal.getSeller()
-                        .getCustomerId(),
-                InvoiceType.SELLER_COMMISSION,
-                deal.getSellerCommissionAmount(),
-                "Seller commission for deal "
-                        + deal.getDealId());
-    }
-
-    if (deal.getSelectedBuyerId() != null
-            && deal.getBuyerCommissionAmount() != null
-            && deal.getBuyerCommissionAmount()
-                    .compareTo(BigDecimal.ZERO) > 0) {
-
-        billingService.createInvoice(
-                BillingEntityType.DEAL,
-                deal.getDealId(),
-                deal.getSelectedBuyerId(),
-                InvoiceType.BUYER_COMMISSION,
-                deal.getBuyerCommissionAmount(),
-                "Buyer commission for deal "
-                        + deal.getDealId());
-    }
-}
-
 @Override
 public DealResponse completeDeal(
         UUID dealId,
@@ -665,10 +820,18 @@ public DealResponse completeDeal(
 securityService.validateAdminAccess();
     DealEntity deal =
             dealRepository
-                    .findById(dealId)
+                    .findByIdForUpdate(dealId)
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "Deal not found"));
+
+    if (deal.getDealStatus() == DealStatus.COMPLETED) return mapDeal(deal);
+    if (deal.getDealStatus() != DealStatus.REGISTRATION_SCHEDULED) {
+        throw new BusinessException("Deal must be registration-scheduled before completion");
+    }
+    if (finalDealAmount == null || finalDealAmount.signum() <= 0) {
+        throw new BusinessException("Final deal amount must be greater than zero");
+    }
 
     if (deal.getSelectedBuyerId() == null) {
 
@@ -725,39 +888,36 @@ BigDecimal buyerPercent =
         dealRepository.save(
                 deal);
 
-    createCommissionInvoices(
-            deal);
+    ensureCommissionInvoices(saved);
 
     return mapDeal(saved);
 }
-private void createCommissionInvoices(
+private void ensureCommissionInvoices(
         DealEntity deal) {
 
     if (deal.getBuyerCommissionAmount() != null
             && deal.getBuyerCommissionAmount()
             .compareTo(BigDecimal.ZERO) > 0) {
 
-        billingService.createInvoice(
-                BillingEntityType.DEAL,
-                deal.getDealId(),
-                deal.getSelectedBuyerId(),
-                InvoiceType.BUYER_COMMISSION,
-                deal.getBuyerCommissionAmount(),
-                "Buyer commission invoice");
+        createCommissionInvoiceIfMissing(deal, InvoiceType.BUYER_COMMISSION,
+                deal.getSelectedBuyerId(), deal.getBuyerCommissionAmount(), "Buyer commission invoice");
     }
 
     if (deal.getSellerCommissionAmount() != null
             && deal.getSellerCommissionAmount()
             .compareTo(BigDecimal.ZERO) > 0) {
 
-        billingService.createInvoice(
-                BillingEntityType.DEAL,
-                deal.getDealId(),
-                deal.getSeller()
-                        .getCustomerId(),
-                InvoiceType.SELLER_COMMISSION,
-                deal.getSellerCommissionAmount(),
-                "Seller commission invoice");
+        createCommissionInvoiceIfMissing(deal, InvoiceType.SELLER_COMMISSION,
+                deal.getSeller().getCustomerId(), deal.getSellerCommissionAmount(), "Seller commission invoice");
+    }
+}
+
+private void createCommissionInvoiceIfMissing(DealEntity deal, InvoiceType type, UUID customerId,
+        BigDecimal amount, String description) {
+    boolean exists = invoiceRepository.findByEntityTypeAndEntityIdAndInvoiceType(
+            BillingEntityType.DEAL, deal.getDealId(), type).stream().findAny().isPresent();
+    if (!exists) {
+        billingService.createInvoice(BillingEntityType.DEAL, deal.getDealId(), customerId, type, amount, description);
     }
 }
 

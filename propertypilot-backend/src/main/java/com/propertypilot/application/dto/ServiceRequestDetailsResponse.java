@@ -35,6 +35,8 @@ public class ServiceRequestDetailsResponse {
     private Instant completedAt;
 
     private String cancellationReasonCode;
+    private String assignedAgentName;
+    private String assignedAgentPhone;
     private List<ServiceRequestStatusHistoryResponse>
         statusHistory;
 }

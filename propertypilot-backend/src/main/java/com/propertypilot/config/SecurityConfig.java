@@ -2,6 +2,7 @@ package com.propertypilot.config;
 
 import com.propertypilot.security.CustomUserDetailsService;
 import com.propertypilot.security.JwtAuthenticationFilter;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,10 +15,17 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${propertypilot.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
 
     private final CustomUserDetailsService customUserDetailsService;
     private final PasswordEncoder passwordEncoder;
@@ -61,8 +69,9 @@ public class SecurityConfig {
             HttpSecurity http)
             throws Exception {
 
-        http
-                .csrf(csrf -> csrf.disable())
+http
+        .cors(cors -> {})
+        .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
@@ -92,6 +101,12 @@ public class SecurityConfig {
                                 "/api/v1/users"
                         ).permitAll()
 
+                        // The provider webhook authenticates using its signed raw payload.
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/payments/settlement"
+                        ).permitAll()
+
                         /*
                          * USER PROFILE
                          */
@@ -106,32 +121,40 @@ public class SecurityConfig {
                          */
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/properties/archived"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/v1/properties/*/restore"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/properties"
-                        ).authenticated()
+                        ).hasRole("CUSTOMER")
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/properties"
-                                ).authenticated()
-
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/properties/**"
-                                ).authenticated()
+                                "/api/v1/properties",
+                                "/api/v1/properties/*"
+                        ).hasAnyRole("ADMIN", "CUSTOMER")
 
                         .requestMatchers(
                                 HttpMethod.PUT,
-                                "/api/v1/properties/**"
-                        ).authenticated()
+                                "/api/v1/properties/*"
+                        ).hasAnyRole("ADMIN", "CUSTOMER")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/v1/properties/*/archive"
+                        ).hasAnyRole("ADMIN", "CUSTOMER")
 
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/properties/**"
-                        ).hasAnyRole(
-                                "ADMIN",
-                                "PROPERTY_MANAGER"
-                        )
+                        ).hasAnyRole("ADMIN", "CUSTOMER")
 
                         /*
                          * CUSTOMER MANAGEMENT
@@ -152,8 +175,9 @@ public class SecurityConfig {
                                 "/api/v1/leads/**"
                         ).hasAnyRole(
                                 "ADMIN",
-                                "PROPERTY_MANAGER",
-                                "SALES_AGENT"
+                                "OPERATIONS",
+                                "CUSTOMER",
+                                "AGENT"
                         )
 
                         /*
@@ -164,8 +188,9 @@ public class SecurityConfig {
                                 "/api/v1/visits/**"
                         ).hasAnyRole(
                                 "ADMIN",
-                                "PROPERTY_MANAGER",
-                                "SALES_AGENT"
+                                "OPERATIONS",
+                                "AGENT",
+                                "CUSTOMER"
                         )
 
                         /*
@@ -185,6 +210,32 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/v1/service-requests/**"
+                        ).hasAnyRole(
+                                "ADMIN",
+                                "OPERATIONS",
+                                "AGENT",
+                                "CUSTOMER"
+                        )
+                        .requestMatchers(
+                                "/api/service-requests/**",
+                                "/api/evidence/**",
+                                "/api/gps-verifications/**",
+                                "/api/reports/**",
+                                "/api/tasks/**",
+                                "/api/v1/property-owners/**",
+                                "/api/v1/deals/**",
+                                "/api/customers/**",
+                                "/api/customer-dashboard/**",
+                                "/api/customer-subscriptions/**",
+                                "/api/subscription-consumptions/**",
+                                "/api/subscription-notifications/**",
+                                "/api/subscription-renewals/**",
+                                "/api/subscription-plans/**",
+                                "/api/subscription-plan-versions/**",
+                                "/api/subscription-benefits/**",
+                                "/api/subscription-plan-entitlements/**",
+                                "/api/pricing-rules/**",
+                                "/api/payments/**"
                         ).authenticated()
                         .requestMatchers(
         "/api/v1/pricing/**"
@@ -225,6 +276,12 @@ public class SecurityConfig {
                                 HttpMethod.DELETE,
                                 "/api/v1/users/**"
                         ).hasRole("ADMIN")
+                        // Operations dashboards declare both roles at the controller
+                        // level; allow Operations through the URL-level guard too.
+                        .requestMatchers(
+                                "/api/admin/operations/**",
+                                "/api/admin/agents/**"
+                        ).hasAnyRole("ADMIN", "OPERATIONS")
                         .requestMatchers(
         "/api/admin/**"
 ).hasRole("ADMIN")
@@ -246,4 +303,43 @@ public class SecurityConfig {
 
         return http.build();
     }
+    @Bean
+public CorsConfigurationSource corsConfigurationSource() {
+
+    CorsConfiguration configuration =
+            new CorsConfiguration();
+
+    configuration.setAllowedOrigins(List.of(allowedOrigins.split(","))
+            .stream()
+            .map(String::trim)
+            .filter(origin -> !origin.isEmpty())
+            .toList());
+
+    configuration.setAllowedMethods(
+            List.of(
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE",
+                    "OPTIONS"
+            )
+    );
+
+    configuration.setAllowedHeaders(
+            List.of("*")
+    );
+
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
+    source.registerCorsConfiguration(
+            "/**",
+            configuration
+    );
+
+    return source;
+}
 }

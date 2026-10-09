@@ -13,12 +13,15 @@ import com.propertypilot.infrastructure.persistence.repository.PaymentRepository
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
 import com.propertypilot.infrastructure.persistence.repository.ServiceRequestRepository;
 import org.springframework.transaction.annotation.Transactional;
+import com.propertypilot.security.SecurityService;
 
 
 @Service
 @Transactional(readOnly = true)
 public class CustomerDashboardServiceImpl
         implements CustomerDashboardService {
+
+        private final SecurityService securityService;
 
         private final PropertyRepository propertyRepository;
         private final ServiceRequestRepository serviceRequestRepository;
@@ -31,17 +34,21 @@ public class CustomerDashboardServiceImpl
                         ServiceRequestRepository serviceRequestRepository,
                         CustomerSubscriptionRepository customerSubscriptionRepository,
                         InvoiceRepository invoiceRepository,
-                        PaymentRepository paymentRepository) {
+                        PaymentRepository paymentRepository,
+                        SecurityService securityService) {
                 this.propertyRepository = propertyRepository;
                 this.serviceRequestRepository = serviceRequestRepository;
                 this.customerSubscriptionRepository = customerSubscriptionRepository;
                 this.invoiceRepository = invoiceRepository;
                 this.paymentRepository = paymentRepository;
+                this.securityService = securityService;
         }
 
     @Override
     public CustomerDashboardResponse getDashboard(
             UUID customerId) {
+
+        securityService.validateCustomerAccess(customerId);
 
         CustomerDashboardResponse response =
                 new CustomerDashboardResponse();
@@ -78,7 +85,7 @@ public class CustomerDashboardServiceImpl
                 invoiceRepository
                         .countByCustomerCustomerIdAndStatus(
                                 customerId,
-                                InvoiceStatus.PENDING));
+                                InvoiceStatus.SENT));
 
         response.setPaidInvoices(
                 invoiceRepository

@@ -1,0 +1,25 @@
+import { Alert, Box, Button, Card, CardContent, LinearProgress, Skeleton, Stack, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { useCustomerBilling, useCustomerDashboard, useCustomerProperties, useCustomerQuotes, useCustomerRequests, useCustomerVisits } from '../hooks/useCustomerPortal';
+import { CustomerMetricCards, CustomerPageHeading, CustomerQueryError } from '../components/CustomerStates';
+
+export default function CustomerDashboardPage() {
+  const customer = useCustomerDashboard(); const properties = useCustomerProperties(); const requests = useCustomerRequests(); const visits = useCustomerVisits(); const billing = useCustomerBilling(); const quotes = useCustomerQuotes();
+  const now = Date.now(); const upcoming = (visits.data ?? []).filter((visit) => visit.status === 'SCHEDULED' && new Date(visit.scheduledAt).getTime() >= now);
+  const pendingInvoices = billing.invoices.data?.filter((invoice) => ['PENDING','OVERDUE'].includes(invoice.status)).length ?? customer.dashboard.data?.pendingInvoices ?? 0;
+  const metrics = [{ label: 'Properties', value: customer.dashboard.data?.totalProperties ?? 0 }, { label: 'Active requests', value: customer.dashboard.data?.activeServiceRequests ?? 0 }, { label: 'Upcoming visits', value: upcoming.length }, { label: 'Active subscriptions', value: customer.dashboard.data?.activeSubscriptions ?? 0 }, { label: 'Open quotes', value: quotes.data?.filter((quote) => quote.status === 'ACTIVE').length ?? 0 }, { label: 'Pending invoices', value: pendingInvoices }];
+  const errors = [customer.profile, customer.dashboard, properties, requests, visits, billing.invoices, quotes].filter((query) => query.isError);
+  const byService = [...(requests.data ?? []).reduce((map, request) => map.set(request.requestType, (map.get(request.requestType) ?? 0) + 1), new Map<string, number>())].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const byProperty = [...(requests.data ?? []).reduce((map, request) => map.set(request.propertyTitle, (map.get(request.propertyTitle) ?? 0) + 1), new Map<string, number>())].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const serviceMax = Math.max(1, ...byService.map(([, value]) => value)); const propertyMax = Math.max(1, ...byProperty.map(([, value]) => value));
+  const loading = customer.profile.isLoading || customer.dashboard.isLoading || properties.isLoading || requests.isLoading || visits.isLoading || quotes.isLoading || billing.invoices.isLoading;
+  return <Stack spacing={3}><CustomerPageHeading title={`Welcome${customer.profile.data?.fullName ? `, ${customer.profile.data.fullName.split(' ')[0]}` : ''}`} subtitle="Your properties, service activity, and account at a glance." action={<Button component={Link} to="/customer/service-requests/new" variant="contained">Request a service</Button>} />
+    {errors.map((query, index) => <CustomerQueryError key={index} error={query.error} retry={() => void query.refetch()} />)}
+    <CustomerMetricCards items={metrics} loading={loading} />
+    <Box display="grid" gridTemplateColumns={{ xs: '1fr', lg: '1fr 1fr' }} gap={2}>
+      <Card variant="outlined"><CardContent><Typography variant="h6" fontWeight={700}>Service usage</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Requests by service type</Typography><Stack spacing={1.5} sx={{ mt: 2 }}>{requests.isLoading ? <Skeleton height={160} /> : byService.map(([label, count]) => <Box key={label}><Stack direction="row" justifyContent="space-between" sx={{ mb: .5 }}><Typography variant="body2">{label}</Typography><Typography variant="body2" fontWeight={700}>{count}</Typography></Stack><LinearProgress variant="determinate" value={count * 100 / serviceMax} aria-label={`${label}: ${count} requests`} /></Box>)}</Stack>{!requests.isLoading && !byService.length && <Typography color="text.secondary" sx={{ mt: 2 }}>Service activity will appear when you create a request.</Typography>}</CardContent></Card>
+      <Card variant="outlined"><CardContent><Typography variant="h6" fontWeight={700}>Property activity</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Requests by property</Typography><Stack spacing={1.5} sx={{ mt: 2 }}>{requests.isLoading ? <Skeleton height={160} /> : byProperty.map(([label, count]) => <Box key={label}><Stack direction="row" justifyContent="space-between" sx={{ mb: .5 }}><Typography variant="body2">{label}</Typography><Typography variant="body2" fontWeight={700}>{count}</Typography></Stack><LinearProgress variant="determinate" value={count * 100 / propertyMax} aria-label={`${label}: ${count} requests`} /></Box>)}</Stack>{!requests.isLoading && !byProperty.length && <Typography color="text.secondary" sx={{ mt: 2 }}>Property activity will appear when you create a request.</Typography>}</CardContent></Card>
+    </Box>
+    {!loading && !(properties.data?.length) && <Alert severity="info" action={<Button component={Link} to="/customer/properties">View properties</Button>}>There are no properties on your account yet.</Alert>}
+  </Stack>;
+}

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.UUID;
 
@@ -93,6 +94,7 @@ public class ReportController {
             description = "Report approved successfully"
     )
     @PutMapping("/{reportId}/approve")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('OPERATIONS')")
     public ReportResponse approveReport(
             @PathVariable
             UUID reportId) {

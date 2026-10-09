@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.Set;
 
 @Service
@@ -37,6 +38,7 @@ public class SubscriptionPlanVersionServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanVersionResponse createPlanVersion(
             CreateSubscriptionPlanVersionRequest request) {
 
@@ -134,6 +136,7 @@ entity.setVersionNumber(
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanVersionResponse updatePlanVersion(
             UUID planVersionId,
             UpdateSubscriptionPlanVersionRequest request) {

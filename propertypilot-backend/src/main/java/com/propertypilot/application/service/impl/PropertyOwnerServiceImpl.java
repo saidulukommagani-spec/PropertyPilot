@@ -18,11 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class PropertyOwnerServiceImpl
         implements PropertyOwnerService {
+
+    private final SecurityService securityService;
 
     private final PropertyOwnerRepository
             propertyOwnerRepository;
@@ -36,7 +39,8 @@ public class PropertyOwnerServiceImpl
     public PropertyOwnerServiceImpl(
             PropertyOwnerRepository propertyOwnerRepository,
             PropertyRepository propertyRepository,
-            CustomerRepository customerRepository) {
+            CustomerRepository customerRepository,
+            SecurityService securityService) {
 
         this.propertyOwnerRepository =
                 propertyOwnerRepository;
@@ -46,6 +50,7 @@ public class PropertyOwnerServiceImpl
 
         this.customerRepository =
                 customerRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -59,6 +64,7 @@ public class PropertyOwnerServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Property not found"));
+        securityService.validateOperationsAccess();
 
         validatePrimaryOwner(
                 property.getPropertyId(),
@@ -110,13 +116,14 @@ public class PropertyOwnerServiceImpl
     public PropertyOwnerResponse getOwner(
             UUID propertyOwnerId) {
 
-        return mapToResponse(
-                propertyOwnerRepository
+        PropertyOwnerEntity owner = propertyOwnerRepository
                         .findById(
                                 propertyOwnerId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Property owner not found")));
+                                        "Property owner not found"));
+        securityService.validatePropertyOwnership(owner.getProperty());
+        return mapToResponse(owner);
     }
 
     @Override
@@ -124,6 +131,10 @@ public class PropertyOwnerServiceImpl
     public List<PropertyOwnerResponse>
     getOwnersByProperty(
             UUID propertyId) {
+
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        securityService.validatePropertyOwnership(property);
 
         return propertyOwnerRepository
                 .findByProperty_PropertyId(
@@ -145,6 +156,7 @@ public class PropertyOwnerServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Property owner not found"));
+        securityService.validateOperationsAccess();
 
         validatePrimaryOwnerForUpdate(
                 owner.getProperty()
@@ -201,6 +213,7 @@ public class PropertyOwnerServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Property owner not found"));
+        securityService.validateOperationsAccess();
 
         propertyOwnerRepository
                 .delete(owner);

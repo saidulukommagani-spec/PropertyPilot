@@ -3,6 +3,7 @@ package com.propertypilot.application.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 public class ServiceRequestResponse {
 
@@ -13,6 +14,10 @@ public class ServiceRequestResponse {
     private UUID propertyId;
 
     private UUID serviceId;
+
+    private UUID quoteId;
+
+    private UUID leadId;
 
     private String requestType;
 
@@ -31,6 +36,24 @@ public class ServiceRequestResponse {
     private Instant completedAt;
 
     private UUID assignedTo;
+    private UUID assignedAgentId;
+    private String customerName;
+    private String propertyTitle;
+    private String serviceName;
+    private List<ServiceRequestStatusHistoryResponse> statusHistory;
+    private String assignedToName;
+    private String assignedAgentPhone;
+    private String assignedAgentCode;
+    private String assignedByName;
+    private UUID assignedByUserId;
+    private Instant assignedAt;
+    private String assignmentNotes;
+
+    private String assignedAgentName;
+
+    private Instant slaDueAt;
+
+    private String slaStatus;
 
     public UUID getServiceRequestId() {
         return serviceRequestId;
@@ -68,6 +91,17 @@ public class ServiceRequestResponse {
             UUID serviceId) {
         this.serviceId = serviceId;
     }
+
+    public UUID getQuoteId() { return quoteId; }
+    public void setQuoteId(UUID quoteId) { this.quoteId = quoteId; }
+    public UUID getLeadId() { return leadId; }
+    public void setLeadId(UUID leadId) { this.leadId = leadId; }
+    public String getAssignedAgentName() { return assignedAgentName; }
+    public void setAssignedAgentName(String assignedAgentName) { this.assignedAgentName = assignedAgentName; }
+    public Instant getSlaDueAt() { return slaDueAt; }
+    public void setSlaDueAt(Instant slaDueAt) { this.slaDueAt = slaDueAt; }
+    public String getSlaStatus() { return slaStatus; }
+    public void setSlaStatus(String slaStatus) { this.slaStatus = slaStatus; }
 
     public String getRequestType() {
         return requestType;
@@ -149,4 +183,29 @@ public class ServiceRequestResponse {
             UUID assignedTo) {
         this.assignedTo = assignedTo;
     }
+
+    public UUID getAssignedAgentId() { return assignedAgentId; }
+    public void setAssignedAgentId(UUID assignedAgentId) { this.assignedAgentId = assignedAgentId; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getPropertyTitle() { return propertyTitle; }
+    public void setPropertyTitle(String propertyTitle) { this.propertyTitle = propertyTitle; }
+    public String getServiceName() { return serviceName; }
+    public void setServiceName(String serviceName) { this.serviceName = serviceName; }
+    public List<ServiceRequestStatusHistoryResponse> getStatusHistory() { return statusHistory; }
+    public void setStatusHistory(List<ServiceRequestStatusHistoryResponse> statusHistory) { this.statusHistory = statusHistory; }
+    public String getAssignedToName() { return assignedToName; }
+    public void setAssignedToName(String assignedToName) { this.assignedToName = assignedToName; }
+    public String getAssignedAgentPhone() { return assignedAgentPhone; }
+    public void setAssignedAgentPhone(String assignedAgentPhone) { this.assignedAgentPhone = assignedAgentPhone; }
+    public String getAssignedAgentCode() { return assignedAgentCode; }
+    public void setAssignedAgentCode(String assignedAgentCode) { this.assignedAgentCode = assignedAgentCode; }
+    public String getAssignedByName() { return assignedByName; }
+    public void setAssignedByName(String assignedByName) { this.assignedByName = assignedByName; }
+    public UUID getAssignedByUserId() { return assignedByUserId; }
+    public void setAssignedByUserId(UUID assignedByUserId) { this.assignedByUserId = assignedByUserId; }
+    public Instant getAssignedAt() { return assignedAt; }
+    public void setAssignedAt(Instant assignedAt) { this.assignedAt = assignedAt; }
+    public String getAssignmentNotes() { return assignmentNotes; }
+    public void setAssignmentNotes(String assignmentNotes) { this.assignmentNotes = assignmentNotes; }
 }

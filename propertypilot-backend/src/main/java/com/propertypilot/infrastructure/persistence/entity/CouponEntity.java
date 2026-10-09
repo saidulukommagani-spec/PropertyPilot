@@ -52,5 +52,27 @@ public class CouponEntity extends AuditableEntity {
     @Column(name = "version")
     private Long version;
 
-    // Generate getters/setters
+    public UUID getCouponId() { return couponId; }
+    public String getCouponCode() { return couponCode; }
+    public void setCouponCode(String value) { couponCode = value; }
+    public String getDescription() { return description; }
+    public void setDescription(String value) { description = value; }
+    public String getDiscountType() { return discountType; }
+    public void setDiscountType(String value) { discountType = value; }
+    public BigDecimal getDiscountValue() { return discountValue; }
+    public void setDiscountValue(BigDecimal value) { discountValue = value; }
+    public BigDecimal getMaximumDiscount() { return maximumDiscount; }
+    public void setMaximumDiscount(BigDecimal value) { maximumDiscount = value; }
+    public BigDecimal getMinimumOrderAmount() { return minimumOrderAmount; }
+    public void setMinimumOrderAmount(BigDecimal value) { minimumOrderAmount = value; }
+    public OffsetDateTime getValidFrom() { return validFrom; }
+    public void setValidFrom(OffsetDateTime value) { validFrom = value; }
+    public OffsetDateTime getValidTo() { return validTo; }
+    public void setValidTo(OffsetDateTime value) { validTo = value; }
+    public Integer getRedemptionLimit() { return redemptionLimit; }
+    public void setRedemptionLimit(Integer value) { redemptionLimit = value; }
+    public Integer getPerCustomerLimit() { return perCustomerLimit; }
+    public void setPerCustomerLimit(Integer value) { perCustomerLimit = value; }
+    public String getStatus() { return status; }
+    public void setStatus(String value) { status = value; }
 }

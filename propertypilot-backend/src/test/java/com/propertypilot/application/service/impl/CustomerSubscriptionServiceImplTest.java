@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.propertypilot.security.SecurityService;
 
 
 import java.math.BigDecimal;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerSubscriptionServiceImplTest {
+    @Mock private SecurityService securityService;
 
     @Mock
     private CustomerSubscriptionRepository
@@ -124,6 +126,7 @@ class CustomerSubscriptionServiceImplTest {
                 buildPlanVersion(
                         "ACTIVE",
                         BigDecimal.valueOf(999));
+        plan.setCurrencyCode("USD");
 
         CreateCustomerSubscriptionRequest request =
                 new CreateCustomerSubscriptionRequest();
@@ -168,7 +171,12 @@ class CustomerSubscriptionServiceImplTest {
                         any(),
                         any(),
                         any(),
-                        anyString());
+                        anyString(),
+                        eq("USD"));
+        org.mockito.ArgumentCaptor<CustomerSubscriptionEntity> subscriptionCaptor =
+                org.mockito.ArgumentCaptor.forClass(CustomerSubscriptionEntity.class);
+        verify(customerSubscriptionRepository).save(subscriptionCaptor.capture());
+        assertThat(subscriptionCaptor.getValue().getStatus()).isEqualTo("PENDING");
     }
 
     @Test
@@ -222,7 +230,12 @@ class CustomerSubscriptionServiceImplTest {
                         any(),
                         any(),
                         any(),
+                        anyString(),
                         anyString());
+        org.mockito.ArgumentCaptor<CustomerSubscriptionEntity> subscriptionCaptor =
+                org.mockito.ArgumentCaptor.forClass(CustomerSubscriptionEntity.class);
+        verify(customerSubscriptionRepository).save(subscriptionCaptor.capture());
+        assertThat(subscriptionCaptor.getValue().getStatus()).isEqualTo("ACTIVE");
     }
 
     @Test
@@ -420,7 +433,7 @@ class CustomerSubscriptionServiceImplTest {
         request.setStatus(
                 "EXPIRED");
 
-        when(customerSubscriptionRepository.findById(id))
+        when(customerSubscriptionRepository.findByIdForUpdate(id))
                 .thenReturn(Optional.of(entity));
 
         when(customerSubscriptionRepository.save(any()))
@@ -450,15 +463,14 @@ class CustomerSubscriptionServiceImplTest {
         request.setStatus(
                 "INVALID");
 
-        when(customerSubscriptionRepository.findById(id))
+        when(customerSubscriptionRepository.findByIdForUpdate(id))
                 .thenReturn(Optional.of(entity));
 
         assertThatThrownBy(
                 () -> service.updateSubscription(
                         id,
                         request))
-                .isInstanceOf(
-                        IllegalArgumentException.class);
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test
@@ -476,15 +488,60 @@ class CustomerSubscriptionServiceImplTest {
         request.setEndDate(
                 entity.getStartDate().minusDays(1));
 
-        when(customerSubscriptionRepository.findById(id))
+        when(customerSubscriptionRepository.findByIdForUpdate(id))
                 .thenReturn(Optional.of(entity));
 
         assertThatThrownBy(
                 () -> service.updateSubscription(
                         id,
                         request))
-                .isInstanceOf(
-                        IllegalArgumentException.class);
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void updateSubscription_EndDateChangeRequiresOperationsAuthorization() {
+        UUID id = UUID.randomUUID();
+        CustomerSubscriptionEntity entity = buildSubscription();
+        UpdateCustomerSubscriptionRequest request = new UpdateCustomerSubscriptionRequest();
+        request.setEndDate(entity.getEndDate().minusDays(1));
+
+        when(customerSubscriptionRepository.findByIdForUpdate(id)).thenReturn(Optional.of(entity));
+        when(customerSubscriptionRepository.save(any())).thenReturn(entity);
+
+        service.updateSubscription(id, request);
+
+        verify(securityService).validateOperationsAccess();
+    }
+
+    @Test
+    void updateSubscription_RejectsActivationWithoutVerifiedPayment() {
+        UUID id = UUID.randomUUID();
+        CustomerSubscriptionEntity entity = buildSubscription();
+        entity.setStatus("PENDING");
+        UpdateCustomerSubscriptionRequest request = new UpdateCustomerSubscriptionRequest();
+        request.setStatus("ACTIVE");
+        when(customerSubscriptionRepository.findByIdForUpdate(id)).thenReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> service.updateSubscription(id, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("confirmed payment");
+        verify(securityService).validateOperationsAccess();
+        verify(customerSubscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void updateSubscription_RejectsTermExtensionWithoutRenewalPayment() {
+        UUID id = UUID.randomUUID();
+        CustomerSubscriptionEntity entity = buildSubscription();
+        UpdateCustomerSubscriptionRequest request = new UpdateCustomerSubscriptionRequest();
+        request.setEndDate(entity.getEndDate().plusDays(1));
+        when(customerSubscriptionRepository.findByIdForUpdate(id)).thenReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> service.updateSubscription(id, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("confirmed payment");
+        verify(securityService).validateOperationsAccess();
+        verify(customerSubscriptionRepository, never()).save(any());
     }
 
     @Test
@@ -501,7 +558,7 @@ class CustomerSubscriptionServiceImplTest {
 
         request.setAutoRenew(false);
 
-        when(customerSubscriptionRepository.findById(id))
+        when(customerSubscriptionRepository.findByIdForUpdate(id))
                 .thenReturn(Optional.of(entity));
 
         when(customerSubscriptionRepository.save(any()))

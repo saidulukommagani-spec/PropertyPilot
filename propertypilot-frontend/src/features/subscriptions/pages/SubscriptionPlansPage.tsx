@@ -1,10 +1,13 @@
-/src
-  /api
-  /components
-  /layouts
-  /pages
-  /redux
-  /hooks
-  /utils
-  /styles
-  /tests
+import { Alert, Box, Button, Card, CardActionArea, CardContent, Chip, Skeleton, Stack, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { useSubscriptionCatalog } from '../hooks/useSubscriptions';
+import { SubscriptionError, SubscriptionHeading } from '../components/SubscriptionStates';
+
+export default function SubscriptionPlansPage(){
+  const data=useSubscriptionCatalog();const plans=(data.plans.data??[]).filter((plan)=>plan.status==='ACTIVE');const versions=data.versions.data??[];const entitlements=data.entitlements.data??[];const benefits=data.benefits.data??[];const services=data.services.data??[];
+  const loading=data.plans.isLoading||data.versions.isLoading||data.entitlements.isLoading||data.services.isLoading||data.benefits.isLoading;
+  return <Stack spacing={3}><SubscriptionHeading title="Subscription plans" subtitle="Choose a plan built around property services and clear usage allowances." />
+    {data.plans.isError&&<SubscriptionError error={data.plans.error} retry={()=>void data.plans.refetch()}/ >}{data.versions.isError&&<SubscriptionError error={data.versions.error} retry={()=>void data.versions.refetch()}/ >}{data.entitlements.isError&&<SubscriptionError error={data.entitlements.error} retry={()=>void data.entitlements.refetch()}/ >}{data.services.isError&&<SubscriptionError error={data.services.error} retry={()=>void data.services.refetch()}/ >}{data.benefits.isError&&<SubscriptionError error={data.benefits.error} retry={()=>void data.benefits.refetch()}/ >}
+    {loading? <Box display="grid" gridTemplateColumns={{xs:'1fr',md:'repeat(2,minmax(0,1fr))',xl:'repeat(3,minmax(0,1fr))'}} gap={2}>{Array.from({length:3},(_,index)=><Skeleton key={index} variant="rounded" height={300}/>)}</Box>:plans.length?<Box display="grid" gridTemplateColumns={{xs:'1fr',md:'repeat(2,minmax(0,1fr))',xl:'repeat(3,minmax(0,1fr))'}} gap={2}>{plans.map((plan)=>{const planVersions=versions.filter((version)=>version.subscriptionPlanId===plan.subscriptionPlanId&&version.status==='ACTIVE').sort((a,b)=>b.versionNumber-a.versionNumber);const current=planVersions[0];const included=entitlements.filter((item)=>item.planVersionId===current?.planVersionId&&item.status==='ACTIVE');const planBenefits=benefits.filter((item)=>item.planId===plan.subscriptionPlanId&&item.status==='ACTIVE');return <Card key={plan.subscriptionPlanId} variant="outlined"><CardActionArea component={Link} to={`/subscriptions/plans/${plan.subscriptionPlanId}`}><CardContent><Stack direction="row" justifyContent="space-between" alignItems="start"><Typography variant="h5" fontWeight={750}>{plan.planName}</Typography><Chip size="small" label={plan.planCode}/></Stack><Typography color="text.secondary" sx={{mt:1,minHeight:48}}>{plan.description||'Subscription plan for property services.'}</Typography>{current?<><Typography variant="h4" fontWeight={750} sx={{mt:2}}>{current.price.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">{current.currencyCode} / plan term</Typography></Typography><Typography variant="caption" color="text.secondary">Version {current.versionNumber} · Effective {new Date(current.effectiveFrom).toLocaleDateString()}</Typography></>:<Alert severity="info" sx={{mt:2}}>Current pricing is not published.</Alert>}<Typography fontWeight={700} sx={{mt:2}}>Features</Typography>{planBenefits.length?planBenefits.slice(0,3).map((benefit)=><Typography key={benefit.benefitId} variant="body2" sx={{mt:.75}}>{benefit.benefitType.replaceAll('_',' ')} · {benefit.benefitValue}</Typography>):<Typography variant="body2" color="text.secondary" sx={{mt:.75}}>See plan details for included benefits.</Typography>}<Typography fontWeight={700} sx={{mt:1.5}}>Included services</Typography>{included.length?included.slice(0,3).map((item)=><Typography key={item.entitlementId} variant="body2" sx={{mt:.75}}>{services.find((service)=>service.serviceId===item.serviceId)?.serviceName||'Service'} · {item.quantity} per {item.periodType.toLowerCase()}</Typography>):<Typography variant="body2" color="text.secondary" sx={{mt:.75}}>Service allowances are listed in plan details.</Typography>}<Button component="span" sx={{mt:2}}>View plan details</Button></CardContent></CardActionArea></Card>;})}</Box>:!data.plans.isError&&<Alert severity="info">No active subscription plans are available.</Alert>}
+  </Stack>;
+}

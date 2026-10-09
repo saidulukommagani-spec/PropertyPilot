@@ -2,16 +2,9 @@ package com.propertypilot.domain.enums;
 public enum InvoiceStatus {
 
     DRAFT,
-
-    PENDING,
-
+    SENT,
     PARTIALLY_PAID,
-
     PAID,
-
-    CANCELLED,
-
     OVERDUE,
-
-    VOID
+    CANCELLED
 }

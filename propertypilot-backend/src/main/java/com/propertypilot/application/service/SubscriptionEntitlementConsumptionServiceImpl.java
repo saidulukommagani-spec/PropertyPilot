@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
@@ -43,13 +44,17 @@ public class SubscriptionEntitlementConsumptionServiceImpl
 
     private final ServiceRequestRepository
             serviceRequestRepository;
+    private final SubscriptionPaymentVerificationService paymentVerificationService;
+    private final SecurityService securityService;
 
     public SubscriptionEntitlementConsumptionServiceImpl(
             SubscriptionEntitlementConsumptionRepository consumptionRepository,
             CustomerSubscriptionRepository customerSubscriptionRepository,
             SubscriptionPlanEntitlementRepository entitlementRepository,
             ServiceRepository serviceRepository,
-            ServiceRequestRepository serviceRequestRepository) {
+            ServiceRequestRepository serviceRequestRepository,
+            SubscriptionPaymentVerificationService paymentVerificationService,
+            SecurityService securityService) {
 
         this.consumptionRepository =
                 consumptionRepository;
@@ -65,6 +70,8 @@ public class SubscriptionEntitlementConsumptionServiceImpl
 
         this.serviceRequestRepository =
                 serviceRequestRepository;
+        this.paymentVerificationService = paymentVerificationService;
+        this.securityService = securityService;
     }
 
     @Override
@@ -73,18 +80,22 @@ public class SubscriptionEntitlementConsumptionServiceImpl
 
         CustomerSubscriptionEntity subscription =
                 customerSubscriptionRepository
-                        .findById(
+                        .findByIdForUpdate(
                                 request.getCustomerSubscriptionId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer subscription not found"));
+        securityService.validateCustomerAccess(subscription.getCustomer());
 
-        if (!"ACTIVE".equalsIgnoreCase(
-                subscription.getStatus())) {
+        LocalDate today = LocalDate.now();
+        if (!"ACTIVE".equalsIgnoreCase(subscription.getStatus())
+                || (subscription.getStartDate() != null && subscription.getStartDate().isAfter(today))
+                || (subscription.getEndDate() != null && subscription.getEndDate().isBefore(today))) {
 
             throw new BusinessException(
-                    "Subscription is not active");
+                    "Subscription is not active for the current date");
         }
+        requireVerifiedPayment(subscription);
 
         ServiceEntity service =
                 serviceRepository
@@ -104,36 +115,8 @@ public class SubscriptionEntitlementConsumptionServiceImpl
                         .orElseThrow(() ->
                                 new BusinessException(
                                         "Service not included in subscription"));
-
-        SubscriptionEntitlementConsumptionEntity consumption =
-                consumptionRepository
-                        .findByCustomerSubscription_CustomerSubscriptionIdAndService_ServiceIdAndPeriodEndIsNull(
-                                subscription.getCustomerSubscriptionId(),
-                                service.getServiceId())
-                        .orElse(null);
-
-        if (consumption == null) {
-
-            consumption =
-                    new SubscriptionEntitlementConsumptionEntity();
-
-            consumption.setCustomerSubscription(
-                    subscription);
-
-            consumption.setService(
-                    service);
-
-            consumption.setEntitlement(
-                    entitlement);
-
-            consumption.setPeriodStart(
-                    LocalDate.now());
-
-            consumption.setConsumedQuantity(
-                    0);
-
-            consumption.setEntitledQuantity(
-                    entitlement.getQuantity());
+        if (!"ACTIVE".equalsIgnoreCase(entitlement.getStatus())) {
+            throw new BusinessException("Service entitlement is not active");
         }
 
         int requestedQty =
@@ -147,30 +130,67 @@ public class SubscriptionEntitlementConsumptionServiceImpl
                     "Quantity must be greater than zero");
         }
 
-        int newConsumed =
-                consumption.getConsumedQuantity()
-                        + requestedQty;
+        if (request.getServiceRequestId() != null) {
+            ServiceRequestEntity serviceRequest = serviceRequestRepository
+                    .findByIdForUpdate(request.getServiceRequestId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Service request not found"));
+            securityService.validateServiceRequestAccess(serviceRequest);
+            if (serviceRequest.getCustomer() == null
+                    || !subscription.getCustomer().getCustomerId()
+                            .equals(serviceRequest.getCustomer().getCustomerId())) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Service request and subscription belong to different customers");
+            }
+            if (serviceRequest.getService() == null
+                    || !service.getServiceId().equals(serviceRequest.getService().getServiceId())) {
+                throw new BusinessException("The entitlement service must match the service request");
+            }
+            if ("COMPLETED".equalsIgnoreCase(serviceRequest.getStatus())
+                    || "CANCELLED".equalsIgnoreCase(serviceRequest.getStatus())
+                    || "FAILED".equalsIgnoreCase(serviceRequest.getStatus())) {
+                throw new BusinessException("An entitlement cannot be applied to a closed service request");
+            }
+
+            SubscriptionEntitlementConsumptionEntity prior = consumptionRepository
+                    .findByServiceRequest_ServiceRequestIdAndPeriodEndIsNull(
+                            serviceRequest.getServiceRequestId())
+                    .orElse(null);
+            if (prior != null) {
+                if (!subscription.getCustomerSubscriptionId().equals(
+                                prior.getCustomerSubscription().getCustomerSubscriptionId())
+                        || !service.getServiceId().equals(prior.getService().getServiceId())
+                        || !Integer.valueOf(requestedQty).equals(prior.getConsumedQuantity())) {
+                    throw new BusinessException("This service request already consumed a different entitlement");
+                }
+                int totalConsumed = getActiveConsumedQuantity(subscription, service);
+                return mapResponse(prior, totalConsumed, entitlement.getQuantity());
+            }
+        }
+
+        int currentConsumed = getActiveConsumedQuantity(subscription, service);
+        int newConsumed = currentConsumed + requestedQty;
 
         if (newConsumed >
-                consumption.getEntitledQuantity()) {
+                entitlement.getQuantity()) {
 
             throw new BusinessException(
                     "Entitlement limit exceeded");
         }
 
+        SubscriptionEntitlementConsumptionEntity consumption =
+                new SubscriptionEntitlementConsumptionEntity();
+        consumption.setCustomerSubscription(subscription);
+        consumption.setService(service);
+        consumption.setEntitlement(entitlement);
+        consumption.setPeriodStart(LocalDate.now());
+        consumption.setEntitledQuantity(entitlement.getQuantity());
         consumption.setConsumedQuantity(
-                newConsumed);
+                requestedQty);
 
         if (request.getServiceRequestId() != null) {
-
-            ServiceRequestEntity serviceRequest =
-                    serviceRequestRepository
-                            .findById(
-                                    request.getServiceRequestId())
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Service request not found"));
-
+            ServiceRequestEntity serviceRequest = serviceRequestRepository
+                    .findByIdForUpdate(request.getServiceRequestId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Service request not found"));
             consumption.setServiceRequest(
                     serviceRequest);
         }
@@ -179,8 +199,7 @@ public class SubscriptionEntitlementConsumptionServiceImpl
                 consumptionRepository.save(
                         consumption);
 
-        return mapResponse(
-                consumption);
+        return mapResponse(consumption, newConsumed, entitlement.getQuantity());
     }
 
     @Override
@@ -194,6 +213,8 @@ public List<SubscriptionUsageResponse> getUsage(
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "Customer subscription not found"));
+    securityService.validateCustomerAccess(subscription.getCustomer());
+    requireVerifiedPayment(subscription);
 
     List<SubscriptionPlanEntitlementEntity>
             entitlements =
@@ -210,18 +231,16 @@ public List<SubscriptionUsageResponse> getUsage(
     for (SubscriptionPlanEntitlementEntity entitlement
             : entitlements) {
 
-        SubscriptionEntitlementConsumptionEntity consumption =
+        List<SubscriptionEntitlementConsumptionEntity> consumptions =
                 consumptionRepository
                         .findByCustomerSubscription_CustomerSubscriptionIdAndService_ServiceIdAndPeriodEndIsNull(
                                 customerSubscriptionId,
-                                entitlement.getService()
-                                        .getServiceId())
-                        .orElse(null);
+                                entitlement.getService().getServiceId());
 
         int consumedQty =
-                consumption == null
-                        ? 0
-                        : consumption.getConsumedQuantity();
+                consumptions.stream()
+                        .mapToInt(SubscriptionEntitlementConsumptionEntity::getConsumedQuantity)
+                        .sum();
 
         SubscriptionUsageResponse response =
                 new SubscriptionUsageResponse();
@@ -229,6 +248,9 @@ public List<SubscriptionUsageResponse> getUsage(
         response.setServiceId(
                 entitlement.getService()
                         .getServiceId());
+        response.setServiceName(
+                entitlement.getService()
+                        .getServiceName());
 
         response.setEntitledQuantity(
                 entitlement.getQuantity());
@@ -247,6 +269,13 @@ public List<SubscriptionUsageResponse> getUsage(
     return responses;
 }
 
+    private void requireVerifiedPayment(CustomerSubscriptionEntity subscription) {
+        if (!paymentVerificationService.isPaymentVerified(subscription)) {
+            throw new BusinessException(
+                    "Subscription benefits require verified payment for the purchase or renewal");
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<SubscriptionUsageResponse> getRemaining(
@@ -256,8 +285,19 @@ public List<SubscriptionUsageResponse> getUsage(
                 customerSubscriptionId);
     }
 
+    private int getActiveConsumedQuantity(CustomerSubscriptionEntity subscription, ServiceEntity service) {
+        return consumptionRepository
+                .findByCustomerSubscription_CustomerSubscriptionIdAndService_ServiceIdAndPeriodEndIsNull(
+                        subscription.getCustomerSubscriptionId(), service.getServiceId())
+                .stream()
+                .mapToInt(SubscriptionEntitlementConsumptionEntity::getConsumedQuantity)
+                .sum();
+    }
+
     private ConsumptionResponse mapResponse(
-            SubscriptionEntitlementConsumptionEntity entity) {
+            SubscriptionEntitlementConsumptionEntity entity,
+            int totalConsumed,
+            int entitledQuantity) {
 
         ConsumptionResponse response =
                 new ConsumptionResponse();
@@ -274,14 +314,13 @@ public List<SubscriptionUsageResponse> getUsage(
                         .getServiceId());
 
         response.setEntitledQuantity(
-                entity.getEntitledQuantity());
+                entitledQuantity);
 
         response.setConsumedQuantity(
-                entity.getConsumedQuantity());
+                totalConsumed);
 
         response.setRemainingQuantity(
-                entity.getEntitledQuantity()
-                        - entity.getConsumedQuantity());
+                entitledQuantity - totalConsumed);
 
         response.setPeriodStart(
                 entity.getPeriodStart());

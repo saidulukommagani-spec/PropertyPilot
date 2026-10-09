@@ -12,8 +12,12 @@ public interface PaymentService {
             UUID invoiceId,
             CreatePaymentRequest request);
 
+    PaymentResponse confirmSettlement(String rawBody, String signature);
+
     PaymentResponse getPayment(
             UUID paymentId);
+
+    List<PaymentResponse> getAllPayments();
 
     List<PaymentResponse>
     getPaymentsByInvoice(

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -31,10 +32,17 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "List payments for operations review")
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+        return ResponseEntity.ok(paymentService.getAllPayments());
+    }
+
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     @Operation(
-            summary = "Record payment")
+            summary = "Initiate payment; settlement is confirmed separately by a signed provider event")
     public ResponseEntity<PaymentResponse>
     recordPayment(
             @PathVariable
@@ -45,10 +53,18 @@ public class PaymentController {
             @RequestBody
             CreatePaymentRequest request) {
 
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(
                 paymentService.recordPayment(
                         invoiceId,
                         request));
+    }
+
+    @PostMapping(value = "/settlement", consumes = "text/plain")
+    @Operation(summary = "Confirm payment settlement using a signed provider event")
+    public ResponseEntity<PaymentResponse> confirmSettlement(
+            @RequestBody String rawBody,
+            @RequestHeader("X-PropertyPilot-Signature") String signature) {
+        return ResponseEntity.ok(paymentService.confirmSettlement(rawBody, signature));
     }
 
     @GetMapping("/{paymentId}")

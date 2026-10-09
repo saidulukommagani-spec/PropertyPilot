@@ -46,6 +46,9 @@ class DealServiceImplTest {
     private LeadRepository leadRepository;
 
     @Mock
+    private LeadActivityRepository leadActivityRepository;
+
+    @Mock
     private SecurityService securityService;
 
     @Mock
@@ -53,6 +56,9 @@ class DealServiceImplTest {
 
     @Mock
     private PricingConfigurationService pricingConfigurationService;
+
+    @Mock
+    private InvoiceRepository invoiceRepository;
 
     @InjectMocks
     private DealServiceImpl dealService;
@@ -135,6 +141,9 @@ void createDeal_PropertyNotFound() {
             new CreateDealRequest();
 
     request.setPropertyId(propertyId);
+    request.setSellerCustomerId(UUID.randomUUID());
+    request.setDealType("PROPERTY_SALE");
+    request.setExpectedAmount(BigDecimal.valueOf(1_000_000));
 
     when(propertyRepository.findById(propertyId))
             .thenReturn(Optional.empty());
@@ -202,7 +211,7 @@ void updateDealStatus_ShouldUpdateStatus() {
     UpdateDealStatusRequest request =
             new UpdateDealStatusRequest();
 
-    request.setDealStatus("COMPLETED");
+    request.setDealStatus("BUYER_SEARCH_IN_PROGRESS");
 
     when(dealRepository.findById(dealId))
             .thenReturn(Optional.of(deal));
@@ -221,7 +230,25 @@ void updateDealStatus_ShouldUpdateStatus() {
             .save(any());
             assertThat(
         response.getDealStatus())
-        .isEqualTo("COMPLETED");
+        .isEqualTo("BUYER_SEARCH_IN_PROGRESS");
+}
+
+@Test
+void updateDealStatus_rejectsSkippingDirectlyToCompleted() {
+    UUID dealId = UUID.randomUUID();
+    DealEntity deal = new DealEntity();
+    deal.setSeller(new CustomerEntity());
+    deal.setDealType(DealType.PROPERTY_SALE);
+    deal.setDealStatus(DealStatus.NEW);
+    UpdateDealStatusRequest request = new UpdateDealStatusRequest();
+    request.setDealStatus("COMPLETED");
+    when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
+
+    assertThatThrownBy(() -> dealService.updateDealStatus(dealId, request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("dedicated complete or cancel action");
+    verify(dealRepository, never()).save(any());
+    verify(billingService, never()).createInvoice(any(), any(), any(), any(), any(), any());
 }
 @Test
 void createDeal_ShouldCreateDeal() {
@@ -236,6 +263,7 @@ void createDeal_ShouldCreateDeal() {
             new CustomerEntity();
 
     seller.setCustomerId(sellerId);
+    property.setCustomer(seller);
 
     CreateDealRequest request =
             new CreateDealRequest();
@@ -274,6 +302,48 @@ void createDeal_ShouldCreateDeal() {
     verify(dealRepository)
             .save(any());
 }
+
+@Test
+void createDeal_RejectsSellerWhoDoesNotOwnTheProperty() {
+    UUID propertyId = UUID.randomUUID();
+    UUID sellerId = UUID.randomUUID();
+    Property property = new Property();
+    property.setPropertyId(propertyId);
+    CustomerEntity owner = new CustomerEntity();
+    owner.setCustomerId(UUID.randomUUID());
+    property.setCustomer(owner);
+    CustomerEntity seller = new CustomerEntity();
+    seller.setCustomerId(sellerId);
+    CreateDealRequest request = new CreateDealRequest();
+    request.setPropertyId(propertyId);
+    request.setSellerCustomerId(sellerId);
+    request.setDealType("PROPERTY_SALE");
+    request.setExpectedAmount(BigDecimal.valueOf(1_000_000));
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(customerRepository.findById(sellerId)).thenReturn(Optional.of(seller));
+
+    assertThatThrownBy(() -> dealService.createDeal(request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("must own the selected property");
+    verify(dealRepository, never()).save(any());
+}
+
+@Test
+void createDeal_RejectsCommissionAboveOneHundredPercent() {
+    CreateDealRequest request = new CreateDealRequest();
+    request.setPropertyId(UUID.randomUUID());
+    request.setSellerCustomerId(UUID.randomUUID());
+    request.setDealType("PROPERTY_SALE");
+    request.setExpectedAmount(BigDecimal.valueOf(1_000_000));
+    request.setBuyerCommissionPercent(new BigDecimal("100.01"));
+
+    assertThatThrownBy(() -> dealService.createDeal(request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessage("Buyer commission percent must be between 0 and 100");
+
+    verify(propertyRepository, never()).findById(any());
+    verify(dealRepository, never()).save(any());
+}
 @Test
 void finalizeDeal_ShouldCalculateCommissions() {
 
@@ -298,7 +368,9 @@ deal.setDealType(
         DealType.PROPERTY_SALE);
 
 deal.setDealStatus(
-        DealStatus.BUYER_SELECTED);
+        DealStatus.REGISTRATION_SCHEDULED);
+
+    deal.setSelectedBuyerId(UUID.randomUUID());
 
 deal.setDealSource(
         DealSource.ADMIN_CREATED);
@@ -312,11 +384,13 @@ deal.setDealSource(
     deal.setSellerCommissionPercent(
             BigDecimal.valueOf(1));
 
-    when(dealRepository.findById(dealId))
+    when(dealRepository.findByIdForUpdate(dealId))
             .thenReturn(Optional.of(deal));
 
     when(dealRepository.save(any()))
             .thenReturn(deal);
+    when(invoiceRepository.findByEntityTypeAndEntityIdAndInvoiceType(any(), any(), any()))
+            .thenReturn(List.of());
 
     FinalizeDealRequest request =
             new FinalizeDealRequest();
@@ -346,8 +420,9 @@ void completeDeal_ShouldThrow_WhenBuyerNotSelected() {
 
     deal.setSelectedBuyerId(
             null);
+    deal.setDealStatus(DealStatus.REGISTRATION_SCHEDULED);
 
-    when(dealRepository.findById(dealId))
+    when(dealRepository.findByIdForUpdate(dealId))
             .thenReturn(Optional.of(deal));
 
     assertThatThrownBy(
@@ -382,6 +457,7 @@ void getParticipants_ShouldReturnList() {
             new DealEntity();
 
     deal.setDealId(dealId);
+    when(dealRepository.findById(dealId)).thenReturn(Optional.of(deal));
 
     DealParticipantEntity participant =
             new DealParticipantEntity();
@@ -423,7 +499,7 @@ void selectBuyer_ShouldSelectBuyer() {
 
     deal.setDealId(dealId);
     deal.setDealType(DealType.PROPERTY_SALE);
-    deal.setDealStatus(DealStatus.NEW);
+    deal.setDealStatus(DealStatus.NEGOTIATION_IN_PROGRESS);
     deal.setDealSource(DealSource.ADMIN_CREATED);
 
     UserEntity user = new UserEntity();
@@ -517,12 +593,12 @@ void completeDeal_ShouldCompleteDeal() {
             DealType.PROPERTY_SALE);
 
     deal.setDealStatus(
-            DealStatus.BUYER_SELECTED);
+            DealStatus.REGISTRATION_SCHEDULED);
 
     deal.setDealSource(
             DealSource.ADMIN_CREATED);
 
-    when(dealRepository.findById(dealId))
+    when(dealRepository.findByIdForUpdate(dealId))
             .thenReturn(Optional.of(deal));
 
     when(pricingConfigurationService
@@ -543,6 +619,8 @@ void completeDeal_ShouldCompleteDeal() {
 
     when(dealRepository.save(any()))
             .thenReturn(deal);
+    when(invoiceRepository.findByEntityTypeAndEntityIdAndInvoiceType(any(), any(), any()))
+            .thenReturn(List.of());
 
     DealResponse response =
             dealService.completeDeal(
@@ -554,6 +632,44 @@ void completeDeal_ShouldCompleteDeal() {
 
     verify(dealRepository)
             .save(any());
+    verify(billingService, times(2)).createInvoice(any(), any(), any(), any(), any(), any());
+}
+
+@Test
+void completeDeal_requiresRegistrationScheduledState() {
+    UUID dealId = UUID.randomUUID();
+    DealEntity deal = new DealEntity();
+    deal.setDealStatus(DealStatus.BUYER_SELECTED);
+    deal.setSelectedBuyerId(UUID.randomUUID());
+    when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(deal));
+
+    assertThatThrownBy(() -> dealService.completeDeal(dealId, BigDecimal.valueOf(1000)))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("registration-scheduled");
+    verify(dealRepository, never()).save(any());
+    verify(billingService, never()).createInvoice(any(), any(), any(), any(), any(), any());
+}
+
+@Test
+void completeDeal_retryDoesNotCreateDuplicateCommissionInvoices() {
+    UUID dealId = UUID.randomUUID();
+    CustomerEntity seller = new CustomerEntity();
+    seller.setCustomerId(UUID.randomUUID());
+    DealEntity completed = new DealEntity();
+    completed.setDealId(dealId);
+    completed.setSeller(seller);
+    completed.setDealType(DealType.PROPERTY_SALE);
+    completed.setDealStatus(DealStatus.COMPLETED);
+    completed.setSelectedBuyerId(UUID.randomUUID());
+    completed.setFinalDealAmount(BigDecimal.valueOf(1000));
+    when(dealRepository.findByIdForUpdate(dealId)).thenReturn(Optional.of(completed));
+
+    DealResponse response = dealService.completeDeal(dealId, BigDecimal.valueOf(1000));
+
+    assertThat(response.getDealStatus()).isEqualTo("COMPLETED");
+    verify(dealRepository, never()).save(any());
+    verify(invoiceRepository, never()).findByEntityTypeAndEntityIdAndInvoiceType(any(), any(), any());
+    verify(billingService, never()).createInvoice(any(), any(), any(), any(), any(), any());
 }
 
 @Test

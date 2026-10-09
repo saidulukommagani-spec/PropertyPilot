@@ -1,0 +1,6 @@
+import { Alert, Box, Button, Card, CardContent, Skeleton, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
+
+export function SubscriptionHeading({title,subtitle,action}:{title:string;subtitle:string;action?:ReactNode}){return <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" alignItems={{sm:'center'}} gap={1}><Box><Typography variant="h4" fontWeight={750}>{title}</Typography><Typography color="text.secondary" sx={{mt:.5}}>{subtitle}</Typography></Box>{action}</Stack>;}
+export function SubscriptionError({error,retry}:{error:unknown;retry:()=>void}){return <Alert severity="error" action={<Button size="small" color="inherit" onClick={retry}>Retry</Button>}>{error instanceof Error?error.message:'Subscription data could not be loaded.'}</Alert>;}
+export function SubscriptionMetrics({items,loading}:{items:Array<{label:string;value:string|number}>;loading:boolean}){return <Box display="grid" gridTemplateColumns={{xs:'repeat(2,minmax(0,1fr))',md:'repeat(3,minmax(0,1fr))',xl:'repeat(5,minmax(0,1fr))'}} gap={2}>{items.map((item)=><Card key={item.label} variant="outlined"><CardContent><Typography variant="body2" color="text.secondary">{item.label}</Typography>{loading?<Skeleton width={65} height={42}/>:<Typography variant="h4" fontWeight={750}>{item.value}</Typography>}</CardContent></Card>)}</Box>;}

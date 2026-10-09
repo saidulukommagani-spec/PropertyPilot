@@ -27,6 +27,7 @@ import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.ServiceAssignmentEntity;
 import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
 import com.propertypilot.infrastructure.persistence.repository.AgentRepository;
+import com.propertypilot.infrastructure.persistence.repository.AgentAssignmentRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentTypeRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentVersionRepository;
@@ -81,6 +82,8 @@ private final ServiceRequestStatusHistoryRepository serviceRequestStatusHistoryR
 private final ServiceAssignmentRepository serviceAssignmentRepository;
 
 private final AgentRepository agentRepository;
+
+private final AgentAssignmentRepository agentAssignmentRepository;
 
 private final UserRepository userRepository;
         
@@ -673,6 +676,15 @@ getServiceRequest(
     response.setCompletedAt(
             serviceRequest.getCompletedAt());
 
+    if (serviceRequest.getAssignedTo() != null) {
+        agentRepository.findById(serviceRequest.getAssignedTo()).ifPresent(agent -> {
+            if (agent.getUser() != null) {
+                response.setAssignedAgentName(agent.getUser().getFullName());
+                response.setAssignedAgentPhone(agent.getUser().getMobileNumber());
+            }
+        });
+    }
+
     response.setCancellationReasonCode(
             serviceRequest.getCancellationReasonCode());
             List<ServiceRequestStatusHistoryResponse>
@@ -742,6 +754,13 @@ getDocumentProcurementRequests(
 
                 response.setRequestedAt(
                         request.getRequestedAt());
+
+                if (request.getAssignedTo() != null) {
+                    agentRepository.findById(request.getAssignedTo()).ifPresent(agent -> {
+                        response.setAssignedAgentId(agent.getAgentId());
+                        if (agent.getUser() != null) response.setAssignedAgentName(agent.getUser().getFullName());
+                    });
+                }
 
                 response.setRemarks(
                         request.getDescription());
@@ -958,6 +977,8 @@ private void createStatusHistory(
 
     history.setChangedAt(
             Instant.now());
+    history.setCreatedBy(securityService.getCurrentUserId());
+    history.setUpdatedBy(securityService.getCurrentUserId());
 
     serviceRequestStatusHistoryRepository.save(
             history);
@@ -1148,6 +1169,10 @@ response.setCustomerName(
                 response.setRequestType(
                         request.getRequestType());
 
+                response.setServiceName(request.getService() == null
+                        ? request.getRequestType()
+                        : request.getService().getServiceName());
+
                 response.setStatus(
                         request.getStatus());
 
@@ -1212,6 +1237,10 @@ getAdminServiceRequest(
     response.setRequestType(
             serviceRequest.getRequestType());
 
+    response.setServiceName(serviceRequest.getService() == null
+            ? serviceRequest.getRequestType()
+            : serviceRequest.getService().getServiceName());
+
     response.setStatus(
             serviceRequest.getStatus());
 
@@ -1263,6 +1292,25 @@ getAdminServiceRequest(
                     })
                     .toList();
 
+    com.propertypilot.infrastructure.persistence.entity.AgentAssignmentEntity operationalAssignment =
+            agentAssignmentRepository.findByServiceRequest_ServiceRequestIdAndAssignmentStatusIn(
+                    serviceRequestId, List.of("ASSIGNED", "ACCEPTED", "IN_PROGRESS")).orElse(null);
+
+    if (operationalAssignment != null) {
+        AgentEntity assignedAgent = operationalAssignment.getAgent();
+        response.setAssignedToUserId(assignedAgent.getUser().getUserId());
+        response.setAssignedToName(assignedAgent.getUser().getFullName());
+        response.setAssignedAgentPhone(assignedAgent.getUser().getMobileNumber());
+        response.setAssignedAgentCode(assignedAgent.getAgentCode());
+        response.setAssignmentNotes(operationalAssignment.getAssignmentNotes());
+        response.setActiveAssignmentId(operationalAssignment.getAssignmentId());
+        response.setAssignedAt(operationalAssignment.getAssignedAt().toInstant());
+        response.setAssignedByUserId(operationalAssignment.getCreatedBy());
+        if (operationalAssignment.getCreatedBy() != null) {
+            userRepository.findById(operationalAssignment.getCreatedBy())
+                    .ifPresent(user -> response.setAssignedByName(user.getFullName()));
+        }
+    } else {
     ServiceAssignmentEntity assignment =
             serviceAssignmentRepository
                     .findByServiceRequest_ServiceRequestIdAndStatus(
@@ -1297,6 +1345,7 @@ getAdminServiceRequest(
                 .ifPresent(user ->
                         response.setAssignedByName(
                                 user.getFullName()));
+    }
     }
 
         
@@ -1386,100 +1435,23 @@ getAdminDashboard() {
 
     securityService.validateAdminAccess();
 
-    List<ServiceRequestEntity> requests =
-            serviceRequestRepository.findAll();
-
     AdminDashboardResponse response =
             new AdminDashboardResponse();
 
-    response.setTotalRequests(
-            requests.size());
-
-    response.setNewRequests(
-            requests.stream()
-                    .filter(r -> "NEW".equalsIgnoreCase(
-                            r.getStatus()))
-                    .count());
-
-    response.setPendingPayment(
-            requests.stream()
-                    .filter(r ->
-                            "PENDING_PAYMENT"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setPaymentCompleted(
-            requests.stream()
-                    .filter(r ->
-                            "PAYMENT_COMPLETED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setPendingAssignment(
-            requests.stream()
-                    .filter(r ->
-                            "PENDING_ASSIGNMENT"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setAssigned(
-            requests.stream()
-                    .filter(r ->
-                            "ASSIGNED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setAccepted(
-            requests.stream()
-                    .filter(r ->
-                            "ACCEPTED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setInProgress(
-            requests.stream()
-                    .filter(r ->
-                            "IN_PROGRESS"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setReportSubmitted(
-            requests.stream()
-                    .filter(r ->
-                            "REPORT_SUBMITTED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setUnderReview(
-            requests.stream()
-                    .filter(r ->
-                            "UNDER_REVIEW"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setCompleted(
-            requests.stream()
-                    .filter(r ->
-                            "COMPLETED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
-
-    response.setCancelled(
-            requests.stream()
-                    .filter(r ->
-                            "CANCELLED"
-                                    .equalsIgnoreCase(
-                                            r.getStatus()))
-                    .count());
+    response.setTotalRequests(serviceRequestRepository.count());
+    response.setNewRequests(serviceRequestRepository.countByStatus("NEW"));
+    response.setPendingPayment(serviceRequestRepository.countByStatus("PENDING_PAYMENT"));
+    response.setPaymentCompleted(serviceRequestRepository.countByStatus("PAYMENT_COMPLETED"));
+    response.setPendingAssignment(serviceRequestRepository.countByStatus("PENDING_ASSIGNMENT"));
+    response.setAssigned(serviceRequestRepository.countByStatus("ASSIGNED"));
+    response.setAccepted(serviceRequestRepository.countByStatus("ACCEPTED"));
+    response.setInProgress(serviceRequestRepository.countByStatus("IN_PROGRESS"));
+    response.setReportSubmitted(serviceRequestRepository.countByStatus("REPORT_SUBMITTED"));
+    response.setUnderReview(serviceRequestRepository.countByStatus("UNDER_REVIEW"));
+    response.setCompleted(serviceRequestRepository.countByStatus("COMPLETED"));
+    response.setCancelled(serviceRequestRepository.countByStatus("CANCELLED"));
+    response.setFailed(serviceRequestRepository.countByStatus("FAILED"));
+    response.setEscalated(serviceRequestRepository.countByStatus("ESCALATED"));
 
     return response;
 }

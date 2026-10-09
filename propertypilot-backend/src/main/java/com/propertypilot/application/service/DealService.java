@@ -11,6 +11,10 @@ public interface DealService {
     DealResponse createDeal(
             CreateDealRequest request);
 
+    DealResponse convertLeadToDeal(UUID leadId, LeadDealConversionRequest request);
+
+    List<DealResponse> getDealsByLead(UUID leadId);
+
     DealResponse getDeal(
             UUID dealId);
 

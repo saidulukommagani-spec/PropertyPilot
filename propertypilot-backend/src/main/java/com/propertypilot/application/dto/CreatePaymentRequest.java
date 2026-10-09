@@ -5,6 +5,7 @@ import com.propertypilot.domain.enums.PaymentMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -38,7 +39,9 @@ public class CreatePaymentRequest {
 
     @Schema(
             description = "Payment provider",
-            example = "PhonePe")
+            example = "PhonePe",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Payment provider is required")
     @Size(
             max = 100,
             message =
@@ -47,7 +50,9 @@ public class CreatePaymentRequest {
 
     @Schema(
             description = "External provider payment id",
-            example = "TXN123456789")
+            example = "TXN123456789",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Provider payment id is required")
     @Size(
             max = 100,
             message =

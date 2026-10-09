@@ -53,6 +53,15 @@ class PaymentControllerTest
     private PaymentService paymentService;
 
     @Test
+    void getAllPayments() throws Exception {
+        when(paymentService.getAllPayments()).thenReturn(List.of(buildResponse()));
+
+        mockMvc.perform(get("/api/payments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentStatus").value("PENDING"));
+    }
+
+    @Test
     void recordPayment()
             throws Exception {
 
@@ -67,6 +76,8 @@ class PaymentControllerTest
 
         request.setPaymentMethod(
                 PaymentMethod.UPI);
+        request.setProvider("PhonePe");
+        request.setProviderPaymentId("TXN123456789");
 
         when(paymentService
                 .recordPayment(
@@ -83,9 +94,23 @@ class PaymentControllerTest
                                         objectMapper
                                                 .writeValueAsString(
                                                         request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.paymentStatus")
-                        .value("SUCCESS"));
+                        .value("PENDING"));
+    }
+
+    @Test
+    void recordPaymentRequiresProviderReference()
+            throws Exception {
+        UUID invoiceId = UUID.randomUUID();
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setAmount(new BigDecimal("2500"));
+        request.setPaymentMethod(PaymentMethod.UPI);
+
+        mockMvc.perform(post("/api/payments/invoice/{invoiceId}", invoiceId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -105,7 +130,7 @@ class PaymentControllerTest
                                 paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paymentStatus")
-                        .value("SUCCESS"));
+                        .value("PENDING"));
     }
 
     @Test
@@ -126,7 +151,7 @@ class PaymentControllerTest
                                 invoiceId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].paymentStatus")
-                        .value("SUCCESS"));
+                        .value("PENDING"));
     }
 
     private PaymentResponse
@@ -148,7 +173,7 @@ class PaymentControllerTest
                 PaymentMethod.UPI);
 
         response.setPaymentStatus(
-                PaymentStatus.SUCCESS);
+                PaymentStatus.PENDING);
 
         response.setPaymentDate(
                 OffsetDateTime.now());

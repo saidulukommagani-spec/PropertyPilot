@@ -1,5 +1,7 @@
 package com.propertypilot.application.dto;
 
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,6 +18,12 @@ public class UpdateServiceRequestRequest {
     private UUID assignedBy;
 
     private String cancellationReasonCode;
+
+    @Pattern(regexp = "LOW|MEDIUM|HIGH|URGENT")
+    private String priority;
+
+    @Size(max = 4000)
+    private String description;
 
     public String getStatus() {
         return status;
@@ -71,4 +79,9 @@ public class UpdateServiceRequestRequest {
         this.cancellationReasonCode =
                 cancellationReasonCode;
     }
+
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

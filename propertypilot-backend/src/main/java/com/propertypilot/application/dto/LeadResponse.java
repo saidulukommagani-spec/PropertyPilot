@@ -28,7 +28,9 @@ public record LeadResponse(
 
         UUID assignedAgentId,
 
-        String assignedAgentCode
+        String assignedAgentCode,
+
+        UUID customerId
         
 
 ) {

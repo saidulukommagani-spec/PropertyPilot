@@ -45,6 +45,12 @@ public class VisitEntity extends AuditableEntity {
     @Column(name = "ended_at")
     private OffsetDateTime endedAt;
 
+    @Column(name = "started_by_user_id")
+    private UUID startedByUserId;
+
+    @Column(name = "completed_by_user_id")
+    private UUID completedByUserId;
+
     @Column(
             name = "status",
             nullable = false,
@@ -57,6 +63,9 @@ public class VisitEntity extends AuditableEntity {
 
     @Column(name = "cancellation_reason")
     private String cancellationReason;
+
+    @Column(name = "reschedule_reason", length = 1000)
+    private String rescheduleReason;
 
     @Version
     @Column(
@@ -127,6 +136,11 @@ public class VisitEntity extends AuditableEntity {
         this.endedAt = endedAt;
     }
 
+    public UUID getStartedByUserId() { return startedByUserId; }
+    public void setStartedByUserId(UUID startedByUserId) { this.startedByUserId = startedByUserId; }
+    public UUID getCompletedByUserId() { return completedByUserId; }
+    public void setCompletedByUserId(UUID completedByUserId) { this.completedByUserId = completedByUserId; }
+
     public String getStatus() {
         return status;
     }
@@ -153,6 +167,9 @@ public class VisitEntity extends AuditableEntity {
             String cancellationReason) {
         this.cancellationReason = cancellationReason;
     }
+
+    public String getRescheduleReason() { return rescheduleReason; }
+    public void setRescheduleReason(String rescheduleReason) { this.rescheduleReason = rescheduleReason; }
 
     public Long getVersion() {
         return version;

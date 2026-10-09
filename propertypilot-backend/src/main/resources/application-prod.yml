@@ -6,12 +6,33 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
       minimum-idle: ${DB_POOL_MIN_IDLE:5}
       connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
   jpa:
     show-sql: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+
+propertypilot:
+  payment:
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
 management:
   endpoint:
@@ -20,4 +41,8 @@ management:
 
 logging:
   level:
+    root: INFO
     com.propertypilot: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

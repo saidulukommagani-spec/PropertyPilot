@@ -1,10 +1,40 @@
-    /src
-      /components
-      /layouts
-      /pages
-      /redux
-      /api
-      /hooks
-      /utils
-      /styles
-      /tests
+import { useMemo, useState } from 'react';
+import { Alert, Box, Button, Card, CardContent, Chip, FormControl, InputLabel, MenuItem, Select, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
+import SearchRounded from '@mui/icons-material/SearchRounded';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { serviceRequestApi } from '../../../api/serviceRequestApi';
+import { VisitApi } from '../../../api/VisitApi';
+
+const dateLabel = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+const statusColor = (status: string): 'success'|'warning'|'error'|'info'|'default' => status === 'COMPLETED' ? 'success' : status === 'CANCELLED' || status === 'FAILED' ? 'error' : status === 'IN_PROGRESS' ? 'warning' : status === 'SCHEDULED' ? 'info' : 'default';
+
+export default function VisitListPage({ mine = false }: { mine?: boolean }) {
+  const navigate = useNavigate();
+  const visits = useQuery({ queryKey: mine ? ['visits','mine'] : ['visits','all'], queryFn: mine ? VisitApi.listMine : VisitApi.listAll });
+  const requests = useQuery({ queryKey: ['service-requests'], queryFn: serviceRequestApi.list, enabled: !mine });
+  const [search, setSearch] = useState(''); const [status, setStatus] = useState('ALL'); const [agent, setAgent] = useState('ALL');
+  const [from, setFrom] = useState(''); const [to, setTo] = useState(''); const [page, setPage] = useState(0); const [size, setSize] = useState(10); const [newestFirst, setNewestFirst] = useState(true);
+  const requestById = useMemo(() => new Map((requests.data ?? []).map((request) => [request.serviceRequestId, request])), [requests.data]);
+  const allVisits = visits.data ?? []; const agents = [...new Set(allVisits.map((visit) => visit.agentName).filter((name): name is string => Boolean(name)))].sort();
+  const filtered = useMemo(() => [...allVisits].filter((visit) => {
+    const request = requestById.get(visit.serviceRequestId); const scheduled = new Date(visit.scheduledAt).getTime();
+    const haystack = `${request?.customerName ?? visit.customerName ?? ''} ${request?.propertyTitle ?? visit.propertyName ?? ''} ${request?.serviceName ?? request?.requestType ?? visit.serviceName ?? ''} ${visit.agentName ?? ''}`.toLowerCase();
+    return (status === 'ALL' || visit.status === status) && (agent === 'ALL' || visit.agentName === agent) && (!from || scheduled >= new Date(`${from}T00:00:00`).getTime()) && (!to || scheduled <= new Date(`${to}T23:59:59`).getTime()) && haystack.includes(search.trim().toLowerCase());
+  }).sort((left,right) => (newestFirst ? -1 : 1) * left.scheduledAt.localeCompare(right.scheduledAt)), [allVisits,requestById,status,agent,from,to,search,newestFirst]);
+  const rows = filtered.slice(page * size, page * size + size);
+  return <Stack spacing={3}>
+    <Stack direction={{xs:'column',sm:'row'}} justifyContent="space-between" alignItems={{sm:'center'}} spacing={2}><Box><Typography variant="h4" fontWeight={750}>{mine?'My Visits':'Visits'}</Typography><Typography color="text.secondary" sx={{mt:.5}}>{mine?'Your assigned field work and evidence capture.':'Plan field work and follow each visit through completion.'}</Typography></Box><Stack direction="row" spacing={1}>{!mine&&<><Button component={Link} to="/visits/dashboard" variant="outlined">Dashboard</Button><Button component={Link} to="/visits/new" variant="contained">Create Visit</Button></>}</Stack></Stack>
+    {visits.isError && <Alert severity="error" action={<Button color="inherit" size="small" onClick={()=>void visits.refetch()}>Retry</Button>}>{visits.error instanceof Error?visits.error.message:'Visits could not be loaded.'}</Alert>}
+    {!mine&&requests.isError&&<Alert severity="error" action={<Button color="inherit" size="small" onClick={()=>void requests.refetch()}>Retry</Button>}>Request details could not be loaded; visit records remain available.</Alert>}
+    <Stack direction={{xs:'column',md:'row'}} flexWrap="wrap" spacing={1.5} useFlexGap><TextField size="small" value={search} onChange={(event)=>{setSearch(event.target.value);setPage(0);}} placeholder="Search by customer, property, service, or agent" sx={{minWidth:260,flex:1}} InputProps={{startAdornment:<SearchRounded color="action" sx={{mr:1}}/>}}/>
+      <FormControl size="small" sx={{minWidth:165}}><InputLabel>Status</InputLabel><Select label="Status" value={status} onChange={(event)=>{setStatus(event.target.value);setPage(0);}}><MenuItem value="ALL">All statuses</MenuItem>{['SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED','FAILED'].map((value)=><MenuItem key={value} value={value}>{value.replaceAll('_',' ')}</MenuItem>)}</Select></FormControl>
+      <FormControl size="small" sx={{minWidth:165}}><InputLabel>Agent</InputLabel><Select label="Agent" value={agent} onChange={(event)=>{setAgent(event.target.value);setPage(0);}}><MenuItem value="ALL">All agents</MenuItem>{agents.map((value)=><MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
+      <TextField size="small" label="Scheduled from" type="date" value={from} onChange={(event)=>{setFrom(event.target.value);setPage(0);}} InputLabelProps={{shrink:true}}/><TextField size="small" label="Scheduled to" type="date" value={to} onChange={(event)=>{setTo(event.target.value);setPage(0);}} InputLabelProps={{shrink:true}}/><Button onClick={()=>setNewestFirst((value)=>!value)}>Date: {newestFirst?'Newest first':'Oldest first'}</Button>
+    </Stack>
+    <Card variant="outlined"><CardContent sx={{p:0,'&:last-child':{pb:0}}}><TableContainer sx={{overflowX:'auto'}}><Table size="small" aria-label={mine?'My visits':'Visits'}><TableHead><TableRow>{['Visit','Service Request','Property','Customer','Agent','Scheduled Date','Status','Actions'].map((label)=><TableCell key={label} sx={{fontWeight:700,whiteSpace:'nowrap'}}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
+      {visits.isLoading?Array.from({length:6},(_,i)=><TableRow key={i}>{Array.from({length:8},(__,j)=><TableCell key={j}><Skeleton/></TableCell>)}</TableRow>):rows.map((visit)=>{const request=requestById.get(visit.serviceRequestId);const base=mine?'/agent/visits':'/visits';return <TableRow hover key={visit.visitId}><TableCell><Button size="small" onClick={()=>navigate(`${base}/${visit.visitId}`)}>Open visit</Button></TableCell><TableCell><Button size="small" component={Link} to={`${mine?"/agent/service-requests":"/service-requests"}/${visit.serviceRequestId}`}>Open request</Button></TableCell><TableCell>{request?.propertyTitle||visit.propertyName||'-'}</TableCell><TableCell>{request?.customerName||visit.customerName||'-'}</TableCell><TableCell>{visit.agentName||'-'}</TableCell><TableCell sx={{whiteSpace:'nowrap'}}>{dateLabel(visit.scheduledAt)}</TableCell><TableCell><Chip size="small" color={statusColor(visit.status)} label={visit.status.replaceAll('_',' ')}/></TableCell><TableCell><Stack direction="row" spacing={.5}><Button size="small" onClick={()=>navigate(`${base}/${visit.visitId}`)}>Open</Button>{!mine&&visit.status==='SCHEDULED'&&<Button size="small" onClick={()=>navigate(`/visits/${visit.visitId}/edit`)}>Edit</Button>}</Stack></TableCell></TableRow>;})}
+      {!visits.isLoading&&!visits.isError&&!rows.length&&<TableRow><TableCell colSpan={8} align="center"><Box sx={{py:7}}><Typography fontWeight={700}>{allVisits.length?'No matching visits':mine?'No visits are assigned to you':'No visits yet'}</Typography><Typography variant="body2" color="text.secondary" sx={{mt:.5}}>{allVisits.length?'Adjust the filters or search.':mine?'Assigned visits will appear here.':'Create a visit from an accepted service request assignment.'}</Typography></Box></TableCell></TableRow>}
+    </TableBody></Table></TableContainer><TablePagination component="div" count={filtered.length} page={page} onPageChange={(_,value)=>setPage(value)} rowsPerPage={size} onRowsPerPageChange={(event)=>{setSize(Number(event.target.value));setPage(0);}} rowsPerPageOptions={[10,25,50]}/></CardContent></Card>
+  </Stack>;
+}

@@ -22,6 +22,7 @@ import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
 import com.propertypilot.infrastructure.persistence.entity.ServiceRequestStatusHistoryEntity;
 import com.propertypilot.infrastructure.persistence.entity.UserEntity;
 import com.propertypilot.infrastructure.persistence.repository.AgentRepository;
+import com.propertypilot.infrastructure.persistence.repository.AgentAssignmentRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentServiceCatalogRepository;
 import com.propertypilot.infrastructure.persistence.repository.DocumentTypeRepository;
@@ -75,6 +76,9 @@ ServiceAssignmentRepository
 
 @Mock
 AgentRepository agentRepository;
+
+@Mock
+AgentAssignmentRepository agentAssignmentRepository;
 
 @Mock
 UserRepository userRepository;
@@ -556,13 +560,20 @@ when(propertyRepository.findById(property.getPropertyId()))
 @Test
 void getAdminDashboard_success() {
 
-    when(serviceRequestRepository.findAll())
-            .thenReturn(List.of(
-                    serviceRequest("NEW"),
-                    serviceRequest("ASSIGNED"),
-                    serviceRequest("COMPLETED"),
-                    serviceRequest("CANCELLED")
-            ));
+    when(serviceRequestRepository.count()).thenReturn(4L);
+    when(serviceRequestRepository.countByStatus("NEW")).thenReturn(1L);
+    when(serviceRequestRepository.countByStatus("PENDING_PAYMENT")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("PAYMENT_COMPLETED")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("PENDING_ASSIGNMENT")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("ASSIGNED")).thenReturn(1L);
+    when(serviceRequestRepository.countByStatus("ACCEPTED")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("IN_PROGRESS")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("REPORT_SUBMITTED")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("UNDER_REVIEW")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("COMPLETED")).thenReturn(1L);
+    when(serviceRequestRepository.countByStatus("CANCELLED")).thenReturn(1L);
+    when(serviceRequestRepository.countByStatus("FAILED")).thenReturn(0L);
+    when(serviceRequestRepository.countByStatus("ESCALATED")).thenReturn(0L);
 
     doNothing()
             .when(securityService)
@@ -908,6 +919,9 @@ void getAllServiceRequestsForAdmin_success() {
     assertThat(result.get(0)
             .getCustomerName())
             .isEqualTo("Test User");
+
+    assertThat(result.get(0).getServiceName())
+            .isEqualTo(request.getRequestType());
 }
 
 @Test
@@ -1956,8 +1970,7 @@ void restoreDocument_alreadyActive() {
 @Test
 void getAdminDashboard_empty() {
 
-    when(serviceRequestRepository.findAll())
-            .thenReturn(List.of());
+    when(serviceRequestRepository.count()).thenReturn(0L);
 
     doNothing()
             .when(securityService)

@@ -7,11 +7,19 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 public interface CustomerSubscriptionRepository
         extends JpaRepository<
                 CustomerSubscriptionEntity,
                 UUID> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from CustomerSubscriptionEntity s where s.customerSubscriptionId = :id")
+    Optional<CustomerSubscriptionEntity> findByIdForUpdate(@Param("id") UUID id);
 
     List<CustomerSubscriptionEntity>
     findByCustomer_CustomerId(

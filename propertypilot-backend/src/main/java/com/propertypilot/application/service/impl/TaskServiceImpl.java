@@ -14,10 +14,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 public class TaskServiceImpl
         implements TaskService {
+
+    private final SecurityService securityService;
 
     private final TaskRepository taskRepository;
 
@@ -28,11 +31,13 @@ public class TaskServiceImpl
     public TaskServiceImpl(
             TaskRepository taskRepository,
             ServiceRequestRepository serviceRequestRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            SecurityService securityService) {
 
         this.taskRepository = taskRepository;
         this.serviceRequestRepository = serviceRequestRepository;
         this.userRepository = userRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -45,6 +50,7 @@ public class TaskServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Service request not found"));
+        securityService.validateOperationsAccess();
 
         UserEntity assignee = null;
 
@@ -73,11 +79,12 @@ public class TaskServiceImpl
     public TaskResponse getTask(
             UUID taskId) {
 
-        return buildResponse(
-                taskRepository.findById(taskId)
+        TaskEntity task = taskRepository.findById(taskId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Task not found")));
+                                        "Task not found"));
+        validateTaskAccess(task);
+        return buildResponse(task);
     }
 
     @Override
@@ -89,6 +96,7 @@ public class TaskServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Task not found"));
+        validateTaskAccess(task);
 
         task.setTaskStatus("IN_PROGRESS");
 
@@ -105,6 +113,7 @@ public class TaskServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Task not found"));
+        validateTaskAccess(task);
 
         task.setTaskStatus("COMPLETED");
         task.setCompletedAt(
@@ -147,5 +156,14 @@ public class TaskServiceImpl
         }
 
         return response;
+    }
+
+    private void validateTaskAccess(TaskEntity task) {
+        securityService.validateServiceRequestAccess(task.getServiceRequest());
+        if (!securityService.isOperationsUser()
+                && (task.getAssigneeUser() == null
+                    || !securityService.getCurrentUserId().equals(task.getAssigneeUser().getUserId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("Task is not assigned to you");
+        }
     }
 }

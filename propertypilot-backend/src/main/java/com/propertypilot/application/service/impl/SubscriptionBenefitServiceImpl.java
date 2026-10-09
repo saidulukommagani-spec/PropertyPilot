@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 public class SubscriptionBenefitServiceImpl
@@ -28,6 +29,7 @@ public class SubscriptionBenefitServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionBenefitResponse createBenefit(
             CreateSubscriptionBenefitRequest request) {
 
@@ -78,6 +80,7 @@ public class SubscriptionBenefitServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionBenefitResponse updateBenefit(
             UUID benefitId,
             UpdateSubscriptionBenefitRequest request) {

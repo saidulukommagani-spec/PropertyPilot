@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.Map;
+import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "pricing_estimates")
@@ -62,8 +66,9 @@ public class PricingEstimateEntity extends AuditableEntity {
     )
     private String currencyCode;
 
-    @Column(name = "calculation_snapshot")
-    private String calculationSnapshot;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "calculation_snapshot", columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> calculationSnapshot;
 
     @Column(
             name = "status",
@@ -76,6 +81,24 @@ public class PricingEstimateEntity extends AuditableEntity {
             nullable = false
     )
     private OffsetDateTime expiresAt;
+
+    @Column(name = "accepted_at")
+    private OffsetDateTime acceptedAt;
+
+    @Column(name = "accepted_by_user_id")
+    private UUID acceptedByUserId;
+
+    @Column(name = "rejected_at")
+    private OffsetDateTime rejectedAt;
+
+    @Column(name = "rejected_by_user_id")
+    private UUID rejectedByUserId;
+
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
+    @OneToOne(mappedBy = "pricingEstimate", fetch = FetchType.LAZY)
+    private ServiceRequestEntity serviceRequest;
 
     @Version
     @Column(
@@ -169,12 +192,12 @@ public class PricingEstimateEntity extends AuditableEntity {
         this.currencyCode = currencyCode;
     }
 
-    public String getCalculationSnapshot() {
+    public Map<String, Object> getCalculationSnapshot() {
         return calculationSnapshot;
     }
 
     public void setCalculationSnapshot(
-            String calculationSnapshot) {
+            Map<String, Object> calculationSnapshot) {
         this.calculationSnapshot = calculationSnapshot;
     }
 
@@ -196,6 +219,18 @@ public class PricingEstimateEntity extends AuditableEntity {
         this.expiresAt = expiresAt;
     }
 
+    public OffsetDateTime getAcceptedAt() { return acceptedAt; }
+    public void setAcceptedAt(OffsetDateTime acceptedAt) { this.acceptedAt = acceptedAt; }
+    public UUID getAcceptedByUserId() { return acceptedByUserId; }
+    public void setAcceptedByUserId(UUID acceptedByUserId) { this.acceptedByUserId = acceptedByUserId; }
+    public OffsetDateTime getRejectedAt() { return rejectedAt; }
+    public void setRejectedAt(OffsetDateTime rejectedAt) { this.rejectedAt = rejectedAt; }
+    public UUID getRejectedByUserId() { return rejectedByUserId; }
+    public void setRejectedByUserId(UUID rejectedByUserId) { this.rejectedByUserId = rejectedByUserId; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public ServiceRequestEntity getServiceRequest() { return serviceRequest; }
+
     public Long getVersion() {
         return version;
     }
@@ -204,4 +239,4 @@ public class PricingEstimateEntity extends AuditableEntity {
             Long version) {
         this.version = version;
     }
-}   
+}

@@ -1,11 +1,1 @@
-  /src
-    /components
-    /layouts
-    /pages
-    /redux
-    /hooks
-    /api
-    /utils
-    /styles
-    /tests
-    /assets
+export { useAuth } from '../AuthContext';

@@ -3,6 +3,8 @@ package com.propertypilot.web.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.propertypilot.application.dto.CreateSubscriptionRenewalRequest;
 import com.propertypilot.application.dto.SubscriptionRenewalResponse;
+import com.propertypilot.application.dto.InvoiceResponse;
+import com.propertypilot.application.dto.SubscriptionRenewalInvoiceRequest;
 import com.propertypilot.application.service.SubscriptionRenewalService;
 
 import org.junit.jupiter.api.Test;
@@ -84,6 +86,26 @@ class SubscriptionRenewalControllerTest
 
         verify(renewalService)
                 .renewSubscription(any());
+    }
+
+    @Test
+    void createRenewalInvoice() throws Exception {
+        SubscriptionRenewalInvoiceRequest request = new SubscriptionRenewalInvoiceRequest(
+                UUID.randomUUID(), LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31));
+        InvoiceResponse invoice = new InvoiceResponse();
+        invoice.setInvoiceId(UUID.randomUUID());
+        invoice.setInvoiceType(com.propertypilot.domain.enums.InvoiceType.SUBSCRIPTION_RENEWAL);
+        invoice.setStatus(com.propertypilot.domain.enums.InvoiceStatus.DRAFT);
+        when(renewalService.createRenewalInvoice(any())).thenReturn(invoice);
+
+        mockMvc.perform(post("/api/subscription-renewals/invoice")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.invoiceType").value("SUBSCRIPTION_RENEWAL"))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
+
+        verify(renewalService).createRenewalInvoice(any());
     }
 
     @Test

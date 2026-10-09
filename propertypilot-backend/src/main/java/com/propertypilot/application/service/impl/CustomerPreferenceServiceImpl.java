@@ -12,24 +12,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerPreferenceServiceImpl
         implements CustomerPreferenceService {
 
+    private final SecurityService securityService;
+
     private final CustomerPreferenceRepository customerPreferenceRepository;
     private final CustomerJpaRepository customerRepository;
 
     public CustomerPreferenceServiceImpl(
             CustomerPreferenceRepository customerPreferenceRepository,
-            CustomerJpaRepository customerRepository) {
+            CustomerJpaRepository customerRepository,
+            SecurityService securityService) {
 
         this.customerPreferenceRepository =
                 customerPreferenceRepository;
 
         this.customerRepository =
                 customerRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -42,6 +47,7 @@ public class CustomerPreferenceServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         CustomerPreferenceEntity preference =
                 customerPreferenceRepository
@@ -74,6 +80,8 @@ public class CustomerPreferenceServiceImpl
     @Transactional(readOnly = true)
     public CustomerPreferenceResponse getPreference(
             UUID customerId) {
+
+        securityService.validateCustomerAccess(customerId);
 
         CustomerPreferenceEntity preference =
                 customerPreferenceRepository

@@ -19,4 +19,8 @@ public class DocumentProcurementRequestSummaryResponse {
     private Instant requestedAt;
 
     private String remarks;
+
+    private UUID assignedAgentId;
+
+    private String assignedAgentName;
 }

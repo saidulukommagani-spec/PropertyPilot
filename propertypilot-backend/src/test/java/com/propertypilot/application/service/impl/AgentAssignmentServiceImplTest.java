@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.propertypilot.application.dto.AgentAssignmentResponse;
 import com.propertypilot.application.dto.CreateAgentAssignmentRequest;
 import com.propertypilot.application.dto.RejectAgentAssignmentRequest;
+import com.propertypilot.application.service.ServiceRequestService;
 
 import com.propertypilot.infrastructure.persistence.entity.AgentAssignmentEntity;
 import com.propertypilot.infrastructure.persistence.entity.AgentEntity;
@@ -52,6 +53,9 @@ private ServiceRequestRepository serviceRequestRepository;
 
 @Mock
 private SecurityService securityService;
+
+@Mock
+private ServiceRequestService serviceRequestService;
 
 @InjectMocks
 private AgentAssignmentServiceImpl service;
@@ -136,26 +140,13 @@ void createAssignment_success() {
         BigDecimal.valueOf(12.5));
 
     request.setEtaMinutes(20);
-
-    when(
-            serviceRequestRepository.findById(
-                    requestEntity.getServiceRequestId()))
-            .thenReturn(
-                    Optional.of(requestEntity));
-
-    when(
-            agentRepository.findById(
-                    agent.getAgentId()))
-            .thenReturn(
-                    Optional.of(agent));
-
-    when(
-            agentAssignmentRepository
-                    .findByServiceRequest_ServiceRequestIdAndAssignmentStatusIn(
-                            any(),
-                            any()))
-            .thenReturn(
-                    Optional.empty());
+    AgentAssignmentEntity assigned = assignment();
+    assigned.setServiceRequest(requestEntity);
+    assigned.setAgent(agent);
+    when(serviceRequestService.assignAgent(request.getServiceRequestId(), request.getAgentId()))
+            .thenReturn(null);
+    when(agentAssignmentRepository.findByServiceRequest_ServiceRequestIdAndAssignmentStatus(
+            request.getServiceRequestId(), "ASSIGNED")).thenReturn(Optional.of(assigned));
 
     when(
             agentAssignmentRepository.save(any()))
@@ -183,120 +174,6 @@ void createAssignment_success() {
     verify(securityService)
             .validateAdminAccess();
 }
-@Test
-void createAssignment_serviceRequestNotFound() {
-
-    CreateAgentAssignmentRequest request =
-            new CreateAgentAssignmentRequest();
-
-    UUID requestId =
-            UUID.randomUUID();
-
-    request.setServiceRequestId(
-            requestId);
-
-    when(
-            serviceRequestRepository.findById(
-                    requestId))
-            .thenReturn(
-                    Optional.empty());
-
-    assertThatThrownBy(() ->
-            service.createAssignment(
-                    request))
-            .isInstanceOf(
-                    ResourceNotFoundException.class)
-            .hasMessage(
-                    "Service request not found");
-}
-
-@Test
-void createAssignment_agentNotFound() {
-
-    ServiceRequestEntity requestEntity =
-            serviceRequest();
-
-    UUID agentId =
-            UUID.randomUUID();
-
-    CreateAgentAssignmentRequest request =
-            new CreateAgentAssignmentRequest();
-
-    request.setServiceRequestId(
-            requestEntity.getServiceRequestId());
-
-    request.setAgentId(
-            agentId);
-
-    when(
-            serviceRequestRepository.findById(
-                    requestEntity.getServiceRequestId()))
-            .thenReturn(
-                    Optional.of(requestEntity));
-
-    when(
-            agentRepository.findById(
-                    agentId))
-            .thenReturn(
-                    Optional.empty());
-
-    assertThatThrownBy(() ->
-            service.createAssignment(
-                    request))
-            .isInstanceOf(
-                    ResourceNotFoundException.class)
-            .hasMessage(
-                    "Agent not found");
-}
-
-@Test
-void createAssignment_activeAssignmentExists() {
-
-    ServiceRequestEntity requestEntity =
-            serviceRequest();
-
-    AgentEntity agent =
-            agent();
-
-    CreateAgentAssignmentRequest request =
-            new CreateAgentAssignmentRequest();
-
-    request.setServiceRequestId(
-            requestEntity.getServiceRequestId());
-
-    request.setAgentId(
-            agent.getAgentId());
-
-    when(
-            serviceRequestRepository.findById(
-                    requestEntity.getServiceRequestId()))
-            .thenReturn(
-                    Optional.of(requestEntity));
-
-    when(
-            agentRepository.findById(
-                    agent.getAgentId()))
-            .thenReturn(
-                    Optional.of(agent));
-
-    when(
-            agentAssignmentRepository
-                    .findByServiceRequest_ServiceRequestIdAndAssignmentStatusIn(
-                            any(),
-                            any()))
-            .thenReturn(
-                    Optional.of(
-                            assignment()));
-
-    assertThatThrownBy(() ->
-            service.createAssignment(
-                    request))
-            .isInstanceOf(
-                    IllegalStateException.class)
-            .hasMessageContaining(
-                    "Active assignment already exists");
-}
-
 @Test
 void getAssignment_success() {
 
@@ -347,46 +224,14 @@ void getAssignment_notFound() {
 }
 
 @Test
-void acceptAssignment_throwsException() {
+void acceptAssignmentDelegatesToCanonicalRequestWorkflow() {
+    AgentAssignmentEntity entity = assignment();
+    when(agentAssignmentRepository.findById(entity.getAssignmentId())).thenReturn(Optional.of(entity));
 
-    assertThatThrownBy(() ->
-            service.acceptAssignment(
-                    UUID.randomUUID()))
-            .isInstanceOf(
-                    IllegalStateException.class)
-            .hasMessageContaining(
-                    "Assignment lifecycle");
-}
+    AgentAssignmentResponse response = service.acceptAssignment(entity.getAssignmentId());
 
-@Test
-void rejectAssignment_throwsException() {
-
-    assertThatThrownBy(() ->
-            service.rejectAssignment(
-                    UUID.randomUUID(),
-                    new RejectAgentAssignmentRequest()))
-            .isInstanceOf(
-                    IllegalStateException.class);
-}
-
-@Test
-void startAssignment_throwsException() {
-
-    assertThatThrownBy(() ->
-            service.startAssignment(
-                    UUID.randomUUID()))
-            .isInstanceOf(
-                    IllegalStateException.class);
-}
-
-@Test
-void completeAssignment_throwsException() {
-
-    assertThatThrownBy(() ->
-            service.completeAssignment(
-                    UUID.randomUUID()))
-            .isInstanceOf(
-                    IllegalStateException.class);
+    assertThat(response.getAssignmentId()).isEqualTo(entity.getAssignmentId());
+    verify(serviceRequestService).acceptRequest(entity.getServiceRequest().getServiceRequestId(), "Agent accepted assignment");
 }
 
 

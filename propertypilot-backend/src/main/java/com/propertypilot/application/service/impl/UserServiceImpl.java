@@ -16,6 +16,8 @@ import com.propertypilot.infrastructure.persistence.repository.RoleRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRoleRepository;
 import com.propertypilot.web.exception.DuplicateResourceException;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,9 +54,6 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse createUser(UserCreateRequest request) {
 
-        System.out.println("CREATE USER START");
-        System.out.println("EMAIL = " + request.email());
-
         String normalizedEmail =
                 request.email().trim().toLowerCase();
 
@@ -75,12 +74,10 @@ public class UserServiceImpl implements UserService {
 
         userEntity.setFullName(request.fullName());
         userEntity.setEmail(normalizedEmail);
-        userEntity.setMobileNumber(
-                request.mobileNumber());
+        userEntity.setMobileNumber(request.mobileNumber());
 
         userEntity.setPasswordHash(
-                passwordEncoder.encode(
-                        request.password()));
+                passwordEncoder.encode(request.password()));
 
         userEntity.setStatus(UserStatus.ACTIVE);
 
@@ -98,80 +95,48 @@ public class UserServiceImpl implements UserService {
 
         userRole.setUser(savedUser);
         userRole.setRole(customerRole);
-
-        // Required by DB constraint
-        userRole.setEffectiveFrom(
-                OffsetDateTime.now());
+        userRole.setEffectiveFrom(OffsetDateTime.now());
 
         userRoleRepository.save(userRole);
 
-        /*
-         * Automatically create Customer record
-         */
         CustomerEntity customer =
                 new CustomerEntity();
 
-        customer.setCustomerId(
-                UUID.randomUUID());
-
+        customer.setCustomerId(UUID.randomUUID());
         customer.setUser(savedUser);
-
-        customer.setCustomerType(
-                CustomerType.INDIVIDUAL);
-
-        customer.setStatus(
-                CustomerStatus.ACTIVE);
+        customer.setCustomerType(CustomerType.INDIVIDUAL);
+        customer.setStatus(CustomerStatus.ACTIVE);
 
         customerRepository.save(customer);
 
-        System.out.println(
-                "USER SAVED = "
-                        + savedUser.getUserId());
-
-        return new UserResponse(
-                savedUser.getUserId(),
-                savedUser.getFullName(),
-                savedUser.getEmail(),
-                savedUser.getMobileNumber(),
-                savedUser.getStatus().name()
-        );
+        return mapToUserResponse(savedUser);
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUsers() {
 
         return userRepository.findAll()
                 .stream()
-                .map(user -> new UserResponse(
-                        user.getUserId(),
-                        user.getFullName(),
-                        user.getEmail(),
-                        user.getMobileNumber(),
-                        user.getStatus().name()
-                ))
+                .map(this::mapToUserResponse)
                 .toList();
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUserById(UUID userId) {
 
         UserEntity user =
                 userRepository.findById(userId)
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "User not found: "
-                                                + userId));
+                                        "User not found: " + userId));
 
-        return new UserResponse(
-                user.getUserId(),
-                user.getFullName(),
-                user.getEmail(),
-                user.getMobileNumber(),
-                user.getStatus().name()
-        );
+        return mapToUserResponse(user);
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse updateUser(
             UUID userId,
             UserUpdateRequest request) {
@@ -180,65 +145,82 @@ public class UserServiceImpl implements UserService {
                 userRepository.findById(userId)
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "User not found: "
-                                                + userId));
+                                        "User not found: " + userId));
 
         user.setFullName(request.fullName());
 
         String normalizedEmail =
                 request.email().trim().toLowerCase();
 
-        user.setEmail(normalizedEmail);
+        String normalizedMobile = request.mobileNumber().trim();
+        if (userRepository.existsByEmailAndUserIdNot(normalizedEmail, userId)) {
+            throw new DuplicateResourceException("Email already exists");
+        }
+        if (userRepository.existsByMobileNumberAndUserIdNot(normalizedMobile, userId)) {
+            throw new DuplicateResourceException("Mobile number already exists");
+        }
 
-        user.setMobileNumber(
-                request.mobileNumber());
+        user.setEmail(normalizedEmail);
+        user.setMobileNumber(normalizedMobile);
 
         UserEntity updatedUser =
                 userRepository.save(user);
 
-        return new UserResponse(
-                updatedUser.getUserId(),
-                updatedUser.getFullName(),
-                updatedUser.getEmail(),
-                updatedUser.getMobileNumber(),
-                updatedUser.getStatus().name()
-        );
+        return mapToUserResponse(updatedUser);
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(UUID userId) {
 
         UserEntity user =
                 userRepository.findById(userId)
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "User not found: "
-                                                + userId));
+                                        "User not found: " + userId));
 
         userRepository.delete(user);
     }
 
     @Override
-    public UserResponse getCurrentUser(
-            String email) {
+    public UserResponse getCurrentUser(String email) {
 
         String normalizedEmail =
                 email.trim().toLowerCase();
 
         UserEntity user =
-                userRepository.findByEmail(
-                                normalizedEmail)
+                userRepository.findByEmail(normalizedEmail)
                         .orElseThrow(() ->
                                 new RuntimeException(
-                                        "User not found: "
-                                                + email));
+                                        "User not found: " + email));
+
+        return mapToUserResponse(user);
+    }
+
+    /**
+     * Centralized mapper for UserResponse.
+     */
+    private UserResponse mapToUserResponse(UserEntity user) {
+
+        List<String> roles =
+                userRoleRepository.findByUser_UserId(user.getUserId())
+                        .stream()
+                        .filter(userRole ->
+                                userRole.getRole() != null
+                                        && userRole.getRole().getStatus() != null)
+                        .map(userRole ->
+                                userRole.getRole().getRoleCode())
+                        .distinct()
+                        .sorted()
+                        .toList();
 
         return new UserResponse(
                 user.getUserId(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getMobileNumber(),
-                user.getStatus().name()
+                user.getStatus().name(),
+                roles
         );
     }
 }

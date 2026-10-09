@@ -13,8 +13,14 @@ public class CustomerSubscriptionResponse {
     @Schema(description = "Customer Id")
     private UUID customerId;
 
+    @Schema(description = "Customer display name")
+    private String customerName;
+
     @Schema(description = "Plan Version Id")
     private UUID planVersionId;
+
+    @Schema(description = "Subscription plan display name")
+    private String planName;
 
     @Schema(description = "Subscription Status")
     private String status;
@@ -47,6 +53,14 @@ public class CustomerSubscriptionResponse {
         this.customerId = customerId;
     }
 
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
     public UUID getPlanVersionId() {
         return planVersionId;
     }
@@ -54,6 +68,14 @@ public class CustomerSubscriptionResponse {
     public void setPlanVersionId(
             UUID planVersionId) {
         this.planVersionId = planVersionId;
+    }
+
+    public String getPlanName() {
+        return planName;
+    }
+
+    public void setPlanName(String planName) {
+        this.planName = planName;
     }
 
     public String getStatus() {

@@ -1,10 +1,7 @@
-  /src
-    /api
-    /components
-    /layouts
-    /pages
-    /redux
-    /hooks
-    /utils
-    /styles
-    /tests
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

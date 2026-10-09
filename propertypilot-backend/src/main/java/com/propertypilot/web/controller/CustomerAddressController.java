@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.propertypilot.application.dto.CustomerProfileResponse;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -27,11 +30,21 @@ import java.util.UUID;
 public class CustomerAddressController {
 
     private final CustomerAddressService service;
+    private final SecurityService securityService;
 
     public CustomerAddressController(
-            CustomerAddressService service) {
+            CustomerAddressService service, SecurityService securityService) {
 
         this.service = service;
+        this.securityService = securityService;
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public CustomerProfileResponse getCurrentCustomer() {
+        var customer = securityService.getCurrentCustomer();
+        var user = customer.getUser();
+        return new CustomerProfileResponse(customer.getCustomerId(), user.getFullName(), user.getEmail(), user.getMobileNumber());
     }
 
     @Operation(

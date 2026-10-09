@@ -14,6 +14,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 @Transactional
@@ -45,6 +46,7 @@ public class PricingRuleServiceImpl
                 serviceRepository;
     }
 @Override
+@PreAuthorize("hasRole('ADMIN')")
 public PricingRuleResponse createRule(
         CreatePricingRuleRequest request) {
 
@@ -131,6 +133,7 @@ getRulesByService(
             .toList();
 }
 @Override
+@PreAuthorize("hasRole('ADMIN')")
 public PricingRuleResponse updateRule(
         UUID ruleId,
         UpdatePricingRuleRequest request) {

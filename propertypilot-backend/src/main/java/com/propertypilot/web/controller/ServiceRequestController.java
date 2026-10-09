@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -44,12 +46,38 @@ public class ServiceRequestController {
             @ApiResponse(responseCode = "400", description = "Invalid request")
     })
     @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ServiceRequestResponse createRequest(
+            @Valid
             @RequestBody
             CreateServiceRequestRequest request) {
 
         return serviceRequestService
                 .createRequest(request);
+    }
+
+    @PostMapping("/admin")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS')")
+    public ServiceRequestResponse createRequestForOperations(@Valid @RequestBody CreateServiceRequestRequest request) {
+        return serviceRequestService.createRequest(request);
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS')")
+    public List<ServiceRequestResponse> getAllRequestsForOperations() {
+        return serviceRequestService.getAllRequestsForOperations();
+    }
+
+    @GetMapping("/mine")
+    @PreAuthorize("hasRole('AGENT')")
+    public List<ServiceRequestResponse> getRequestsForCurrentAgent() {
+        return serviceRequestService.getRequestsForCurrentAgent();
+    }
+
+    @GetMapping("/admin/{serviceRequestId}")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS')")
+    public ServiceRequestResponse getRequestForOperations(@PathVariable UUID serviceRequestId) {
+        return serviceRequestService.getRequestForOperations(serviceRequestId);
     }
 
     @Operation(
@@ -95,7 +123,7 @@ public class ServiceRequestController {
     @PutMapping("/{serviceRequestId}")
     public ServiceRequestResponse updateRequest(
             @PathVariable UUID serviceRequestId,
-            @RequestBody
+            @Valid @RequestBody
             UpdateServiceRequestRequest request) {
 
         return serviceRequestService
@@ -136,12 +164,20 @@ public class ServiceRequestController {
     @PostMapping("/{id}/accept")
     public ServiceRequestResponse acceptRequest(
             @PathVariable UUID id,
-            @RequestBody
+            @Valid @RequestBody
             UpdateServiceRequestStatusRequest request) {
 
         return serviceRequestService.acceptRequest(
                 id,
                 request.getChangeReason());
+    }
+
+    @Operation(summary = "Reject Agent Assignment", description = "Return an assigned request to the operations queue")
+    @PostMapping("/{id}/reject-assignment")
+    public ServiceRequestResponse rejectAssignment(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateServiceRequestStatusRequest request) {
+        return serviceRequestService.rejectAssignment(id, request.getChangeReason());
     }
 
     @Operation(
@@ -154,7 +190,7 @@ public class ServiceRequestController {
     @PostMapping("/{id}/start")
     public ServiceRequestResponse startRequest(
             @PathVariable UUID id,
-            @RequestBody
+            @Valid @RequestBody
             UpdateServiceRequestStatusRequest request) {
 
         return serviceRequestService.startRequest(
@@ -172,7 +208,7 @@ public class ServiceRequestController {
     @PostMapping("/{id}/complete")
     public ServiceRequestResponse completeRequest(
             @PathVariable UUID id,
-            @RequestBody
+            @Valid @RequestBody
             UpdateServiceRequestStatusRequest request) {
 
         return serviceRequestService.completeRequest(
@@ -188,9 +224,10 @@ public class ServiceRequestController {
             @ApiResponse(responseCode = "200", description = "Cancelled successfully")
     })
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN','OPERATIONS')")
     public ServiceRequestResponse cancelRequest(
             @PathVariable UUID id,
-            @RequestBody
+            @Valid @RequestBody
             UpdateServiceRequestStatusRequest request) {
 
         return serviceRequestService.cancelRequest(
@@ -209,7 +246,7 @@ public class ServiceRequestController {
     public ResponseEntity<ServiceRequestResponse>
     assignAgent(
             @PathVariable UUID serviceRequestId,
-            @RequestBody AssignAgentRequest request) {
+            @Valid @RequestBody AssignAgentRequest request) {
 
         return ResponseEntity.ok(
                 serviceRequestService.assignAgent(

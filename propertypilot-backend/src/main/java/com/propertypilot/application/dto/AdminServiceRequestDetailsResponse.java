@@ -27,6 +27,8 @@ public class AdminServiceRequestDetailsResponse {
 
     private String requestType;
 
+    private String serviceName;
+
     private String status;
 
     private String priority;
@@ -52,6 +54,14 @@ private Instant assignedAt;
 private UUID assignedByUserId;
 
 private String assignedByName;
+
+private String assignedAgentPhone;
+
+private String assignedAgentCode;
+
+private String assignmentNotes;
+
+private UUID activeAssignmentId;
 
 
 }

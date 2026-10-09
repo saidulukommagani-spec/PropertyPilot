@@ -6,6 +6,7 @@ import com.propertypilot.application.dto.LeadAssignmentResponse;
 import com.propertypilot.application.dto.LeadCreateRequest;
 import com.propertypilot.application.dto.LeadResponse;
 import com.propertypilot.application.service.LeadService;
+import com.propertypilot.application.service.DealService;
 import com.propertypilot.domain.enums.LeadStatus;
 import com.propertypilot.security.CustomUserDetailsService;
 import com.propertypilot.security.JwtService;
@@ -23,10 +24,18 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import com.propertypilot.application.dto.OperationsLeadResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.mockito.ArgumentCaptor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,6 +54,9 @@ class LeadControllerTest {
 
     @MockitoBean
     private LeadService leadService;
+
+    @MockitoBean
+    private DealService dealService;
 
     @MockitoBean
     private JwtService jwtService;
@@ -135,6 +147,88 @@ class LeadControllerTest {
     }
 
     @Test
+    @DisplayName("Operations lead search is paged and returns customer-facing context only")
+    void searchOperationsLeads_success() throws Exception {
+        OperationsLeadResponse row = new OperationsLeadResponse(UUID.randomUUID(), "Website", "Apartment",
+                "Hyderabad", "NEW", "Test Customer", "customer@example.test", "9000000000", "AGT-1",
+                OffsetDateTime.now());
+        when(leadService.searchOperationsLeads(eq("Customer"), eq(LeadStatus.NEW), any()))
+                .thenReturn(new PageImpl<>(List.of(row), PageRequest.of(0, 10), 1));
+
+        mockMvc.perform(get("/api/v1/leads")
+                        .param("search", "Customer")
+                        .param("status", "NEW")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].customerName").value("Test Customer"))
+                .andExpect(jsonPath("$.content[0].customerEmail").value("customer@example.test"))
+                .andExpect(jsonPath("$.content[0].notes").doesNotExist())
+                .andExpect(jsonPath("$.content[0].activityDetails").doesNotExist())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    @DisplayName("Operations lead search rejects unsupported sort fields")
+    void searchOperationsLeads_rejectsUnsupportedSort() throws Exception {
+        mockMvc.perform(get("/api/v1/leads").param("sort", "notes"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Operations lead search applies bounded defaults and deterministic sorting")
+    void searchOperationsLeads_usesSafeDefaultsAndStableSort() throws Exception {
+        when(leadService.searchOperationsLeads(eq(null), eq(null), any()))
+                .thenReturn(Page.empty(PageRequest.of(0, 25)));
+
+        mockMvc.perform(get("/api/v1/leads"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(25))
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalPages").value(0));
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(leadService).searchOperationsLeads(eq(null), eq(null), pageable.capture());
+        assertEquals(25, pageable.getValue().getPageSize());
+        assertEquals(0, pageable.getValue().getPageNumber());
+        assertEquals("createdAt", pageable.getValue().getSort().getOrderFor("createdAt").getProperty());
+        assertEquals(org.springframework.data.domain.Sort.Direction.DESC,
+                pageable.getValue().getSort().getOrderFor("createdAt").getDirection());
+        assertEquals("leadId", pageable.getValue().getSort().getOrderFor("leadId").getProperty());
+    }
+
+    @Test
+    void searchOperationsLeads_rejectsInvalidPaginationAndOversizedSearch() throws Exception {
+        mockMvc.perform(get("/api/v1/leads").param("page", "-1"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/leads").param("size", "101"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/leads").param("search", "x".repeat(201)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void searchOperationsLeads_passesStatusAndSortFiltersToService() throws Exception {
+        when(leadService.searchOperationsLeads(eq("Apartment"), eq(LeadStatus.NEW), any()))
+                .thenReturn(Page.empty(PageRequest.of(1, 50)));
+        mockMvc.perform(get("/api/v1/leads")
+                        .param("search", "Apartment")
+                        .param("status", "NEW")
+                        .param("page", "1")
+                        .param("size", "50")
+                        .param("sort", "status")
+                        .param("direction", "ASC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(50));
+        verify(leadService).searchOperationsLeads(eq("Apartment"), eq(LeadStatus.NEW), any());
+    }
+
+    @Test
     @DisplayName("Assign Lead")
     void assignLead_success() throws Exception {
 
@@ -174,7 +268,8 @@ class LeadControllerTest {
                 OffsetDateTime.now(),
                 null,
                 UUID.randomUUID(),
-                "AGT001"
+                "AGT001",
+                UUID.randomUUID()
         );
     }
 

@@ -9,6 +9,8 @@ import java.util.UUID;
 import com.propertypilot.domain.enums.BillingEntityType;
 import com.propertypilot.domain.enums.PaymentMethod;
 import com.propertypilot.domain.enums.PaymentStatus;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "payments")
@@ -38,6 +40,12 @@ public class PaymentEntity extends AuditableEntity {
     @Column(name = "provider_payment_id")
     private String providerPaymentId;
 
+    @Column(name = "provider_event_id", unique = true, length = 160)
+    private String providerEventId;
+
+    @Column(name = "settled_at")
+    private OffsetDateTime settledAt;
+
     @Column(
             name = "idempotency_key",
             nullable = false)
@@ -47,6 +55,7 @@ public class PaymentEntity extends AuditableEntity {
     @Column(
             name = "currency_code",
             columnDefinition = "char(3)")
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String currencyCode;
 
     @Column(name = "amount")
@@ -112,6 +121,11 @@ public String getProviderPaymentId() {
 public void setProviderPaymentId(String providerPaymentId) {
     this.providerPaymentId = providerPaymentId;
 }
+
+public String getProviderEventId() { return providerEventId; }
+public void setProviderEventId(String providerEventId) { this.providerEventId = providerEventId; }
+public OffsetDateTime getSettledAt() { return settledAt; }
+public void setSettledAt(OffsetDateTime settledAt) { this.settledAt = settledAt; }
 
 public String getIdempotencyKey() {
     return idempotencyKey;

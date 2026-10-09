@@ -19,11 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerVerificationServiceImpl
         implements CustomerVerificationService {
+
+    private final SecurityService securityService;
 
     private final CustomerVerificationRepository
             customerVerificationRepository;
@@ -41,7 +44,8 @@ public class CustomerVerificationServiceImpl
             CustomerVerificationRepository customerVerificationRepository,
             CustomerJpaRepository customerRepository,
             PropertyDocumentRepository propertyDocumentRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            SecurityService securityService) {
 
         this.customerVerificationRepository =
                 customerVerificationRepository;
@@ -54,6 +58,7 @@ public class CustomerVerificationServiceImpl
 
         this.userRepository =
                 userRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -66,6 +71,7 @@ public class CustomerVerificationServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         PropertyDocumentEntity document = null;
 
@@ -113,6 +119,8 @@ public class CustomerVerificationServiceImpl
     getCustomerVerifications(
             UUID customerId) {
 
+        securityService.validateCustomerAccess(customerId);
+
         return customerVerificationRepository
                 .findByCustomerCustomerId(customerId)
                 .stream()
@@ -131,6 +139,7 @@ public class CustomerVerificationServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Verification not found"));
+        securityService.validateCustomerAccess(verification.getCustomer());
 
         return mapToResponse(verification);
     }
@@ -146,10 +155,11 @@ public class CustomerVerificationServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Verification not found"));
+        securityService.validateOperationsAccess();
 
         UserEntity verifier =
                 userRepository.findById(
-                                request.getVerifiedByUserId())
+                                securityService.getCurrentUserId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Verifier not found"));
@@ -181,10 +191,11 @@ public class CustomerVerificationServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Verification not found"));
+        securityService.validateOperationsAccess();
 
         UserEntity verifier =
                 userRepository.findById(
-                                request.getVerifiedByUserId())
+                                securityService.getCurrentUserId())
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Verifier not found"));

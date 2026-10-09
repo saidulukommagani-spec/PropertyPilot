@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
@@ -58,7 +59,8 @@ class ServiceRequestControllerTest {
         mockMvc.perform(
                         post("/api/service-requests")
                                 .contentType("application/json")
-                                .content("{}"))
+                                .content(objectMapper.writeValueAsString(
+                                        java.util.Map.of("quoteId", UUID.randomUUID()))))
                 .andExpect(status().isOk());
     }
 
@@ -73,6 +75,34 @@ class ServiceRequestControllerTest {
         mockMvc.perform(
                         get("/api/service-requests/{id}", id))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void getAllRequestsForOperations_success() throws Exception {
+        when(serviceRequestService.getAllRequestsForOperations()).thenReturn(List.of(buildResponse()));
+        mockMvc.perform(get("/api/service-requests/admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].serviceRequestId").exists());
+        verify(serviceRequestService).getAllRequestsForOperations();
+    }
+
+    @Test
+    void getRequestsForCurrentAgent_success() throws Exception {
+        when(serviceRequestService.getRequestsForCurrentAgent()).thenReturn(List.of(buildResponse()));
+        mockMvc.perform(get("/api/service-requests/mine"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].serviceRequestId").exists());
+        verify(serviceRequestService).getRequestsForCurrentAgent();
+    }
+
+    @Test
+    void getRequestForOperations_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(serviceRequestService.getRequestForOperations(id)).thenReturn(buildResponse());
+        mockMvc.perform(get("/api/service-requests/admin/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.serviceRequestId").exists());
+        verify(serviceRequestService).getRequestForOperations(id);
     }
 
     @Test
@@ -104,6 +134,20 @@ class ServiceRequestControllerTest {
                                 .contentType("application/json")
                                 .content("{}"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void updateRequest_rejectsInvalidPriorityBeforeCallingService() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(
+                        put("/api/service-requests/{id}", id)
+                                .contentType("application/json")
+                                .content("{\"priority\":\"CRITICAL\",\"description\":\"Updated description\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(serviceRequestService, org.mockito.Mockito.never())
+                .updateRequest(eq(id), any(UpdateServiceRequestRequest.class));
     }
 
     @Test
@@ -143,6 +187,45 @@ class ServiceRequestControllerTest {
                                         }
                                         """))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void rejectAssignment_success() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(serviceRequestService.rejectAssignment(eq(id), any())).thenReturn(buildResponse());
+
+        mockMvc.perform(post("/api/service-requests/{id}/reject-assignment", id)
+                        .contentType("application/json")
+                        .content("{\"changeReason\":\"Agent unavailable\"}"))
+                .andExpect(status().isOk());
+
+        verify(serviceRequestService).rejectAssignment(id, "Agent unavailable");
+    }
+
+    @Test
+    void startRequest_rejectsOversizedAuditReason() throws Exception {
+        UUID id = UUID.randomUUID();
+        String content = objectMapper.writeValueAsString(
+                java.util.Map.of("changeReason", "x".repeat(256)));
+
+        mockMvc.perform(post("/api/service-requests/{id}/start", id)
+                        .contentType("application/json")
+                        .content(content))
+                .andExpect(status().isBadRequest());
+
+        verify(serviceRequestService, org.mockito.Mockito.never()).startRequest(eq(id), any());
+    }
+
+    @Test
+    void assignAgent_rejectsMissingAgentId() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/service-requests/{id}/assign-agent", id)
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        verify(serviceRequestService, org.mockito.Mockito.never()).assignAgent(eq(id), any());
     }
 
     @Test

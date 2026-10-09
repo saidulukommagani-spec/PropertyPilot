@@ -24,6 +24,8 @@ public interface VisitRepository
     List<VisitEntity> findByAgent_AgentId(
             UUID agentId);
 
+    List<VisitEntity> findByServiceRequest_Customer_CustomerIdOrderByScheduledAtDesc(UUID customerId);
+
     List<VisitEntity> findByStatus(
             String status);
 
@@ -33,6 +35,10 @@ public interface VisitRepository
     boolean existsByAssignment_AssignmentId(
             UUID assignmentId);
 
+    int countByServiceRequest_ServiceRequestIdAndStatusNot(UUID serviceRequestId, String status);
+
     boolean existsByVisitId(
             UUID visitId);
+
+    long countByServiceRequest_ServiceRequestId(UUID serviceRequestId);
 }

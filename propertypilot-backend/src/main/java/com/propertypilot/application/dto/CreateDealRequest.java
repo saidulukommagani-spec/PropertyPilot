@@ -2,23 +2,42 @@ package com.propertypilot.application.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class CreateDealRequest {
 
+    @NotNull(message = "Property is required")
     private UUID propertyId;
 
+    @NotNull(message = "Seller is required")
     private UUID sellerCustomerId;
 
     private UUID leadId;
 
+    @NotBlank(message = "Deal type is required")
     private String dealType;
 
+    @NotNull(message = "Expected deal amount is required")
+    @DecimalMin(value = "0.01", message = "Expected deal amount must be greater than zero")
+    @Digits(integer = 15, fraction = 2, message = "Expected deal amount must have at most 2 decimal places")
     private BigDecimal expectedAmount;
 
+    @DecimalMin(value = "0", message = "Seller commission cannot be negative")
+    @DecimalMax(value = "100", message = "Seller commission cannot exceed 100 percent")
+    @Digits(integer = 3, fraction = 2, message = "Seller commission must have at most 2 decimal places")
     private BigDecimal sellerCommissionPercent;
 
+    @DecimalMin(value = "0", message = "Buyer commission cannot be negative")
+    @DecimalMax(value = "100", message = "Buyer commission cannot exceed 100 percent")
+    @Digits(integer = 3, fraction = 2, message = "Buyer commission must have at most 2 decimal places")
     private BigDecimal buyerCommissionPercent;
 
+    @Size(max = 2000, message = "Deal notes cannot exceed 2,000 characters")
     private String remarks;
 
     public UUID getPropertyId() {

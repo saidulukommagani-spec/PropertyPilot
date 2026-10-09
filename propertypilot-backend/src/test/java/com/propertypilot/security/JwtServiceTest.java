@@ -1,6 +1,6 @@
 package com.propertypilot.security;
 
-import io.jsonwebtoken.Claims;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -90,5 +90,50 @@ class JwtServiceTest {
         assertEquals(
                 3600000L,
                 jwtService.getExpiration());
+    }
+
+    @Test
+    void validateConfiguration_ShouldRejectShortSecret() {
+
+        ReflectionTestUtils.setField(
+                jwtService,
+                "secret",
+                "too-short");
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(
+                        jwtService,
+                        "validateConfiguration"));
+    }
+
+    @Test
+    void validateConfiguration_ShouldRejectMissingSecret() {
+
+        ReflectionTestUtils.setField(
+                jwtService,
+                "secret",
+                " ");
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(
+                        jwtService,
+                        "validateConfiguration"));
+    }
+
+    @Test
+    void validateConfiguration_ShouldRejectNonPositiveExpiration() {
+
+        ReflectionTestUtils.setField(
+                jwtService,
+                "expiration",
+                0L);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(
+                        jwtService,
+                        "validateConfiguration"));
     }
 }

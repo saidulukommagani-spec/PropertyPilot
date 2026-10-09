@@ -7,6 +7,9 @@ import com.propertypilot.application.dto.LeadAssignRequest;
 import com.propertypilot.application.dto.LeadAssignmentResponse;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import com.propertypilot.application.dto.OperationsLeadResponse;
+import org.springframework.data.domain.Pageable;
 
 public interface LeadService {
 
@@ -25,4 +28,6 @@ public interface LeadService {
    LeadAssignmentResponse assignLead(
     UUID leadId,
     LeadAssignRequest request);
+
+    Page<OperationsLeadResponse> searchOperationsLeads(String search, LeadStatus status, Pageable pageable);
 }

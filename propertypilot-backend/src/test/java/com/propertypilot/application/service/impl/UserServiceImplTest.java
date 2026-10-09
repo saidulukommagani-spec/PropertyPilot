@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import com.propertypilot.domain.enums.UserStatus;
 
 @ExtendWith(MockitoExtension.class)
@@ -305,6 +306,33 @@ void updateUser_success() {
 
     assertThat(response.fullName())
             .isEqualTo("Updated");
+}
+
+@Test
+void updateUser_duplicateEmailIsRejected() {
+    UserEntity existing = user();
+    when(userRepository.findById(existing.getUserId())).thenReturn(Optional.of(existing));
+    when(userRepository.existsByEmailAndUserIdNot("taken@test.com", existing.getUserId())).thenReturn(true);
+
+    assertThatThrownBy(() -> service.updateUser(existing.getUserId(),
+            new UserUpdateRequest("Updated", "taken@test.com", "8888888888")))
+            .isInstanceOf(DuplicateResourceException.class)
+            .hasMessage("Email already exists");
+    verify(userRepository, never()).save(any());
+}
+
+@Test
+void updateUser_duplicatePhoneIsRejected() {
+    UserEntity existing = user();
+    when(userRepository.findById(existing.getUserId())).thenReturn(Optional.of(existing));
+    when(userRepository.existsByEmailAndUserIdNot("updated@test.com", existing.getUserId())).thenReturn(false);
+    when(userRepository.existsByMobileNumberAndUserIdNot("8888888888", existing.getUserId())).thenReturn(true);
+
+    assertThatThrownBy(() -> service.updateUser(existing.getUserId(),
+            new UserUpdateRequest("Updated", "updated@test.com", "8888888888")))
+            .isInstanceOf(DuplicateResourceException.class)
+            .hasMessage("Mobile number already exists");
+    verify(userRepository, never()).save(any());
 }
 
 @Test

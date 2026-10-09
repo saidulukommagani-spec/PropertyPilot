@@ -2,8 +2,8 @@ package com.propertypilot.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.propertypilot.application.dto.CreatePricingEstimateRequest;
-import com.propertypilot.application.dto.PricingCalculationResponse;
-import com.propertypilot.application.service.PricingCalculatorService;
+import com.propertypilot.application.dto.PricingEstimateResponse;
+import com.propertypilot.application.service.PricingEngineService;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +40,7 @@ class PricingControllerTest
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private PricingCalculatorService
-            pricingCalculatorService;
+    private PricingEngineService pricingEngineService;
 
     @Test
     void calculatePricing()
@@ -68,8 +67,8 @@ class PricingControllerTest
         request.setEtaDays(
                 2);
 
-        PricingCalculationResponse response =
-                new PricingCalculationResponse();
+        PricingEstimateResponse response =
+                new PricingEstimateResponse();
 
         response.setStandardPrice(
                 new BigDecimal("2500"));
@@ -80,11 +79,8 @@ class PricingControllerTest
         response.setSavings(
                 new BigDecimal("300"));
 
-        response.setSavingsMessage(
-                "You saved ₹300");
-
-        when(pricingCalculatorService
-                .calculate(any()))
+        when(pricingEngineService
+                .calculateEstimate(any()))
                 .thenReturn(response);
 
         mockMvc.perform(
@@ -102,8 +98,8 @@ class PricingControllerTest
                         jsonPath("$.standardPrice")
                                 .value(2500));
 
-        verify(pricingCalculatorService)
-                .calculate(any());
+        verify(pricingEngineService)
+                .calculateEstimate(any());
     }
 
     @Test

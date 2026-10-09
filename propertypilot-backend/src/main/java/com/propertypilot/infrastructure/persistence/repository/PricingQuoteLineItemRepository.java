@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PricingQuoteLineItemRepository
         extends JpaRepository<PricingQuoteLineItemEntity, UUID> {
+
+    java.util.List<PricingQuoteLineItemEntity> findByPricingEstimate_PricingEstimateIdOrderBySortOrderAsc(UUID pricingEstimateId);
 }

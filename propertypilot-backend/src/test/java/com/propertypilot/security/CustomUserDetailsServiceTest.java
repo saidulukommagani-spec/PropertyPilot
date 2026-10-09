@@ -13,6 +13,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.OffsetDateTime;
+import com.propertypilot.domain.enums.UserStatus;
+import com.propertypilot.domain.enums.RoleStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -40,12 +43,15 @@ class CustomUserDetailsServiceTest {
         user.setUserId(UUID.randomUUID());
         user.setEmail("admin@test.com");
         user.setPasswordHash("password");
+        user.setStatus(UserStatus.ACTIVE);
 
         RoleEntity role = new RoleEntity();
         role.setRoleCode("ADMIN");
+        role.setStatus(RoleStatus.ACTIVE);
 
         UserRoleEntity userRole = new UserRoleEntity();
         userRole.setRole(role);
+        userRole.setEffectiveFrom(OffsetDateTime.now().minusMinutes(1));
 
         when(userRepository.findByEmail("admin@test.com"))
                 .thenReturn(Optional.of(user));
@@ -65,6 +71,24 @@ class CustomUserDetailsServiceTest {
         assertEquals(
                 1,
                 result.getAuthorities().size());
+        assertTrue(result.isEnabled());
+    }
+
+    @Test
+    void loadUser_ShouldDisableInactiveAccount() {
+        UserEntity user = new UserEntity();
+        user.setUserId(UUID.randomUUID());
+        user.setEmail("inactive@test.com");
+        user.setPasswordHash("password");
+        user.setStatus(UserStatus.SUSPENDED);
+
+        when(userRepository.findByEmail("inactive@test.com"))
+                .thenReturn(Optional.of(user));
+        when(userRoleRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of());
+
+        UserDetails details = service.loadUserByUsername("inactive@test.com");
+        assertFalse(details.isEnabled());
     }
 
     @Test

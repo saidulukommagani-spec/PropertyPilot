@@ -9,18 +9,21 @@ import java.time.OffsetDateTime;
 
 import com.propertypilot.application.dto.CreateVisitRequest;
 import com.propertypilot.application.dto.VisitResponse;
+import com.propertypilot.application.service.ServiceRequestService;
 import com.propertypilot.domain.enums.VisitStatus;
 import com.propertypilot.infrastructure.persistence.entity.AgentAssignmentEntity;
 import com.propertypilot.infrastructure.persistence.entity.AgentEntity;
 import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
 import com.propertypilot.infrastructure.persistence.entity.VisitEntity;
 import com.propertypilot.web.exception.ResourceNotFoundException;
+import com.propertypilot.security.SecurityService;
 
 
 
 
 import com.propertypilot.infrastructure.persistence.repository.AgentAssignmentRepository;
 import com.propertypilot.infrastructure.persistence.repository.VisitRepository;
+import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 
 
 
@@ -33,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,8 +51,33 @@ public class VisitServiceImplTest {
     @Mock
     private AgentAssignmentRepository assignmentRepository;
 
+    @Mock
+    private SecurityService securityService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private com.propertypilot.infrastructure.persistence.repository.AgentRepository agentRepository;
+
+    @Mock
+    private ServiceRequestService serviceRequestService;
+
     @InjectMocks
     private VisitServiceImpl service;
+
+    @Test
+    void getVisitsForServiceRequestUsesRequestAccessPolicyAndReturnsRequestVisits() {
+        UUID requestId = UUID.randomUUID();
+        when(serviceRequestService.getRequest(requestId)).thenReturn(new com.propertypilot.application.dto.ServiceRequestResponse());
+        when(visitRepository.findByServiceRequest_ServiceRequestId(requestId)).thenReturn(List.of());
+
+        var visits = service.getVisitsForServiceRequest(requestId);
+
+        assertThat(visits).isEmpty();
+        verify(serviceRequestService).getRequest(requestId);
+        verify(visitRepository).findByServiceRequest_ServiceRequestId(requestId);
+    }
 
     private AgentEntity agent() {
 
@@ -145,12 +174,6 @@ void createVisit_success() {
                     assignment.getAssignmentId()))
             .thenReturn(
                     Optional.of(assignment));
-
-    when(
-            visitRepository
-                    .existsByAssignment_AssignmentId(
-                            assignment.getAssignmentId()))
-            .thenReturn(false);
 
     when(
             visitRepository.save(any()))
@@ -262,7 +285,7 @@ void createVisit_invalidRequestStatus() {
                     "Visit cannot be created");
 }
 @Test
-void createVisit_alreadyExists() {
+void createVisit_allowsMultipleVisitsForSameAssignment() {
 
     AgentAssignmentEntity assignment =
             assignment("ACCEPTED", "ACCEPTED");
@@ -277,17 +300,10 @@ void createVisit_alreadyExists() {
             assignment.getAssignmentId()))
             .thenReturn(Optional.of(assignment));
 
-    when(visitRepository
-            .existsByAssignment_AssignmentId(
-                    assignment.getAssignmentId()))
-            .thenReturn(true);
+    request.setScheduledAt(OffsetDateTime.now().plusDays(2));
+    when(visitRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-    assertThatThrownBy(() ->
-            service.createVisit(request))
-            .isInstanceOf(
-                    IllegalStateException.class)
-            .hasMessageContaining(
-                    "Visit already exists");
+    assertThat(service.createVisit(request).getStatus()).isEqualTo(VisitStatus.SCHEDULED.name());
 }
 
 @Test
@@ -305,11 +321,6 @@ void createVisit_scheduledDateNull() {
     when(assignmentRepository.findById(
             assignment.getAssignmentId()))
             .thenReturn(Optional.of(assignment));
-
-    when(visitRepository
-            .existsByAssignment_AssignmentId(
-                    assignment.getAssignmentId()))
-            .thenReturn(false);
 
     assertThatThrownBy(() ->
             service.createVisit(request))
@@ -337,11 +348,6 @@ void createVisit_scheduledDatePast() {
     when(assignmentRepository.findById(
             assignment.getAssignmentId()))
             .thenReturn(Optional.of(assignment));
-
-    when(visitRepository
-            .existsByAssignment_AssignmentId(
-                    assignment.getAssignmentId()))
-            .thenReturn(false);
 
     assertThatThrownBy(() ->
             service.createVisit(request))
@@ -417,8 +423,7 @@ void startVisit_success() {
             .isEqualTo(
                     VisitStatus.IN_PROGRESS.name());
 
-    verify(assignmentRepository)
-            .save(any());
+    verify(assignmentRepository).save(any());
 
     verify(visitRepository)
             .save(any());
@@ -466,9 +471,6 @@ void completeVisit_success() {
     assertThat(response.getStatus())
             .isEqualTo(
                     VisitStatus.COMPLETED.name());
-
-    verify(assignmentRepository)
-            .save(any());
 
     verify(visitRepository)
             .save(any());

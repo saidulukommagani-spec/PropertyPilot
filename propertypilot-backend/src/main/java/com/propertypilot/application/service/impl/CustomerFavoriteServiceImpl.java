@@ -15,11 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerFavoriteServiceImpl
         implements CustomerFavoriteService {
+
+    private final SecurityService securityService;
 
     private final CustomerFavoriteRepository
             customerFavoriteRepository;
@@ -33,7 +36,8 @@ public class CustomerFavoriteServiceImpl
     public CustomerFavoriteServiceImpl(
             CustomerFavoriteRepository customerFavoriteRepository,
             CustomerJpaRepository customerRepository,
-            PropertyRepository propertyRepository) {
+            PropertyRepository propertyRepository,
+            SecurityService securityService) {
 
         this.customerFavoriteRepository =
                 customerFavoriteRepository;
@@ -43,6 +47,7 @@ public class CustomerFavoriteServiceImpl
 
         this.propertyRepository =
                 propertyRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -55,6 +60,7 @@ public class CustomerFavoriteServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         Property property = null;
 
@@ -105,6 +111,8 @@ favorite.setFavoriteType("PROPERTY");
     getCustomerFavorites(
             UUID customerId) {
 
+        securityService.validateCustomerAccess(customerId);
+
         return customerFavoriteRepository
                 .findByCustomerCustomerId(customerId)
                 .stream()
@@ -126,6 +134,7 @@ favorite.setFavoriteType("PROPERTY");
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Favorite not found"));
+        securityService.validateCustomerAccess(favorite.getCustomer());
 
         customerFavoriteRepository.delete(
                 favorite);

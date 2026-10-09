@@ -1,0 +1,33 @@
+﻿import { useQueries } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Skeleton, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { SubscriptionApi } from '../services/SubscriptionApi';
+import { useAddOnCatalog, usePurchaseAddOn, useSubscriptions } from '../hooks/useSubscriptions';
+import { SubscriptionError, SubscriptionHeading } from '../components/SubscriptionStates';
+
+const schema=z.object({subscriptionId:z.string().uuid('Select an active subscription.'),addOnId:z.string().uuid('Choose an add-on.'),quantity:z.coerce.number().int().min(1).max(100)});type FormValues=z.infer<typeof schema>;
+export default function SubscriptionAddOnsPage(){
+  const catalog=useAddOnCatalog();const records=useSubscriptions();const subscriptions=(records.subscriptions.data??[]).filter((item)=>item.status==='ACTIVE');const purchased=useQueries({queries:subscriptions.map((item)=>({queryKey:['subscriptions','purchased-add-ons',item.customerSubscriptionId],queryFn:()=>SubscriptionApi.purchasedAddOns(item.customerSubscriptionId)}))});
+  const mutation=usePurchaseAddOn();const[open,setOpen]=useState(false);const[message,setMessage]=useState('');const form=useForm<z.input<typeof schema>, unknown, FormValues>({resolver:zodResolver(schema),defaultValues:{subscriptionId:'',addOnId:'',quantity:1}});const selected=form.watch('addOnId');
+  const submit=form.handleSubmit(async(values)=>{try{await mutation.mutateAsync({subscriptionId:values.subscriptionId,request:{subscriptionAddOnId:values.addOnId,quantity:values.quantity,startsAt:new Date().toISOString()}});setOpen(false);setMessage('Add-on added to your subscription.');form.reset({subscriptionId:'',addOnId:'',quantity:1});}catch{/* Mutation error remains visible in the dialog. */}});
+  const activeAddOns=catalog.data??[];const purchasableAddOns=activeAddOns.filter((item)=>item.price===0);const purchasedItems=purchased.flatMap((query)=>query.data??[]);
+  return <Stack spacing={3}><SubscriptionHeading title="Add-on management" subtitle="Explore available service add-ons and review add-ons already attached to your subscriptions." action={<Button variant="contained" onClick={()=>setOpen(true)} disabled={!subscriptions.length||!purchasableAddOns.length}>Add an add-on</Button>}/>
+    {catalog.isError&&<SubscriptionError error={catalog.error} retry={()=>void catalog.refetch()}/ >}{records.subscriptions.isError&&<SubscriptionError error={records.subscriptions.error} retry={()=>void records.subscriptions.refetch()}/ >}{purchased.some((query)=>query.isError)&&<Alert severity="error">Some purchased add-ons could not be loaded.</Alert>}
+    {activeAddOns.some((item)=>item.price>0)&&<Alert severity="info">Paid add-on checkout is not available yet. Paid items cannot be activated until payment is confirmed.</Alert>}
+    <Card variant="outlined"><CardContent><Typography variant="h6" fontWeight={700}>Available add-ons</Typography>{catalog.isLoading?Array.from({length:3},(_,i)=><Skeleton key={i} height={65}/>):activeAddOns.length?activeAddOns.map((item)=><Stack key={item.subscriptionAddOnId} direction={{xs:'column',sm:'row'}} justifyContent="space-between" gap={1} sx={{mt:2}}><Box><Typography fontWeight={650}>{item.name}</Typography><Typography variant="body2" color="text.secondary">{item.serviceName}</Typography></Box><Typography fontWeight={700}>{item.price.toLocaleString()}</Typography></Stack>):<Typography color="text.secondary" sx={{mt:1}}>No add-ons are currently available.</Typography>}</CardContent></Card>
+    <Card variant="outlined"><CardContent><Typography variant="h6" fontWeight={700}>Purchased add-ons</Typography>{purchased.some((query)=>query.isLoading)?<Skeleton height={100}/>:purchasedItems.length?purchasedItems.map((item)=><Stack key={item.customerSubscriptionAddOnId} direction={{xs:'column',sm:'row'}} justifyContent="space-between" gap={1} sx={{mt:1.5}}><Typography>{item.addOnName}  -  quantity {item.quantity}</Typography><Stack direction="row" spacing={1}><Typography variant="body2">{subscriptions.find((record)=>record.customerSubscriptionId===item.customerSubscriptionId)?.planName ?? 'Subscription'}</Typography><Chip size="small" label={item.status}/></Stack></Stack>):<Typography color="text.secondary" sx={{mt:1}}>No add-ons are attached to active subscriptions.</Typography>}</CardContent></Card>
+    {mutation.isError&&<Alert severity="error">{mutation.error.message}</Alert>}
+    <Dialog open={open} onClose={()=>!mutation.isPending&&setOpen(false)} fullWidth maxWidth="sm"><DialogTitle>Add service add-on</DialogTitle><DialogContent><Stack component="form" id="subscription-addon-form" spacing={2} sx={{pt:1}} onSubmit={(event)=>void submit(event)} noValidate>
+      <TextField select label="Subscription" value={form.watch('subscriptionId')} onChange={(event)=>form.setValue('subscriptionId',event.target.value,{shouldValidate:true})} error={Boolean(form.formState.errors.subscriptionId)} helperText={form.formState.errors.subscriptionId?.message}>{subscriptions.map((item)=><MenuItem key={item.customerSubscriptionId} value={item.customerSubscriptionId}>{item.planName ?? 'Subscription'} · {item.customerName ?? 'Customer'}</MenuItem>)}</TextField>
+      <TextField select label="Available add-on" value={selected} onChange={(event)=>form.setValue('addOnId',event.target.value,{shouldValidate:true})} error={Boolean(form.formState.errors.addOnId)} helperText={form.formState.errors.addOnId?.message}>{purchasableAddOns.map((item)=><MenuItem key={item.subscriptionAddOnId} value={item.subscriptionAddOnId}>{item.name}  -  {item.price.toLocaleString()}</MenuItem>)}</TextField>
+      <TextField label="Quantity" type="number" inputProps={{min:1,max:100}} {...form.register('quantity')} error={Boolean(form.formState.errors.quantity)} helperText={form.formState.errors.quantity?.message}/>
+      {mutation.isError&&<Alert severity="error">{mutation.error.message}</Alert>}
+    </Stack></DialogContent><DialogActions><Button onClick={()=>setOpen(false)} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="subscription-addon-form" variant="contained" disabled={!purchasableAddOns.length||!subscriptions.length||mutation.isPending}>{mutation.isPending?'Adding...':'Add to subscription'}</Button></DialogActions></Dialog>
+    <Snackbar open={Boolean(message)} autoHideDuration={4000} onClose={()=>setMessage('')} message={message}/>
+  </Stack>;
+}
+
+

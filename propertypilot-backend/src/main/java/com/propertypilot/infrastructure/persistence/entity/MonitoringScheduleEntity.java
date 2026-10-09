@@ -18,9 +18,13 @@ public class MonitoringScheduleEntity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "customer_subscription_id",
-            nullable = false
+            nullable = true
     )
     private CustomerSubscriptionEntity customerSubscription;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_service_request_id")
+    private ServiceRequestEntity sourceServiceRequest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -81,6 +85,14 @@ public class MonitoringScheduleEntity
                     customerSubscription) {
         this.customerSubscription =
                 customerSubscription;
+    }
+
+    public ServiceRequestEntity getSourceServiceRequest() {
+        return sourceServiceRequest;
+    }
+
+    public void setSourceServiceRequest(ServiceRequestEntity sourceServiceRequest) {
+        this.sourceServiceRequest = sourceServiceRequest;
     }
 
     public Property getProperty() {

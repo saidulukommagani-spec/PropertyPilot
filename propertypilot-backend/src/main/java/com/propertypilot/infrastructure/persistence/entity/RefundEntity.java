@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "refunds")
@@ -32,6 +34,7 @@ public class RefundEntity extends AuditableEntity {
     @Column(
             name = "currency_code",
             columnDefinition = "char(3)")
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String currencyCode;
 
     @Column(

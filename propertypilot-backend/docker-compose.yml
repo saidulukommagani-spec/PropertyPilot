@@ -25,12 +25,18 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/propertypilot
       DB_USERNAME: propertypilot
       DB_PASSWORD: propertypilot
+      JWT_SECRET: ${JWT_SECRET:?Set a random JWT_SECRET of at least 32 UTF-8 bytes}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?Set a random PAYMENT_WEBHOOK_SECRET of at least 32 UTF-8 bytes}
+      EVIDENCE_STORAGE_DIR: /var/lib/propertypilot/evidence
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - propertypilot_evidence_data:/var/lib/propertypilot/evidence
 
 volumes:
   propertypilot_postgres_data:
+  propertypilot_evidence_data:

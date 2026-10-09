@@ -2,6 +2,8 @@ package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.PricingParameterResponse;
 import com.propertypilot.application.dto.UpdatePricingParameterRequest;
+import com.propertypilot.application.dto.PricingCouponRequest;
+import com.propertypilot.application.dto.ClusterDiscountRuleRequest;
 import com.propertypilot.application.service.PricingConfigurationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.infrastructure.persistence.entity.CouponEntity;
+import com.propertypilot.infrastructure.persistence.entity.ClusterRuleEntity;
 
 @RestController
 @RequestMapping("/api/admin/pricing")
@@ -91,5 +95,35 @@ public class PricingConfigurationController {
                         .updateParameter(
                                 parameterId,
                                 request));
+    }
+
+    @PutMapping("/profiles/{profileCode}/active")
+    public ResponseEntity<Void> setProfileActive(
+            @PathVariable String profileCode,
+            @RequestParam boolean active) {
+        pricingConfigurationService.setProfileActive(profileCode, active);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<CouponEntity> createCoupon(@Valid @RequestBody PricingCouponRequest request) {
+        return ResponseEntity.status(201).body(pricingConfigurationService.createCoupon(request));
+    }
+
+    @PutMapping("/coupons/{couponId}")
+    public ResponseEntity<CouponEntity> updateCoupon(@PathVariable UUID couponId,
+            @Valid @RequestBody PricingCouponRequest request) {
+        return ResponseEntity.ok(pricingConfigurationService.updateCoupon(couponId, request));
+    }
+
+    @PostMapping("/cluster-rules")
+    public ResponseEntity<ClusterRuleEntity> createClusterRule(@Valid @RequestBody ClusterDiscountRuleRequest request) {
+        return ResponseEntity.status(201).body(pricingConfigurationService.createClusterRule(request));
+    }
+
+    @PutMapping("/cluster-rules/{ruleId}")
+    public ResponseEntity<ClusterRuleEntity> updateClusterRule(@PathVariable UUID ruleId,
+            @Valid @RequestBody ClusterDiscountRuleRequest request) {
+        return ResponseEntity.ok(pricingConfigurationService.updateClusterRule(ruleId, request));
     }
 }

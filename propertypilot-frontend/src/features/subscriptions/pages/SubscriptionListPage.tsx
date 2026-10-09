@@ -1,0 +1,21 @@
+import { useMemo, useState } from 'react';
+import { Alert, Button, Card, CardContent, Chip, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { useSubscriptionCatalog, useSubscriptions } from '../hooks/useSubscriptions';
+import { SubscriptionError, SubscriptionHeading } from '../components/SubscriptionStates';
+
+export default function SubscriptionListPage(){
+  const records=useSubscriptions();const catalog=useSubscriptionCatalog();const [status,setStatus]=useState('ALL');const subs=records.subscriptions.data??[];const versions=catalog.versions.data??[];const plans=catalog.plans.data??[];
+  const filtered=useMemo(()=>subs.filter((item)=>status==='ALL'||item.status===status||(status==='PENDING_RENEWAL'&&item.status==='ACTIVE'&&item.endDate&&new Date(item.endDate).getTime()<Date.now()+30*86400000)),[subs,status]);
+  const loading=records.subscriptions.isLoading||catalog.versions.isLoading||catalog.plans.isLoading;
+  return <Stack spacing={3}><SubscriptionHeading title="Subscriptions" subtitle="Review current plans, previous subscriptions, and upcoming renewals." action={<Button component={Link} to="/subscriptions/plans" variant="contained">Browse plans</Button>}/>
+    {records.profile.isError&&<SubscriptionError error={records.profile.error} retry={()=>void records.profile.refetch()}/ >}{records.subscriptions.isError&&<SubscriptionError error={records.subscriptions.error} retry={()=>void records.subscriptions.refetch()}/ >}{catalog.versions.isError&&<SubscriptionError error={catalog.versions.error} retry={()=>void catalog.versions.refetch()}/ >}{catalog.plans.isError&&<SubscriptionError error={catalog.plans.error} retry={()=>void catalog.plans.refetch()}/ >}
+    <Stack direction={{xs:'column',sm:'row'}} spacing={1}><TextField select size="small" label="Subscription status" value={status} onChange={(event)=>setStatus(event.target.value)} sx={{minWidth:220}}><MenuItem value="ALL">All subscriptions</MenuItem>{['ACTIVE','EXPIRED','CANCELLED','PENDING_RENEWAL'].map((item)=><MenuItem key={item} value={item}>{item.replaceAll('_',' ')}</MenuItem>)}</TextField></Stack>
+    <Card variant="outlined"><CardContent sx={{p:0,'&:last-child':{pb:0}}}><Table aria-label="Subscriptions"><TableHead><TableRow>{['Plan','Customer','Status','Start date','End date','Auto renew',''].map((label)=><TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>
+      {loading&&Array.from({length:4},(_,i)=><TableRow key={i}><TableCell colSpan={7}><Skeleton/></TableCell></TableRow>)}
+      {filtered.map((subscription)=>{const version=versions.find((item)=>item.planVersionId===subscription.planVersionId);const plan=plans.find((item)=>item.subscriptionPlanId===version?.subscriptionPlanId);const due=subscription.status==='ACTIVE'&&subscription.endDate&&new Date(subscription.endDate).getTime()<Date.now()+30*86400000;return <TableRow key={subscription.customerSubscriptionId} hover><TableCell><Typography fontWeight={650}>{plan?.planName||'Plan'}</Typography><Typography variant="caption" color="text.secondary">v{version?.versionNumber??'—'}</Typography></TableCell><TableCell>{records.role.isCustomer?'You':subscription.customerName||'Customer'}</TableCell><TableCell><Chip size="small" label={due&&status==='PENDING_RENEWAL'?'PENDING RENEWAL':subscription.status} color={subscription.status==='ACTIVE'?'success':'default'}/></TableCell><TableCell>{subscription.startDate}</TableCell><TableCell>{subscription.endDate||'—'}</TableCell><TableCell>{subscription.autoRenew?'On':'Off'}</TableCell><TableCell><Button component={Link} to={`/subscriptions/${subscription.customerSubscriptionId}`}>Details</Button></TableCell></TableRow>;})}
+      {!loading&&!records.subscriptions.isError&&!filtered.length&&<TableRow><TableCell colSpan={7} align="center"><Typography color="text.secondary" sx={{py:4}}>{subs.length?'No subscriptions match this status.':'No subscriptions found for this account.'}</Typography></TableCell></TableRow>}
+    </TableBody></Table></CardContent></Card>
+    {!records.role.isCustomer&&!records.role.isOperations&&<Alert severity="warning">Your role cannot view subscriptions.</Alert>}
+  </Stack>;
+}

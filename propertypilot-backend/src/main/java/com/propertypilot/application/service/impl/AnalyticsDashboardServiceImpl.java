@@ -8,6 +8,7 @@ import com.propertypilot.infrastructure.persistence.repository.LeadRepository;
 import com.propertypilot.infrastructure.persistence.repository.DealRepository;
 import com.propertypilot.infrastructure.persistence.repository.ServiceRequestRepository;
 import com.propertypilot.infrastructure.persistence.repository.CustomerSubscriptionRepository;
+import com.propertypilot.domain.enums.LeadStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -77,6 +78,16 @@ public class AnalyticsDashboardServiceImpl
 
         response.setTotalDeals(
                 dealRepository.count());
+
+        long readyLeads = leadRepository.countByStatus(LeadStatus.READY_FOR_DEAL);
+        long convertedLeads = leadRepository.countByStatus(LeadStatus.DEAL_CONVERTED)
+                + leadRepository.countByStatus(LeadStatus.CONVERTED);
+        long qualifiedDenominator = readyLeads + convertedLeads
+                + leadRepository.countByStatus(LeadStatus.QUALIFIED);
+        response.setReadyForDealLeads(readyLeads);
+        response.setConvertedLeads(convertedLeads);
+        response.setLeadToDealConversionRate(qualifiedDenominator == 0 ? 0.0
+                : (double) convertedLeads * 100.0 / qualifiedDenominator);
 
         response.setTotalServiceRequests(
                 serviceRequestRepository.count());

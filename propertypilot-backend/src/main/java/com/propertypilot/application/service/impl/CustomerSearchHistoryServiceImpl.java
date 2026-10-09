@@ -14,11 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerSearchHistoryServiceImpl
         implements CustomerSearchHistoryService {
+
+    private final SecurityService securityService;
 
     private final CustomerJpaRepository customerRepository;
 
@@ -27,13 +30,15 @@ public class CustomerSearchHistoryServiceImpl
 
     public CustomerSearchHistoryServiceImpl(
             CustomerJpaRepository customerRepository,
-            CustomerSearchHistoryRepository customerSearchHistoryRepository) {
+            CustomerSearchHistoryRepository customerSearchHistoryRepository,
+            SecurityService securityService) {
 
         this.customerRepository =
                 customerRepository;
 
         this.customerSearchHistoryRepository =
                 customerSearchHistoryRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -46,6 +51,7 @@ public class CustomerSearchHistoryServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         CustomerSearchHistoryEntity entity =
                 new CustomerSearchHistoryEntity();
@@ -76,6 +82,8 @@ public class CustomerSearchHistoryServiceImpl
     getCustomerSearchHistory(
             UUID customerId) {
 
+        securityService.validateCustomerAccess(customerId);
+
         return customerSearchHistoryRepository
                 .findByCustomerCustomerId(customerId)
                 .stream()
@@ -94,6 +102,7 @@ public class CustomerSearchHistoryServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Search history not found"));
+        securityService.validateCustomerAccess(entity.getCustomer());
 
         return map(entity);
     }

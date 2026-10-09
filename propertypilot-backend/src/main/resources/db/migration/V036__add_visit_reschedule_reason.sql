@@ -1,0 +1,1 @@
+ALTER TABLE visits ADD COLUMN IF NOT EXISTS reschedule_reason VARCHAR(1000);

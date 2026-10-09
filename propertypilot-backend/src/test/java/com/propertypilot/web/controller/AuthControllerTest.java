@@ -147,6 +147,6 @@ private CustomUserDetailsService customUserDetailsService;
                                 .content(request))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message")
-                        .value("Unexpected Error"));
+                        .value("An unexpected error occurred"));
     }
 }

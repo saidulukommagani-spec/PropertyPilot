@@ -30,4 +30,8 @@ public class AdminDashboardResponse {
     private long completed;
 
     private long cancelled;
+
+    private long failed;
+
+    private long escalated;
 }

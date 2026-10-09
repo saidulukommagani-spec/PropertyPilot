@@ -22,7 +22,7 @@ public class DealEntity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "property_id",
-            nullable = false)
+            nullable = true)
     private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,6 +35,14 @@ public class DealEntity
     @JoinColumn(
             name = "lead_id")
     private LeadEntity lead;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pricing_estimate_id", unique = true)
+    private PricingEstimateEntity pricingEstimate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_subscription_id")
+    private CustomerSubscriptionEntity customerSubscription;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -124,6 +132,11 @@ public class DealEntity
     public LeadEntity getLead() {
         return lead;
     }
+
+    public PricingEstimateEntity getPricingEstimate() { return pricingEstimate; }
+    public void setPricingEstimate(PricingEstimateEntity pricingEstimate) { this.pricingEstimate = pricingEstimate; }
+    public CustomerSubscriptionEntity getCustomerSubscription() { return customerSubscription; }
+    public void setCustomerSubscription(CustomerSubscriptionEntity customerSubscription) { this.customerSubscription = customerSubscription; }
 
     public void setLead(LeadEntity lead) {
         this.lead = lead;

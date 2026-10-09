@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.propertypilot.security.SecurityService;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceImplTest {
+    @Mock private SecurityService securityService;
 
     @Mock
     private TaskRepository taskRepository;
@@ -254,6 +256,7 @@ class TaskServiceImplTest {
 
     @Test
     void getTask_success() {
+        when(securityService.isOperationsUser()).thenReturn(true);
 
         UUID taskId =
                 UUID.randomUUID();
@@ -307,6 +310,7 @@ class TaskServiceImplTest {
 
     @Test
     void startTask_success() {
+        when(securityService.isOperationsUser()).thenReturn(true);
 
         UUID taskId =
                 UUID.randomUUID();
@@ -358,6 +362,7 @@ class TaskServiceImplTest {
 
     @Test
     void completeTask_success() {
+        when(securityService.isOperationsUser()).thenReturn(true);
 
         UUID taskId =
                 UUID.randomUUID();

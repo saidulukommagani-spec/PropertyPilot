@@ -45,3 +45,14 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
+
+# Playwright artifacts
+/propertypilot-frontend/test-results/
+/propertypilot-frontend/playwright-report/
+
+# Local Maven caches
+.maven-cache/
+.maven-user/
+.maven-home/
+.maven-repository/
+*.tsbuildinfo

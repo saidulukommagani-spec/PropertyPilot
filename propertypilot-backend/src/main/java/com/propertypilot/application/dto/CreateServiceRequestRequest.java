@@ -1,59 +1,33 @@
 package com.propertypilot.application.dto;
 
-import java.math.BigDecimal;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Future;
+import java.time.Instant;
 import java.util.UUID;
 
 public class CreateServiceRequestRequest {
 
-    private UUID customerId;
+    @NotNull
+    private UUID quoteId;
 
-    private UUID propertyId;
+    private UUID leadId;
 
-    private UUID serviceId;
-
-    private String requestType;
-
+    @Pattern(regexp = "LOW|MEDIUM|HIGH|URGENT")
     private String priority;
 
-    private BigDecimal amount;
-
+    @Size(max = 4000)
     private String description;
 
-    public UUID getCustomerId() {
-        return customerId;
-    }
+    @Future
+    private Instant preferredDate;
 
-    public void setCustomerId(
-            UUID customerId) {
-        this.customerId = customerId;
-    }
+    public UUID getQuoteId() { return quoteId; }
+    public void setQuoteId(UUID quoteId) { this.quoteId = quoteId; }
 
-    public UUID getPropertyId() {
-        return propertyId;
-    }
-
-    public void setPropertyId(
-            UUID propertyId) {
-        this.propertyId = propertyId;
-    }
-
-    public UUID getServiceId() {
-        return serviceId;
-    }
-
-    public void setServiceId(
-            UUID serviceId) {
-        this.serviceId = serviceId;
-    }
-
-    public String getRequestType() {
-        return requestType;
-    }
-
-    public void setRequestType(
-            String requestType) {
-        this.requestType = requestType;
-    }
+    public UUID getLeadId() { return leadId; }
+    public void setLeadId(UUID leadId) { this.leadId = leadId; }
 
     public String getPriority() {
         return priority;
@@ -64,15 +38,6 @@ public class CreateServiceRequestRequest {
         this.priority = priority;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(
-            BigDecimal amount) {
-        this.amount = amount;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -81,4 +46,7 @@ public class CreateServiceRequestRequest {
             String description) {
         this.description = description;
     }
+
+    public Instant getPreferredDate() { return preferredDate; }
+    public void setPreferredDate(Instant preferredDate) { this.preferredDate = preferredDate; }
 }

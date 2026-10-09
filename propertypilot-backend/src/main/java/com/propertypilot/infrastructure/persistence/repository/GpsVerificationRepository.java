@@ -18,4 +18,9 @@ public interface GpsVerificationRepository
     Optional<GpsVerificationEntity>
 findTopByVisit_VisitIdOrderByCapturedAtDesc(
         UUID visitId);
+boolean existsByVisit_VisitIdAndValidationStatus(
+        UUID visitId,
+        String validationStatus);
+
+
 }

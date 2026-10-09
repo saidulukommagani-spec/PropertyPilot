@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-labelledby="title desc">
+  <title id="title">PropertyPilot</title><desc id="desc">Your property. On autopilot.</desc>
+  <defs><clipPath id="pin" clipPathUnits="userSpaceOnUse"><path d="M230 16C171 16 128 57 128 111c0 50 59 102 102 139 43-37 102-89 102-139C332 57 289 16 230 16Z"/></clipPath></defs>
+  <svg x="4" y="2" width="104" height="116" viewBox="120 10 220 250" preserveAspectRatio="xMidYMid meet">
+    <path d="M230 16C171 16 128 57 128 111c0 50 59 102 102 139 43-37 102-89 102-139C332 57 289 16 230 16Z" fill="#FFFFFF" stroke="#A8792E" stroke-width="6"/>
+    <g clip-path="url(#pin)">
+      <path d="M125 55h107v195H125z" fill="#102A43" opacity=".12"/><path d="M230 76h52c35 0 48 27 26 49-10 10-23 13-40 13h-38" fill="none" stroke="#A8792E" stroke-width="18" stroke-linejoin="round"/><path d="M230 65h-52c-39 0-39 46 0 46h52" fill="none" stroke="#A8792E" stroke-width="14" stroke-linejoin="round"/><path d="M230 250V67h-53c-38 0-38 42 0 42h53Z" fill="#102A43" opacity=".78"/><path d="M219 105h22v138l-11 12-11-12V105Z" fill="#102A43"/>
+      <path d="M174 124V84h15l12 11v29Z" fill="#A8792E"/><path d="M179 89h9v35h-9Z" fill="#FFFFFF"/><path d="m153 128 22-20 21 20v23h-43Z" fill="#A8792E"/><path d="m149 129 26-23 26 23" fill="none" stroke="#102A43" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="160" y="134" width="8" height="10" fill="#FFFFFF"/><rect x="179" y="134" width="8" height="10" fill="#FFFFFF"/><path d="M205 149q14-13 13-29 12 17 0 29Z" fill="#102A43"/><path d="M218 149v6" stroke="#A8792E" stroke-width="2"/>
+      <path d="m246 111 24 8v21c0 14-11 25-24 31-13-6-24-17-24-31v-21Z" fill="#FFFFFF" stroke="#A8792E" stroke-width="4"/><path d="m234 138 9 9 16-18" fill="none" stroke="#102A43" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M122 168q53-25 100 7 16 13 33 6" fill="none" stroke="#A8792E" stroke-width="5"/><path d="M130 177q46-22 84 7 9 8 17 11" fill="none" stroke="#102A43" stroke-width="7"/>
+    </g>
+  </svg>
+  <text x="112" y="65" fill="#102A43" font-family="Georgia, 'Times New Roman', serif" font-size="47" font-weight="700" letter-spacing="-2">Property<tspan fill="#A8792E">Pilot</tspan></text>
+  <text x="116" y="91" fill="#52697D" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="2.1">YOUR PROPERTY. ON AUTOPILOT.</text>
+</svg>

@@ -23,11 +23,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerSubscriptionServiceImpl
         implements CustomerSubscriptionService {
+
+    private final SecurityService securityService;
 
     private final CustomerSubscriptionRepository
             customerSubscriptionRepository;
@@ -44,7 +47,8 @@ public class CustomerSubscriptionServiceImpl
             CustomerSubscriptionRepository customerSubscriptionRepository,
             CustomerJpaRepository customerRepository,
             SubscriptionPlanVersionRepository subscriptionPlanVersionRepository,
-        BillingService billingService) {
+        BillingService billingService,
+        SecurityService securityService) {
 
         this.customerSubscriptionRepository =
                 customerSubscriptionRepository;
@@ -55,6 +59,7 @@ public class CustomerSubscriptionServiceImpl
         this.subscriptionPlanVersionRepository =
                 subscriptionPlanVersionRepository;
                 this.billingService = billingService;
+                this.securityService = securityService;
     }
 
     @Override
@@ -67,6 +72,7 @@ public class CustomerSubscriptionServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         SubscriptionPlanVersionEntity planVersion =
                 subscriptionPlanVersionRepository
@@ -92,9 +98,11 @@ public class CustomerSubscriptionServiceImpl
         CustomerSubscriptionEntity entity =
                 new CustomerSubscriptionEntity();
 
+        boolean paymentRequired = planVersion.getPrice() != null
+                && planVersion.getPrice().compareTo(BigDecimal.ZERO) > 0;
         entity.setCustomer(customer);
         entity.setPlanVersion(planVersion);
-        entity.setStatus("ACTIVE");
+        entity.setStatus(paymentRequired ? "PENDING" : "ACTIVE");
         entity.setStartDate(request.getStartDate());
         entity.setEndDate(request.getEndDate());
         entity.setAutoRenew(Boolean.TRUE.equals(
@@ -102,9 +110,7 @@ public class CustomerSubscriptionServiceImpl
 
         CustomerSubscriptionEntity saved =
                 customerSubscriptionRepository.save(entity);
-if (planVersion.getPrice() != null
-        && planVersion.getPrice()
-                .compareTo(BigDecimal.ZERO) > 0) {
+if (paymentRequired) {
 
     billingService.createInvoice(
             BillingEntityType.SUBSCRIPTION,
@@ -112,7 +118,8 @@ if (planVersion.getPrice() != null
             customer.getCustomerId(),
             InvoiceType.SUBSCRIPTION_FEE,
             planVersion.getPrice(),
-            "Subscription purchase invoice");
+            "Subscription purchase invoice",
+            planVersion.getCurrencyCode());
 }
         return map(saved);
     }
@@ -128,6 +135,7 @@ if (planVersion.getPrice() != null
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer Subscription not found"));
+        securityService.validateCustomerAccess(entity.getCustomer());
 
         return map(entity);
     }
@@ -138,13 +146,23 @@ if (planVersion.getPrice() != null
     getCustomerSubscriptions(
             UUID customerId) {
 
+        securityService.validateCustomerAccess(customerId);
+
         return customerSubscriptionRepository
                 .findByCustomer_CustomerId(customerId)
                 .stream()
                 .map(this::map)
                 .toList();
     }
-    
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CustomerSubscriptionResponse> getAllSubscriptionsForOperations() {
+        securityService.validateOperationsAccess();
+        return customerSubscriptionRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(CustomerSubscriptionEntity::getStartDate).reversed())
+                .map(this::map).toList();
+    }
 
     @Override
 public CustomerSubscriptionResponse updateSubscription(
@@ -153,10 +171,15 @@ public CustomerSubscriptionResponse updateSubscription(
 
     CustomerSubscriptionEntity entity =
             customerSubscriptionRepository
-                    .findById(customerSubscriptionId)
+                        .findByIdForUpdate(customerSubscriptionId)
                     .orElseThrow(() ->
                             new ResourceNotFoundException(
                                     "Customer Subscription not found"));
+    securityService.validateCustomerAccess(entity.getCustomer());
+
+    if (request.getStatus() != null) {
+        securityService.validateOperationsAccess();
+    }
 
     if (request.getStatus() != null) {
 
@@ -171,8 +194,13 @@ public CustomerSubscriptionResponse updateSubscription(
                 "SUSPENDED")
                 .contains(status)) {
 
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "Invalid subscription status");
+        }
+
+        if ("ACTIVE".equals(status) && !"ACTIVE".equalsIgnoreCase(entity.getStatus())) {
+            throw new BusinessException(
+                    "Subscription activation requires confirmed payment through the purchase or renewal workflow");
         }
 
         entity.setStatus(status);
@@ -180,11 +208,20 @@ public CustomerSubscriptionResponse updateSubscription(
 
     if (request.getEndDate() != null) {
 
+        // Subscription term changes alter paid service entitlement and are
+        // operations-managed; a customer may not extend their own coverage.
+        securityService.validateOperationsAccess();
+
         if (request.getEndDate()
                 .isBefore(entity.getStartDate())) {
 
-            throw new IllegalArgumentException(
+            throw new BusinessException(
                     "End date must be after start date");
+        }
+
+        if (entity.getEndDate() == null || request.getEndDate().isAfter(entity.getEndDate())) {
+            throw new BusinessException(
+                    "Extending a subscription term requires confirmed payment through the renewal workflow");
         }
 
         entity.setEndDate(
@@ -208,6 +245,8 @@ public CustomerSubscriptionResponse updateSubscription(
 public List<CustomerSubscriptionResponse>
 getExpiringSubscriptions(
         Integer days) {
+
+    securityService.validateOperationsAccess();
 
     LocalDate today =
             LocalDate.now();
@@ -236,9 +275,13 @@ getExpiringSubscriptions(
 
         response.setCustomerId(
                 entity.getCustomer().getCustomerId());
+        response.setCustomerName(entity.getCustomer().getUser() == null
+                ? null : entity.getCustomer().getUser().getFullName());
 
         response.setPlanVersionId(
                 entity.getPlanVersion().getPlanVersionId());
+        response.setPlanName(entity.getPlanVersion().getSubscriptionPlan() == null
+                ? null : entity.getPlanVersion().getSubscriptionPlan().getPlanName());
 
         response.setStatus(
                 entity.getStatus());

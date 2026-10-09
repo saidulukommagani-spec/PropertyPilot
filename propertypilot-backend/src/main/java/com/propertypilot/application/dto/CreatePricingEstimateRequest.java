@@ -2,7 +2,7 @@ package com.propertypilot.application.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -21,22 +21,19 @@ public class CreatePricingEstimateRequest {
             message = "Service Id is required")
     private UUID serviceId;
 
-    @NotNull(
-            message = "One way distance is required")
-    @Positive(
-            message = "Distance must be greater than zero")
+    @NotNull(message = "One way distance is required")
+    @PositiveOrZero(message = "Distance cannot be negative")
     private Double oneWayDistanceKm;
 
-    @NotNull(
-            message = "Vendor cost is required")
-    @Positive(
-            message = "Vendor cost must be greater than zero")
+    // Retained for old clients; the pricing engine ignores this untrusted value.
     private BigDecimal vendorCost;
 
     @Min(
             value = 0,
             message = "ETA days cannot be negative")
     private Integer etaDays;
+
+    private String couponCode;
 
     public UUID getCustomerId() {
         return customerId;
@@ -88,4 +85,7 @@ public class CreatePricingEstimateRequest {
             Integer etaDays) {
         this.etaDays = etaDays;
     }
+
+    public String getCouponCode() { return couponCode; }
+    public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
 }

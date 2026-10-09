@@ -62,6 +62,17 @@ public class EvidenceEntity extends AuditableEntity {
     @Column(name = "checksum_sha256")
     private String checksumSha256;
 
+    @Column(name = "device_info", length = 500)
+    private String deviceInfo;
+    @Column(name = "validation_status", nullable = false, length = 32)
+    private String validationStatus = "PENDING";
+    @Column(name = "validation_comment", length = 2000)
+    private String validationComment;
+    @Column(name = "validated_by")
+    private UUID validatedBy;
+    @Column(name = "validated_at")
+    private OffsetDateTime validatedAt;
+
     @Version
     @Column(name = "version")
     private Long version = 0L;
@@ -181,6 +192,17 @@ public class EvidenceEntity extends AuditableEntity {
             String checksumSha256) {
         this.checksumSha256 = checksumSha256;
     }
+
+    public String getDeviceInfo() { return deviceInfo; }
+    public void setDeviceInfo(String deviceInfo) { this.deviceInfo = deviceInfo; }
+    public String getValidationStatus() { return validationStatus; }
+    public void setValidationStatus(String validationStatus) { this.validationStatus = validationStatus; }
+    public String getValidationComment() { return validationComment; }
+    public void setValidationComment(String validationComment) { this.validationComment = validationComment; }
+    public UUID getValidatedBy() { return validatedBy; }
+    public void setValidatedBy(UUID validatedBy) { this.validatedBy = validatedBy; }
+    public OffsetDateTime getValidatedAt() { return validatedAt; }
+    public void setValidatedAt(OffsetDateTime validatedAt) { this.validatedAt = validatedAt; }
 
     public Long getVersion() {
         return version;

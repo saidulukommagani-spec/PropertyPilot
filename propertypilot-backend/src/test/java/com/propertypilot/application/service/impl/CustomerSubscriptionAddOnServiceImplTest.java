@@ -9,6 +9,7 @@ import com.propertypilot.infrastructure.persistence.repository.CustomerSubscript
 import com.propertypilot.infrastructure.persistence.repository.CustomerSubscriptionRepository;
 import com.propertypilot.infrastructure.persistence.repository.SubscriptionAddOnRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
+import com.propertypilot.web.exception.BusinessException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.propertypilot.security.SecurityService;
 
 import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerSubscriptionAddOnServiceImplTest {
+    @Mock private SecurityService securityService;
 
     @Mock
     private CustomerSubscriptionRepository
@@ -57,6 +61,8 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         subscription.setCustomerSubscriptionId(
                 subscriptionId);
+        subscription.setStatus("ACTIVE");
+        subscription.setStatus("ACTIVE");
 
         SubscriptionAddOnEntity addOn =
                 new SubscriptionAddOnEntity();
@@ -66,6 +72,10 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         addOn.setName(
                 "Premium Listing");
+        addOn.setStatus("ACTIVE");
+        addOn.setPrice(BigDecimal.ZERO);
+        addOn.setStatus("ACTIVE");
+        addOn.setPrice(BigDecimal.ZERO);
 
         CustomerSubscriptionAddOnEntity entity =
                 new CustomerSubscriptionAddOnEntity();
@@ -109,6 +119,7 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         subscription.setCustomerSubscriptionId(
                 subscriptionId);
+        subscription.setStatus("ACTIVE");
 
         SubscriptionAddOnEntity addOn =
                 new SubscriptionAddOnEntity();
@@ -118,6 +129,8 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         addOn.setName(
                 "Premium Listing");
+        addOn.setStatus("ACTIVE");
+        addOn.setPrice(BigDecimal.ZERO);
 
         CreateCustomerSubscriptionAddOnRequest request =
                 new CreateCustomerSubscriptionAddOnRequest();
@@ -161,6 +174,32 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         verify(customerSubscriptionAddOnRepository)
                 .save(any());
+    }
+
+    @Test
+    void createAddOn_rejectsPaidAddOnWithoutVerifiedBilling() {
+        UUID subscriptionId = UUID.randomUUID();
+        UUID addOnId = UUID.randomUUID();
+        CustomerSubscriptionEntity subscription = new CustomerSubscriptionEntity();
+        subscription.setCustomerSubscriptionId(subscriptionId);
+        subscription.setStatus("ACTIVE");
+        SubscriptionAddOnEntity addOn = new SubscriptionAddOnEntity();
+        addOn.setSubscriptionAddOnId(addOnId);
+        addOn.setName("Premium Listing");
+        addOn.setStatus("ACTIVE");
+        addOn.setPrice(new BigDecimal("500.00"));
+        CreateCustomerSubscriptionAddOnRequest request = new CreateCustomerSubscriptionAddOnRequest();
+        request.setSubscriptionAddOnId(addOnId);
+        request.setQuantity(1);
+        request.setStartsAt(OffsetDateTime.now());
+
+        when(customerSubscriptionRepository.findById(subscriptionId)).thenReturn(Optional.of(subscription));
+        when(subscriptionAddOnRepository.findById(addOnId)).thenReturn(Optional.of(addOn));
+
+        assertThatThrownBy(() -> service.createAddOn(subscriptionId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Paid add-ons require a verified billing workflow before they can be activated");
+        verify(customerSubscriptionAddOnRepository, never()).save(any());
     }
 
     @Test
@@ -259,6 +298,8 @@ class CustomerSubscriptionAddOnServiceImplTest {
 
         UUID subscriptionId =
                 UUID.randomUUID();
+        when(customerSubscriptionRepository.findById(subscriptionId))
+                .thenReturn(Optional.of(new CustomerSubscriptionEntity()));
 
         when(customerSubscriptionAddOnRepository
                 .findByCustomerSubscriptionCustomerSubscriptionId(

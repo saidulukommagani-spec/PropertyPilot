@@ -1,10 +1,9 @@
-  /src
-    /api
-    /components
-    /layouts
-    /pages
-    /redux
-    /hooks
-    /utils
-    /styles
-    /tests
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

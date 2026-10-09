@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -42,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
         return new LoginResponse(
                 token,
                 "Bearer",
-                jwtService.getExpiration()
+                TimeUnit.MILLISECONDS.toSeconds(jwtService.getExpiration())
         );
     }
 }

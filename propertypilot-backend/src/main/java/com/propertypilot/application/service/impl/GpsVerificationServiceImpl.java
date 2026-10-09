@@ -3,6 +3,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.propertypilot.application.dto.CreateGpsVerificationRequest;
 import com.propertypilot.application.dto.GpsVerificationResponse;
 import com.propertypilot.application.service.GpsVerificationService;
+import com.propertypilot.application.service.ServiceRequestService;
 import com.propertypilot.infrastructure.persistence.entity.GpsVerificationEntity;
 import com.propertypilot.infrastructure.persistence.entity.PropertyLocationEntity;
 import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
@@ -17,16 +18,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 public class GpsVerificationServiceImpl
         implements GpsVerificationService {
 
-    private static final double EARTH_RADIUS_KM = 6371.0;
+    private final SecurityService securityService;
 
-    private static final BigDecimal
-            GPS_THRESHOLD_KM =
-            new BigDecimal("0.200");
+    private static final double EARTH_RADIUS_KM = 6371.0;
 
     private final GpsVerificationRepository gpsRepository;
 
@@ -34,16 +34,21 @@ public class GpsVerificationServiceImpl
 
     private final PropertyLocationRepository
             propertyLocationRepository;
+    private final ServiceRequestService serviceRequestService;
 
     public GpsVerificationServiceImpl(
             GpsVerificationRepository gpsRepository,
             VisitRepository visitRepository,
-            PropertyLocationRepository propertyLocationRepository) {
+            PropertyLocationRepository propertyLocationRepository,
+            SecurityService securityService,
+            ServiceRequestService serviceRequestService) {
 
         this.gpsRepository = gpsRepository;
         this.visitRepository = visitRepository;
         this.propertyLocationRepository =
                 propertyLocationRepository;
+        this.securityService = securityService;
+        this.serviceRequestService = serviceRequestService;
     }
 @Override
 @Transactional
@@ -56,9 +61,17 @@ public class GpsVerificationServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Visit not found"));
+        securityService.validateVisitExecutionAccess(visit);
+        if (!"IN_PROGRESS".equals(visit.getStatus())) {
+            throw new IllegalStateException("GPS can only be captured during an in-progress visit");
+        }
 
         ServiceRequestEntity serviceRequest =
                 visit.getServiceRequest();
+        if (serviceRequest.getService() == null
+                || Boolean.TRUE.equals(serviceRequest.getService().getRemote())) {
+            throw new IllegalStateException("GPS verification is unavailable for remote services");
+        }
 
         PropertyLocationEntity propertyLocation =
                 propertyLocationRepository
@@ -75,9 +88,13 @@ public class GpsVerificationServiceImpl
                         request.getLatitude(),
                         request.getLongitude());
 
+        BigDecimal gpsThresholdKm = serviceRequest.getService() == null
+                || serviceRequest.getService().getGpsRadiusKm() == null
+                ? new BigDecimal("0.200")
+                : serviceRequest.getService().getGpsRadiusKm();
         String status =
                 distance.compareTo(
-                        GPS_THRESHOLD_KM) <= 0
+                        gpsThresholdKm) <= 0
                         ? "VERIFIED"
                         : "REJECTED";
 
@@ -105,20 +122,22 @@ public class GpsVerificationServiceImpl
         gps.setValidatedAt(
                 OffsetDateTime.now());
 
-        return buildResponse(
-                gpsRepository.save(gps));
+        GpsVerificationEntity saved = gpsRepository.save(gps);
+        serviceRequestService.completeRequestIfReady(
+                serviceRequest.getServiceRequestId(), "Configured fulfillment requirements satisfied");
+        return buildResponse(saved);
     }
 
     @Override
     public GpsVerificationResponse getVerification(
             UUID gpsVerificationId) {
-
-        return buildResponse(
-                gpsRepository.findById(
+        GpsVerificationEntity verification = gpsRepository.findById(
                                 gpsVerificationId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "GPS verification not found")));
+                                        "GPS verification not found"));
+        securityService.validateVisitAccess(verification.getVisit());
+        return buildResponse(verification);
     }
 
     private BigDecimal calculateDistance(

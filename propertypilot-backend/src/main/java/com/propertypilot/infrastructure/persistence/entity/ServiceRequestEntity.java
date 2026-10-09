@@ -36,6 +36,14 @@ public class ServiceRequestEntity
     )
     private ServiceEntity service;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pricing_estimate_id")
+    private PricingEstimateEntity pricingEstimate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lead_id")
+    private LeadEntity lead;
+
     @Column(
             name = "request_type",
             nullable = false
@@ -62,6 +70,15 @@ public class ServiceRequestEntity
 
     @Column(name = "requested_at")
     private Instant requestedAt;
+
+    @Column(name = "sla_due_at")
+    private Instant slaDueAt;
+
+    @Column(name = "sla_policy_id_snapshot")
+    private UUID slaPolicyIdSnapshot;
+
+    @Column(name = "sla_snapshot_captured", nullable = false)
+    private boolean slaSnapshotCaptured;
 
     @Column(name = "scheduled_at")
     private Instant scheduledAt;
@@ -123,6 +140,11 @@ public class ServiceRequestEntity
         this.service = service;
     }
 
+    public PricingEstimateEntity getPricingEstimate() { return pricingEstimate; }
+    public void setPricingEstimate(PricingEstimateEntity pricingEstimate) { this.pricingEstimate = pricingEstimate; }
+    public LeadEntity getLead() { return lead; }
+    public void setLead(LeadEntity lead) { this.lead = lead; }
+
     public String getRequestType() {
         return requestType;
     }
@@ -170,6 +192,13 @@ public class ServiceRequestEntity
     public void setRequestedAt(Instant requestedAt) {
         this.requestedAt = requestedAt;
     }
+
+    public Instant getSlaDueAt() { return slaDueAt; }
+    public void setSlaDueAt(Instant slaDueAt) { this.slaDueAt = slaDueAt; }
+    public UUID getSlaPolicyIdSnapshot() { return slaPolicyIdSnapshot; }
+    public void setSlaPolicyIdSnapshot(UUID slaPolicyIdSnapshot) { this.slaPolicyIdSnapshot = slaPolicyIdSnapshot; }
+    public boolean isSlaSnapshotCaptured() { return slaSnapshotCaptured; }
+    public void setSlaSnapshotCaptured(boolean slaSnapshotCaptured) { this.slaSnapshotCaptured = slaSnapshotCaptured; }
 
     public Instant getScheduledAt() {
         return scheduledAt;

@@ -21,7 +21,9 @@ public record LeadActivityResponse(
 
         OffsetDateTime occurredAt,
 
-        OffsetDateTime nextActionAt
+        OffsetDateTime nextActionAt,
+
+        String visibility
 
 ) {
 }

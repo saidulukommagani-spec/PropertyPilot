@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 @Transactional
@@ -85,6 +86,13 @@ public class LeadActivityServiceImpl
         activity.setNextActionAt(
                 request.nextActionAt());
 
+        // The caller cannot choose visibility. Customer-authored entries on
+        // their own lead are visible to that customer; all staff entries are internal.
+        activity.setVisibility(!securityService.isOperationsUser()
+                && !securityService.hasRole("AGENT")
+                && securityService.hasRole("CUSTOMER")
+                ? "CUSTOMER_VISIBLE" : "INTERNAL");
+
         activity.setPerformedBy(
                 currentUser);
 
@@ -106,13 +114,17 @@ public class LeadActivityServiceImpl
                                 new ResourceNotFoundException(
                                         "Lead not found"));
 
-        securityService
-                .validateLeadOwnership(lead);
+        securityService.validateLeadOwnership(lead);
 
-        return leadActivityRepository
-                .findByLead_LeadIdOrderByOccurredAtDesc(
-                        leadId)
-                .stream()
+        boolean customer = securityService.hasRole("CUSTOMER")
+                && !securityService.isOperationsUser();
+
+        List<LeadActivityEntity> activities = customer
+                ? leadActivityRepository.findByLead_LeadIdAndVisibilityOrderByOccurredAtDesc(
+                        leadId, "CUSTOMER_VISIBLE")
+                : leadActivityRepository.findByLead_LeadIdOrderByOccurredAtDesc(leadId);
+
+        return activities.stream()
                 .map(this::buildResponse)
                 .toList();
     }
@@ -142,7 +154,9 @@ public class LeadActivityServiceImpl
 
                 activity.getOccurredAt(),
 
-                activity.getNextActionAt()
+                activity.getNextActionAt(),
+
+                activity.getVisibility() == null ? "INTERNAL" : activity.getVisibility()
         );
     }
 }

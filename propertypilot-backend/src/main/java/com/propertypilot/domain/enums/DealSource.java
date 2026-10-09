@@ -8,5 +8,9 @@ public enum DealSource {
 
     ADMIN_CREATED,
 
-    MARKETPLACE
+    MARKETPLACE,
+
+    ACCEPTED_QUOTE,
+
+    SUBSCRIPTION
 }

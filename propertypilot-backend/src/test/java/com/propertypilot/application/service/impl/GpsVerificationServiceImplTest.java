@@ -6,10 +6,13 @@ import com.propertypilot.infrastructure.persistence.entity.GpsVerificationEntity
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.PropertyLocationEntity;
 import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
+import com.propertypilot.infrastructure.persistence.entity.ServiceEntity;
 import com.propertypilot.infrastructure.persistence.entity.VisitEntity;
 import com.propertypilot.infrastructure.persistence.repository.GpsVerificationRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyLocationRepository;
 import com.propertypilot.infrastructure.persistence.repository.VisitRepository;
+import com.propertypilot.security.SecurityService;
+import com.propertypilot.application.service.ServiceRequestService;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,9 +29,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class GpsVerificationServiceImplTest {
+
+    @Mock
+    private SecurityService securityService;
+
+    @Mock
+    private ServiceRequestService serviceRequestService;
 
     @Mock
     private GpsVerificationRepository gpsRepository;
@@ -63,9 +73,15 @@ class GpsVerificationServiceImplTest {
         ServiceRequestEntity serviceRequest =
                 new ServiceRequestEntity();
         serviceRequest.setProperty(property);
+        serviceRequest.setStatus("IN_PROGRESS");
+        ServiceEntity configuredService = new ServiceEntity();
+        configuredService.setRemote(false);
+        serviceRequest.setService(configuredService);
 
         VisitEntity visit = new VisitEntity();
         visit.setVisitId(visitId);
+        visit.setStatus("IN_PROGRESS");
+        visit.setStatus("IN_PROGRESS");
         visit.setServiceRequest(serviceRequest);
 
         PropertyLocationEntity location =
@@ -108,6 +124,8 @@ class GpsVerificationServiceImplTest {
         assertThat(response.getPropertyLocationId())
                 .isEqualTo(
                         location.getPropertyLocationId());
+        verify(serviceRequestService).completeRequestIfReady(
+                serviceRequest.getServiceRequestId(), "Configured fulfillment requirements satisfied");
     }
 
     @Test
@@ -134,9 +152,14 @@ class GpsVerificationServiceImplTest {
                 new ServiceRequestEntity();
 
         serviceRequest.setProperty(property);
+        ServiceEntity configuredService = new ServiceEntity();
+        configuredService.setRemote(false);
+        serviceRequest.setService(configuredService);
+        serviceRequest.setStatus("IN_PROGRESS");
 
         VisitEntity visit = new VisitEntity();
         visit.setVisitId(visitId);
+        visit.setStatus("IN_PROGRESS");
         visit.setServiceRequest(serviceRequest);
 
         PropertyLocationEntity location =
@@ -212,9 +235,14 @@ class GpsVerificationServiceImplTest {
                 new ServiceRequestEntity();
 
         serviceRequest.setProperty(property);
+        ServiceEntity configuredService = new ServiceEntity();
+        configuredService.setRemote(false);
+        serviceRequest.setService(configuredService);
+        serviceRequest.setStatus("IN_PROGRESS");
 
         VisitEntity visit = new VisitEntity();
         visit.setVisitId(visitId);
+        visit.setStatus("IN_PROGRESS");
         visit.setServiceRequest(serviceRequest);
 
         when(visitRepository.findById(visitId))
@@ -241,6 +269,7 @@ class GpsVerificationServiceImplTest {
 
         VisitEntity visit = new VisitEntity();
         visit.setVisitId(visitId);
+        visit.setStatus("IN_PROGRESS");
 
         PropertyLocationEntity location =
                 new PropertyLocationEntity();

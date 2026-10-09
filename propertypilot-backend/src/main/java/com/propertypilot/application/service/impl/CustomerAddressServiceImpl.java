@@ -16,11 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 @Transactional
 public class CustomerAddressServiceImpl
         implements CustomerAddressService {
+
+    private final SecurityService securityService;
 
     private final CustomerJpaRepository customerRepository;
     private final CustomerAddressRepository addressRepository;
@@ -29,11 +32,13 @@ public class CustomerAddressServiceImpl
     public CustomerAddressServiceImpl(
             CustomerJpaRepository customerRepository,
             CustomerAddressRepository addressRepository,
-            LocalityRepository localityRepository) {
+            LocalityRepository localityRepository,
+            SecurityService securityService) {
 
         this.customerRepository = customerRepository;
         this.addressRepository = addressRepository;
         this.localityRepository = localityRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -46,6 +51,7 @@ public class CustomerAddressServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Customer not found"));
+        securityService.validateCustomerAccess(customer);
 
         CustomerAddressEntity entity =
                 new CustomerAddressEntity();
@@ -87,6 +93,7 @@ public class CustomerAddressServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Address not found"));
+        securityService.validateCustomerAccess(entity.getCustomer());
 
         if (request.localityId() != null) {
 
@@ -117,17 +124,20 @@ public class CustomerAddressServiceImpl
     public CustomerAddressResponse getAddress(
             UUID addressId) {
 
-        return map(
-                addressRepository.findById(addressId)
+        CustomerAddressEntity entity = addressRepository.findById(addressId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
-                                        "Address not found")));
+                                        "Address not found"));
+        securityService.validateCustomerAccess(entity.getCustomer());
+        return map(entity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CustomerAddressResponse> getCustomerAddresses(
             UUID customerId) {
+
+        securityService.validateCustomerAccess(customerId);
 
         return addressRepository
                 .findByCustomerCustomerId(customerId)
@@ -145,6 +155,7 @@ public class CustomerAddressServiceImpl
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Address not found"));
+        securityService.validateCustomerAccess(entity.getCustomer());
 
         addressRepository.delete(entity);
     }

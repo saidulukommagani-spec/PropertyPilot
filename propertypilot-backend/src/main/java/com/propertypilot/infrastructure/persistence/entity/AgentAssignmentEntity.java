@@ -65,6 +65,9 @@ public class AgentAssignmentEntity extends AuditableEntity {
     @Column(name = "rejection_reason")
     private String rejectionReason;
 
+    @Column(name = "assignment_notes", columnDefinition = "TEXT")
+    private String assignmentNotes;
+
     @Version
     @Column(
             name = "version",
@@ -151,6 +154,10 @@ public class AgentAssignmentEntity extends AuditableEntity {
     public void setRejectionReason(String rejectionReason) {
         this.rejectionReason = rejectionReason;
     }
+
+    public String getAssignmentNotes() { return assignmentNotes; }
+
+    public void setAssignmentNotes(String assignmentNotes) { this.assignmentNotes = assignmentNotes; }
 
     public Long getVersion() {
         return version;

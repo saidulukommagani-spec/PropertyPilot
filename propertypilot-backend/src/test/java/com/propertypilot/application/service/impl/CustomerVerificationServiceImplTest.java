@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.propertypilot.security.SecurityService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class CustomerVerificationServiceImplTest {
+    @Mock private SecurityService securityService;
 
     @Mock
     private CustomerVerificationRepository
@@ -336,6 +338,8 @@ class CustomerVerificationServiceImplTest {
                 .findById(verificationId))
                 .thenReturn(Optional.of(entity));
 
+        when(securityService.getCurrentUserId()).thenReturn(verifierId);
+
         when(userRepository.findById(verifierId))
                 .thenReturn(Optional.of(verifier));
 
@@ -394,6 +398,8 @@ class CustomerVerificationServiceImplTest {
                 .findById(verificationId))
                 .thenReturn(Optional.of(entity));
 
+        when(securityService.getCurrentUserId()).thenReturn(verifierId);
+
         when(userRepository.findById(verifierId))
                 .thenReturn(Optional.empty());
 
@@ -436,6 +442,7 @@ class CustomerVerificationServiceImplTest {
                 .findById(verificationId))
                 .thenReturn(Optional.of(entity));
 
+        when(securityService.getCurrentUserId()).thenReturn(verifierId);
         when(userRepository.findById(verifierId))
                 .thenReturn(Optional.of(verifier));
 
@@ -494,6 +501,7 @@ class CustomerVerificationServiceImplTest {
                 .findById(verificationId))
                 .thenReturn(Optional.of(entity));
 
+        when(securityService.getCurrentUserId()).thenReturn(verifierId);
         when(userRepository.findById(verifierId))
                 .thenReturn(Optional.empty());
 

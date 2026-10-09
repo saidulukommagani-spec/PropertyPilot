@@ -3,6 +3,7 @@ package com.propertypilot.application.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Schema(
         description =
@@ -19,23 +20,31 @@ public class RevenueDashboardResponse {
     @Schema(example = "50")
     private long pendingInvoices;
 
-    @Schema(example = "2500000.00")
+    @Schema(description = "Legacy scalar total; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "2500000.00", nullable = true)
     private BigDecimal totalRevenue;
 
-    @Schema(example = "2200000.00")
+    @Schema(description = "Legacy scalar collection total; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "2200000.00", nullable = true)
     private BigDecimal collectedRevenue;
 
-    @Schema(example = "300000.00")
+    @Schema(description = "Legacy scalar outstanding total; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "300000.00", nullable = true)
     private BigDecimal outstandingRevenue;
 
-    @Schema(example = "1500000.00")
+    @Schema(description = "Legacy scalar service revenue; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "1500000.00", nullable = true)
     private BigDecimal serviceRevenue;
 
-    @Schema(example = "700000.00")
+    @Schema(description = "Legacy scalar subscription revenue; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "700000.00", nullable = true)
     private BigDecimal subscriptionRevenue;
 
-    @Schema(example = "300000.00")
+    @Schema(description = "Legacy scalar deal revenue; null when invoice currencies differ. Use revenueByCurrency in that case.", example = "300000.00", nullable = true)
     private BigDecimal dealRevenue;
+
+    /** Currency-separated totals; financial amounts must not be added across currencies. */
+    private List<InvoiceRevenueByCurrencyResponse> revenueByCurrency = List.of();
+
+    public List<InvoiceRevenueByCurrencyResponse> getRevenueByCurrency() { return revenueByCurrency; }
+    public void setRevenueByCurrency(List<InvoiceRevenueByCurrencyResponse> revenueByCurrency) {
+        this.revenueByCurrency = revenueByCurrency == null ? List.of() : List.copyOf(revenueByCurrency);
+    }
 
     public long getTotalInvoices() {
         return totalInvoices;

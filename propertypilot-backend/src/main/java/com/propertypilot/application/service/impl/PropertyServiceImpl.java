@@ -109,23 +109,6 @@ public List<PropertyResponse> getAllProperties() {
             securityService.getCurrentCustomer()
                     .getCustomerId();
 
-    System.out.println(
-            "Current Customer = "
-                    + currentCustomerId);
-
-    propertyRepository.findAll()
-            .forEach(property -> {
-
-                System.out.println(
-                        "Property = "
-                                + property.getPropertyId()
-                                + " Customer = "
-                                + (property.getCustomer() == null
-                                ? "NULL"
-                                : property.getCustomer()
-                                        .getCustomerId()));
-            });
-
     return propertyRepository.findAll()
             .stream()
             .filter(property ->

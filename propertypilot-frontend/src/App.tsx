@@ -1,10 +1,5 @@
-  /src
-    /api
-    /components
-    /layouts
-    /pages
-    /redux
-    /hooks
-    /utils
-    /styles
-    /tests
+import AppRoutes from './app/routes/AppRoutes';
+
+export default function App() {
+  return <AppRoutes />;
+}

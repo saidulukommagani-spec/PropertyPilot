@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.Map;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "pricing_discount_applications")
@@ -42,8 +45,9 @@ public class PricingDiscountApplicationEntity extends AuditableEntity {
     )
     private BigDecimal amount;
 
-    @Column(name = "metadata")
-    private String metadata;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata", columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> metadata;
 
     @Version
     @Column(
@@ -103,12 +107,12 @@ public class PricingDiscountApplicationEntity extends AuditableEntity {
         this.amount = amount;
     }
 
-    public String getMetadata() {
+    public Map<String, Object> getMetadata() {
         return metadata;
     }
 
     public void setMetadata(
-            String metadata) {
+            Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 

@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/pricing-rules")
 @Tag(
         name = "Pricing Rule Management",

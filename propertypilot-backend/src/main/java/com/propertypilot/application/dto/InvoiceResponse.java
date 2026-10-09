@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Schema(
@@ -21,6 +22,8 @@ public class InvoiceResponse {
 
     @Schema(description = "Customer identifier")
     private UUID customerId;
+
+    private String customerName;
 
     @Schema(
             description = "Invoice number",
@@ -48,6 +51,11 @@ public class InvoiceResponse {
             example = "270.00"
     )
     private BigDecimal taxAmount;
+
+    private String currencyCode;
+
+    private LocalDate renewalPeriodStart;
+    private LocalDate renewalPeriodEnd;
 
     @Schema(description = "Invoice status")
     private InvoiceStatus status;
@@ -82,6 +90,9 @@ public class InvoiceResponse {
     public void setCustomerId(UUID customerId) {
         this.customerId = customerId;
     }
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
 
     public String getInvoiceNumber() {
         return invoiceNumber;
@@ -134,6 +145,19 @@ public class InvoiceResponse {
             BigDecimal taxAmount) {
         this.taxAmount = taxAmount;
     }
+
+    public String getCurrencyCode() {
+        return currencyCode;
+    }
+
+    public void setCurrencyCode(String currencyCode) {
+        this.currencyCode = currencyCode;
+    }
+
+    public LocalDate getRenewalPeriodStart() { return renewalPeriodStart; }
+    public void setRenewalPeriodStart(LocalDate renewalPeriodStart) { this.renewalPeriodStart = renewalPeriodStart; }
+    public LocalDate getRenewalPeriodEnd() { return renewalPeriodEnd; }
+    public void setRenewalPeriodEnd(LocalDate renewalPeriodEnd) { this.renewalPeriodEnd = renewalPeriodEnd; }
 
     public InvoiceStatus getStatus() {
         return status;

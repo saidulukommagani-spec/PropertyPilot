@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 public class SubscriptionPlanServiceImpl
@@ -28,6 +29,7 @@ public class SubscriptionPlanServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanResponse createPlan(
             CreateSubscriptionPlanRequest request) {
 
@@ -75,6 +77,7 @@ public class SubscriptionPlanServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanResponse updatePlan(
             UUID planId,
             UpdateSubscriptionPlanRequest request) {

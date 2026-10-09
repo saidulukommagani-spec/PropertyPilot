@@ -21,11 +21,28 @@ import com.propertypilot.infrastructure.persistence.repository.LeadActivityRepos
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.propertypilot.application.dto.OperationsLeadResponse;
 
 @Service
 @Transactional
 public class LeadServiceImpl
         implements LeadService {
+
+    private static final Map<LeadStatus, List<LeadStatus>> LEAD_STATUS_TRANSITIONS = Map.of(
+            LeadStatus.NEW, List.of(LeadStatus.CONTACTED, LeadStatus.LOST, LeadStatus.CLOSED),
+            LeadStatus.CONTACTED, List.of(LeadStatus.QUALIFIED, LeadStatus.LOST, LeadStatus.CLOSED),
+            LeadStatus.QUALIFIED, List.of(LeadStatus.READY_FOR_DEAL, LeadStatus.LOST, LeadStatus.CLOSED),
+            LeadStatus.READY_FOR_DEAL, List.of(LeadStatus.QUALIFIED, LeadStatus.LOST, LeadStatus.CLOSED),
+            LeadStatus.DEAL_CONVERTED, List.of(LeadStatus.CLOSED),
+            LeadStatus.CONVERTED, List.of(LeadStatus.CLOSED),
+            LeadStatus.LOST, List.of(),
+            LeadStatus.CLOSED, List.of());
 
     private final LeadRepository leadRepository;
 
@@ -127,6 +144,11 @@ private final LeadActivityRepository leadActivityRepository;
         securityService
                 .validateAdminAccess();
 
+        if (status == LeadStatus.DEAL_CONVERTED || status == LeadStatus.CONVERTED) {
+            throw new com.propertypilot.web.exception.BusinessException(
+                    "Use the lead conversion workflow to mark a lead converted");
+        }
+
         LeadEntity lead =
                 leadRepository
                         .findByLeadId(
@@ -135,22 +157,18 @@ private final LeadActivityRepository leadActivityRepository;
                                 new ResourceNotFoundException(
                                         "Lead not found"));
 
-        lead.setStatus(
-                status);
+        LeadStatus previousStatus = lead.getStatus();
+        if (status == null || !LEAD_STATUS_TRANSITIONS.getOrDefault(previousStatus, List.of()).contains(status)) {
+            throw new com.propertypilot.web.exception.BusinessException(
+                    "Invalid lead status transition from " + previousStatus + " to " + status);
+        }
+        lead.setStatus(status);
 
         if (status ==
                 LeadStatus.CONTACTED &&
                 lead.getContactedAt() == null) {
 
             lead.setContactedAt(
-                    OffsetDateTime.now());
-        }
-
-        if (status ==
-                LeadStatus.CONVERTED &&
-                lead.getConvertedAt() == null) {
-
-            lead.setConvertedAt(
                     OffsetDateTime.now());
         }
 
@@ -171,15 +189,27 @@ private final LeadActivityRepository leadActivityRepository;
 
     @Override
     public List<LeadResponse> getMyLeads() {
+        Map<UUID, LeadEntity> personalLeads = new LinkedHashMap<>();
+        if (securityService.hasRole("AGENT")) {
+            UUID userId = securityService.getCurrentUserId();
+            AgentEntity agent = agentRepository.findByUser_UserIdAndStatus(userId, "ACTIVE")
+                    .orElseThrow(() -> new AccessDeniedException("An active agent profile is required"));
+            leadRepository.findByAssignedAgent_AgentIdOrderByCreatedAtDesc(agent.getAgentId())
+                    .forEach(lead -> personalLeads.put(lead.getLeadId(), lead));
+        }
+        try {
+            UUID customerId = securityService.getCurrentCustomerId();
+            leadRepository.findByCustomer_CustomerIdOrderByCreatedAtDesc(customerId)
+                    .forEach(lead -> personalLeads.putIfAbsent(lead.getLeadId(), lead));
+        } catch (ResourceNotFoundException exception) {
+            if (personalLeads.isEmpty() && !securityService.hasRole("AGENT")) {
+                throw exception;
+            }
+        }
 
-        UUID customerId =
-                securityService
-                        .getCurrentCustomerId();
-
-        return leadRepository
-                .findByCustomer_CustomerIdOrderByCreatedAtDesc(
-                        customerId)
-                .stream()
+        return personalLeads.values().stream()
+                .sorted(Comparator.comparing(LeadEntity::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(this::buildResponse)
                 .toList();
     }
@@ -224,6 +254,25 @@ createActivity(
     );
 }
 
+@Override
+@Transactional(readOnly = true)
+public Page<OperationsLeadResponse> searchOperationsLeads(String search, LeadStatus status, Pageable pageable) {
+    securityService.validateOperationsAccess();
+    String normalizedSearch = search == null ? "" : search.trim();
+    return leadRepository.searchForOperations(normalizedSearch, status, pageable)
+            .map(lead -> new OperationsLeadResponse(
+                    lead.getLeadId(), lead.getSource(), lead.getPropertyType(), lead.getLocation(),
+                    lead.getStatus() == null ? null : lead.getStatus().name(),
+                    lead.getCustomer() != null && lead.getCustomer().getUser() != null
+                            ? lead.getCustomer().getUser().getFullName() : null,
+                    lead.getCustomer() != null && lead.getCustomer().getUser() != null
+                            ? lead.getCustomer().getUser().getEmail() : null,
+                    lead.getCustomer() != null && lead.getCustomer().getUser() != null
+                            ? lead.getCustomer().getUser().getMobileNumber() : null,
+                    lead.getAssignedAgent() == null ? null : lead.getAssignedAgent().getAgentCode(),
+                    lead.getCreatedAt()));
+}
+
 private void createActivity(
         LeadEntity lead,
         String activityType,
@@ -243,6 +292,8 @@ private void createActivity(
 
     activity.setDetails(
             details);
+
+    activity.setVisibility("INTERNAL");
 
     activity.setOccurredAt(
             OffsetDateTime.now());
@@ -287,7 +338,8 @@ private void createActivity(
             lead.getAssignedAgent() != null
                     ? lead.getAssignedAgent()
                             .getAgentCode()
-                    : null
+                    : null,
+            lead.getCustomer() == null ? null : lead.getCustomer().getCustomerId()
     );
 }
 }

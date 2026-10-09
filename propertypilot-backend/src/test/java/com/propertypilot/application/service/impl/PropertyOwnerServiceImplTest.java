@@ -30,9 +30,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.propertypilot.security.SecurityService;
 
 @ExtendWith(MockitoExtension.class)
 public class PropertyOwnerServiceImplTest {
+    @Mock private SecurityService securityService;
 
     @Mock
     private PropertyOwnerRepository propertyOwnerRepository;
@@ -349,6 +351,9 @@ void getOwnersByProperty() {
 
     UUID propertyId =
             UUID.randomUUID();
+    Property property = new Property();
+    property.setPropertyId(propertyId);
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
 
     when(propertyOwnerRepository
             .findByProperty_PropertyId(

@@ -21,6 +21,8 @@ public interface AgentAssignmentRepository
     findByServiceRequest_ServiceRequestId(
             UUID serviceRequestId);
 
+    List<AgentAssignmentEntity> findByServiceRequest_ServiceRequestIdOrderByAssignedAtAsc(UUID serviceRequestId);
+
     Optional<AgentAssignmentEntity>
     findByServiceRequest_ServiceRequestIdAndAssignmentStatusIn(
             UUID serviceRequestId,

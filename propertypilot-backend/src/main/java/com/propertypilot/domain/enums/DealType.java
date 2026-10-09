@@ -8,5 +8,9 @@ public enum DealType {
 
     PROPERTY_RENTAL,
 
-    PROPERTY_LEASE
+    PROPERTY_LEASE,
+
+    SERVICE_CONTRACT,
+
+    SUBSCRIPTION_RENEWAL
 }

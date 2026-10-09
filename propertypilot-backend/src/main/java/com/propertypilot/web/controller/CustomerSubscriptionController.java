@@ -25,6 +25,11 @@ public class CustomerSubscriptionController {
     private final CustomerSubscriptionService
             customerSubscriptionService;
 
+    @GetMapping("/admin")
+    public List<CustomerSubscriptionResponse> getAllSubscriptionsForOperations() {
+        return customerSubscriptionService.getAllSubscriptionsForOperations();
+    }
+
     public CustomerSubscriptionController(
             CustomerSubscriptionService customerSubscriptionService) {
 

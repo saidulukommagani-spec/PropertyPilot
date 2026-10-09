@@ -1,108 +1,76 @@
-Creating a comprehensive roadmap for a production-grade React application involves several key areas, including architecture, state management, data fetching, routing, authentication, and testing. Below is a structured roadmap that outlines the necessary components, pages, layouts, and tools to consider when building your application.
+import { useMemo, useState } from 'react';
+import { Alert, Box, Button, Card, CardContent, Chip, FormControl, InputLabel, MenuItem, Select, Skeleton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { paymentsApi } from '../../../api/payments';
+import { isVerifiedSettlement, paymentStatusLabel } from '../utils/settlement';
 
-### React Implementation Roadmap
+const money = (amount: number, currencyCode?: string | null) => new Intl.NumberFormat(undefined, { style: 'currency', currency: currencyCode || 'INR' }).format(amount);
 
-#### 1. **Project Setup**
-   - **Initialize Project**
-     - Use Create React App or Vite for bootstrapping the project.
-     - Set up TypeScript for type safety (optional but recommended).
-   - **Directory Structure**
-     - Organize the project into folders: `src/components`, `src/pages`, `src/layouts`, `src/store`, `src/api`, `src/hooks`, `src/utils`, `src/styles`, `src/tests`.
+export default function PaymentListPage() {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('ALL');
+  const [sortBy, setSortBy] = useState<'paymentDate' | 'amount' | 'paymentStatus'>('paymentDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const query = useQuery({ queryKey: ['payments', 'list'], queryFn: paymentsApi.list });
+  const payments = query.data ?? [];
+  const filtered = useMemo(() => payments
+    .filter((payment) => status === 'ALL' || (status === 'SUCCESS' ? isVerifiedSettlement(payment) : status === 'UNVERIFIED_SUCCESS' ? payment.paymentStatus === 'SUCCESS' && !isVerifiedSettlement(payment) : payment.paymentStatus === status))
+    .filter((payment) =>
+      `${payment.invoiceNumber ?? ''} ${payment.customerName ?? ''} ${payment.paymentMethod} ${payment.paymentStatus}`
+        .toLowerCase().includes(search.trim().toLowerCase()),
+    )
+    .sort((left, right) => {
+      const leftValue = sortBy === 'paymentDate' ? (left.settledAt ?? left.paymentDate ?? '') : sortBy === 'amount' ? left.amount : left.paymentStatus;
+      const rightValue = sortBy === 'paymentDate' ? (right.settledAt ?? right.paymentDate ?? '') : sortBy === 'amount' ? right.amount : right.paymentStatus;
+      const comparison = typeof leftValue === 'number' && typeof rightValue === 'number'
+        ? leftValue - rightValue
+        : String(leftValue).localeCompare(String(rightValue));
+      return sortDirection === 'asc' ? comparison : -comparison;
+    }), [payments, search, sortBy, sortDirection, status]);
 
-#### 2. **Routing**
-   - **React Router Setup**
-     - Install `react-router-dom`.
-     - Create a `Router` component to manage routes.
-     - Define routes for main pages (e.g., Home, About, Dashboard, Login, etc.).
-   - **Dynamic Routing**
-     - Implement dynamic routes for user profiles, product details, etc.
+  const toggleSort = (column: typeof sortBy) => {
+    if (sortBy === column) setSortDirection((current) => current === 'asc' ? 'desc' : 'asc');
+    else { setSortBy(column); setSortDirection('asc'); }
+    setPage(0);
+  };
 
-#### 3. **Layouts**
-   - **Create Layout Components**
-     - `MainLayout`: For general pages with header, footer, and sidebar.
-     - `AuthLayout`: For authentication pages (Login, Register).
-   - **Responsive Design**
-     - Use CSS frameworks (e.g., Tailwind CSS, Bootstrap) or CSS-in-JS libraries (e.g., styled-components) for styling.
-
-#### 4. **Pages**
-   - **Define Main Pages**
-     - Home Page
-     - About Page
-     - Dashboard Page
-     - User Profile Page
-     - Login Page
-     - Registration Page
-     - Error Page (404)
-   - **Nested Pages**
-     - Implement nested routes for dashboard features (e.g., settings, reports).
-
-#### 5. **Components**
-   - **Reusable Components**
-     - Button, Input, Modal, Card, Table, etc.
-   - **Form Components**
-     - Create form components for user input (e.g., LoginForm, RegistrationForm).
-   - **UI Libraries**
-     - Consider using component libraries (e.g., Material-UI, Ant Design) for pre-built components.
-
-#### 6. **State Management**
-   - **Redux Setup**
-     - Install `redux`, `react-redux`, and `@reduxjs/toolkit`.
-     - Create a Redux store and configure it.
-     - Define slices for user authentication, application state, etc.
-   - **Redux Toolkit**
-     - Use `createSlice` and `createAsyncThunk` for managing state and side effects.
-
-#### 7. **Data Fetching**
-   - **React Query Setup**
-     - Install `react-query`.
-     - Create API client using Axios or Fetch API.
-     - Define queries and mutations for data fetching (e.g., fetching user data, submitting forms).
-   - **Caching and Synchronization**
-     - Utilize React Query's caching and background refetching features.
-
-#### 8. **API Clients**
-   - **Create API Client**
-     - Set up Axios instance with base URL and interceptors for authentication.
-   - **Service Layer**
-     - Create service functions for API calls (e.g., `authService`, `userService`).
-
-#### 9. **Authentication**
-   - **Authentication Flow**
-     - Implement login, registration, and logout functionalities.
-     - Use JWT or session-based authentication.
-   - **Protected Routes**
-     - Create higher-order components (HOCs) or hooks to protect routes based on authentication status.
-   - **User Context**
-     - Use React Context or Redux to manage user authentication state globally.
-
-#### 10. **Forms**
-   - **Form Handling**
-     - Use libraries like Formik or React Hook Form for form management and validation.
-   - **Validation**
-     - Implement client-side validation using Yup or similar libraries.
-
-#### 11. **Testing**
-   - **Testing Framework**
-     - Set up Jest and React Testing Library for unit and integration tests.
-   - **Write Tests**
-     - Write tests for components, pages, and Redux slices.
-     - Test API calls and form submissions.
-   - **End-to-End Testing**
-     - Consider using Cypress or Playwright for end-to-end testing.
-
-#### 12. **Deployment**
-   - **Build Process**
-     - Configure build scripts for production.
-   - **Deployment Platforms**
-     - Choose a hosting platform (e.g., Vercel, Netlify, AWS).
-   - **CI/CD**
-     - Set up continuous integration and deployment pipelines (e.g., GitHub Actions, CircleCI).
-
-#### 13. **Monitoring and Analytics**
-   - **Error Tracking**
-     - Integrate tools like Sentry for error tracking.
-   - **Analytics**
-     - Use Google Analytics or similar tools for user behavior tracking.
-
-### Conclusion
-This roadmap provides a structured approach to building a production-grade React application. Each section can be expanded with more specific tasks and considerations based on the project's requirements. Remember to iterate and adapt the roadmap as needed throughout the development process.
+  return <Stack spacing={3}>
+    <Box><Typography variant="h4" fontWeight={750}>Payments</Typography><Typography color="text.secondary" sx={{ mt: 0.5 }}>Payment attempts and verified settlements recorded against invoices.</Typography></Box>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+      <TextField label="Search by invoice or customer" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} size="small" fullWidth />
+      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+        <InputLabel id="payment-status-filter-label">Payment status</InputLabel>
+        <Select labelId="payment-status-filter-label" value={status} label="Payment status" onChange={(event) => { setStatus(event.target.value); setPage(0); }}>
+          <MenuItem value="ALL">All statuses</MenuItem>
+          <MenuItem value="INITIATED">Initiated</MenuItem>
+          <MenuItem value="PENDING">Pending</MenuItem>
+          <MenuItem value="SUCCESS">Verified settlement</MenuItem>
+          <MenuItem value="UNVERIFIED_SUCCESS">Unverified success</MenuItem>
+          <MenuItem value="FAILED">Failed</MenuItem>
+          <MenuItem value="REFUNDED">Refunded</MenuItem>
+          <MenuItem value="CANCELLED">Cancelled</MenuItem>
+        </Select>
+      </FormControl>
+    </Stack>
+    {query.isError && <Alert severity="error" action={<Button color="inherit" onClick={() => void query.refetch()}>Retry</Button>}>{query.error instanceof Error ? query.error.message : 'Payment records could not be loaded.'}</Alert>}
+    <Card variant="outlined"><CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}><Box sx={{ overflowX: 'auto' }}><Table size="small" aria-label="Payments">
+      <TableHead><TableRow>
+        <TableCell sx={{ fontWeight: 700 }}>Invoice</TableCell><TableCell sx={{ fontWeight: 700 }}>Customer</TableCell>
+        <TableCell sx={{ fontWeight: 700 }}><TableSortLabel active={sortBy === 'amount'} direction={sortBy === 'amount' ? sortDirection : 'asc'} onClick={() => toggleSort('amount')}>Amount</TableSortLabel></TableCell>
+        <TableCell sx={{ fontWeight: 700 }}>Method</TableCell>
+        <TableCell sx={{ fontWeight: 700 }}><TableSortLabel active={sortBy === 'paymentStatus'} direction={sortBy === 'paymentStatus' ? sortDirection : 'asc'} onClick={() => toggleSort('paymentStatus')}>Status</TableSortLabel></TableCell>
+        <TableCell sx={{ fontWeight: 700 }}><TableSortLabel active={sortBy === 'paymentDate'} direction={sortBy === 'paymentDate' ? sortDirection : 'asc'} onClick={() => toggleSort('paymentDate')}>Payment / settlement date</TableSortLabel></TableCell><TableCell />
+      </TableRow></TableHead>
+      <TableBody>
+        {query.isLoading && Array.from({ length: 5 }, (_, index) => <TableRow key={index}>{Array.from({ length: 7 }, (_, cell) => <TableCell key={cell}><Skeleton /></TableCell>)}</TableRow>)}
+        {!query.isLoading && filtered.slice(page * pageSize, (page + 1) * pageSize).map((payment) => <TableRow key={payment.paymentId} hover>
+          <TableCell>{payment.invoiceNumber || 'Invoice'}</TableCell><TableCell>{payment.customerName || 'Customer'}</TableCell><TableCell>{money(payment.amount,payment.currencyCode)}</TableCell><TableCell>{payment.paymentMethod.replaceAll('_', ' ')}</TableCell><TableCell><Chip size="small" label={paymentStatusLabel(payment)} color={isVerifiedSettlement(payment) ? 'success' : payment.paymentStatus === 'FAILED' ? 'error' : 'warning'} /></TableCell><TableCell>{payment.settledAt ? new Date(payment.settledAt).toLocaleString() : payment.paymentDate ? new Date(payment.paymentDate).toLocaleString() : '—'}</TableCell><TableCell><Button component={Link} to={`/staff/payments/${payment.paymentId}`} size="small">View</Button></TableCell>
+        </TableRow>)}
+        {!query.isLoading && !query.isError && filtered.length === 0 && <TableRow><TableCell colSpan={7} align="center"><Box sx={{ py: 6 }}><Typography fontWeight={700}>{payments.length ? 'No matching payments' : 'No payments recorded'}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Payments appear after they are recorded against an invoice.</Typography></Box></TableCell></TableRow>}
+      </TableBody>
+    </Table></Box><TablePagination component="div" count={filtered.length} page={page} onPageChange={(_, nextPage) => setPage(nextPage)} rowsPerPage={pageSize} onRowsPerPageChange={(event) => { setPageSize(Number(event.target.value)); setPage(0); }} rowsPerPageOptions={[10, 25, 50]} /></CardContent></Card>
+  </Stack>;
+}

@@ -1,7 +1,10 @@
 package com.propertypilot.config;
 
+import com.propertypilot.PropertyPilotApplication;
 import com.propertypilot.security.CustomUserDetailsService;
 import com.propertypilot.security.JwtAuthenticationFilter;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -116,5 +119,15 @@ class SecurityConfigTest {
     void securityConfig_ShouldBeCreated() {
 
         assertNotNull(securityConfig);
+    }
+
+    @Test
+    void application_ShouldNotEnableSpringGeneratedInMemoryUsers() {
+        SpringBootApplication application = PropertyPilotApplication.class
+                .getAnnotation(SpringBootApplication.class);
+
+        assertNotNull(application);
+        assertTrue(java.util.Arrays.asList(application.exclude())
+                .contains(UserDetailsServiceAutoConfiguration.class));
     }
 }

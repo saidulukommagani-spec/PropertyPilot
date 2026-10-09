@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 public class SubscriptionPlanEntitlementServiceImpl
@@ -45,6 +46,7 @@ public class SubscriptionPlanEntitlementServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanEntitlementResponse
     createEntitlement(
             CreateSubscriptionPlanEntitlementRequest request) {
@@ -103,6 +105,7 @@ public class SubscriptionPlanEntitlementServiceImpl
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanEntitlementResponse
     updateEntitlement(
             UUID entitlementId,

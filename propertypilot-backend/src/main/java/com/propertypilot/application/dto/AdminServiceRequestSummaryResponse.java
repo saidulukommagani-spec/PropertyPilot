@@ -22,9 +22,15 @@ public class AdminServiceRequestSummaryResponse {
 
     private String requestType;
 
+    private String serviceName;
+
     private String status;
 
     private String priority;
 
     private Instant requestedAt;
+
+    private UUID assignedAgentId;
+
+    private String assignedAgentName;
 }

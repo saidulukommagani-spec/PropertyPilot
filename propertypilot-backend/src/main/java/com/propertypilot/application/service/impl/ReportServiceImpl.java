@@ -12,19 +12,24 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import com.propertypilot.security.SecurityService;
 
 @Service
 public class ReportServiceImpl implements ReportService {
+
+    private final SecurityService securityService;
 
     private final ReportRepository reportRepository;
     private final ServiceRequestRepository serviceRequestRepository;
 
     public ReportServiceImpl(
             ReportRepository reportRepository,
-            ServiceRequestRepository serviceRequestRepository) {
+            ServiceRequestRepository serviceRequestRepository,
+            SecurityService securityService) {
 
         this.reportRepository = reportRepository;
         this.serviceRequestRepository = serviceRequestRepository;
+        this.securityService = securityService;
     }
 
     @Override
@@ -37,6 +42,7 @@ public class ReportServiceImpl implements ReportService {
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Service request not found"));
+        securityService.validateOperationsAccess();
 
         ReportEntity report = new ReportEntity();
 
@@ -62,6 +68,8 @@ public class ReportServiceImpl implements ReportService {
     public ReportResponse submitReport(
             UUID reportId) {
 
+        securityService.validateOperationsAccess();
+
         ReportEntity report =
                 getReportEntity(reportId);
 
@@ -76,6 +84,8 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportResponse approveReport(
             UUID reportId) {
+
+        securityService.validateOperationsAccess();
 
         ReportEntity report =
                 getReportEntity(reportId);
@@ -92,6 +102,8 @@ public class ReportServiceImpl implements ReportService {
     public ReportResponse deliverReport(
             UUID reportId) {
 
+        securityService.validateOperationsAccess();
+
         ReportEntity report =
                 getReportEntity(reportId);
 
@@ -106,10 +118,12 @@ public class ReportServiceImpl implements ReportService {
     private ReportEntity getReportEntity(
             UUID reportId) {
 
-        return reportRepository.findById(reportId)
+        ReportEntity report = reportRepository.findById(reportId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Report not found"));
+        securityService.validateServiceRequestAccess(report.getServiceRequest());
+        return report;
     }
 
     private ReportResponse buildResponse(

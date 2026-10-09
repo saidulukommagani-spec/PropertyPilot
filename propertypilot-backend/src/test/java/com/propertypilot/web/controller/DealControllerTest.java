@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -54,10 +56,23 @@ class DealControllerTest {
         mockMvc.perform(
                         post("/api/v1/deals")
                                 .contentType("application/json")
-                                .content("{}"))
+                                .content(objectMapper.writeValueAsString(validCreateDealRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dealStatus")
                         .value("OPEN"));
+    }
+
+    @Test
+    void createDeal_rejectsInvalidCommissionBeforeCallingService() throws Exception {
+        CreateDealRequest request = validCreateDealRequest();
+        request.setBuyerCommissionPercent(new BigDecimal("100.01"));
+
+        mockMvc.perform(post("/api/v1/deals")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verify(dealService, never()).createDeal(any());
     }
 
     @Test
@@ -244,6 +259,18 @@ class DealControllerTest {
                 BigDecimal.valueOf(1000000));
 
         return response;
+    }
+
+    private CreateDealRequest validCreateDealRequest() {
+        CreateDealRequest request = new CreateDealRequest();
+        request.setPropertyId(UUID.randomUUID());
+        request.setSellerCustomerId(UUID.randomUUID());
+        request.setDealType("PROPERTY_SALE");
+        request.setExpectedAmount(new BigDecimal("100000.00"));
+        request.setSellerCommissionPercent(new BigDecimal("2.50"));
+        request.setBuyerCommissionPercent(new BigDecimal("2.50"));
+        request.setRemarks("Property transaction deal");
+        return request;
     }
 
     private DealParticipantResponse buildParticipantResponse() {

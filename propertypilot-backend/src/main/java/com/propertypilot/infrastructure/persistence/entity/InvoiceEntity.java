@@ -4,11 +4,14 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.propertypilot.domain.enums.BillingEntityType;
 import com.propertypilot.domain.enums.InvoiceStatus;
 import com.propertypilot.domain.enums.InvoiceType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "invoices")
@@ -28,6 +31,10 @@ public class InvoiceEntity extends AuditableEntity {
             nullable = false)
     private CustomerEntity customer;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deal_id")
+    private DealEntity deal;
+
     @Column(
             name = "invoice_number",
             nullable = false)
@@ -36,6 +43,7 @@ public class InvoiceEntity extends AuditableEntity {
     @Column(
             name = "currency_code",
             columnDefinition = "char(3)")
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String currencyCode;
 
     @Column(name = "invoice_amount")
@@ -75,6 +83,12 @@ private InvoiceType invoiceType;
 @Column(name = "description")
 private String description;
 
+    @Column(name = "renewal_period_start")
+    private LocalDate renewalPeriodStart;
+
+    @Column(name = "renewal_period_end")
+    private LocalDate renewalPeriodEnd;
+
 public UUID getInvoiceId() {
     return invoiceId;
 }
@@ -86,6 +100,9 @@ public void setInvoiceId(UUID invoiceId) {
 public CustomerEntity getCustomer() {
     return customer;
 }
+
+public DealEntity getDeal() { return deal; }
+public void setDeal(DealEntity deal) { this.deal = deal; }
 
 public void setCustomer(CustomerEntity customer) {
     this.customer = customer;
@@ -194,5 +211,10 @@ public String getDescription() {
 public void setDescription(String description) {
     this.description = description;
 }
+
+public LocalDate getRenewalPeriodStart() { return renewalPeriodStart; }
+public void setRenewalPeriodStart(LocalDate renewalPeriodStart) { this.renewalPeriodStart = renewalPeriodStart; }
+public LocalDate getRenewalPeriodEnd() { return renewalPeriodEnd; }
+public void setRenewalPeriodEnd(LocalDate renewalPeriodEnd) { this.renewalPeriodEnd = renewalPeriodEnd; }
 
 }

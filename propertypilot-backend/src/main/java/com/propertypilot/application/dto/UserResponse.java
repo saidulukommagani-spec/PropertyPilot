@@ -2,6 +2,7 @@ package com.propertypilot.application.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
 import java.util.UUID;
 
 public record UserResponse(
@@ -34,6 +35,12 @@ public record UserResponse(
                 description = "User status",
                 example = "ACTIVE"
         )
-        String status
+        String status,
+
+        @Schema(
+                description = "Assigned roles",
+                example = "[\"ADMIN\",\"OPERATIONS\"]"
+        )
+        List<String> roles
 ) {
 }

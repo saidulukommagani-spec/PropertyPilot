@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PricingDiscountApplicationRepository
         extends JpaRepository<PricingDiscountApplicationEntity, UUID> {
+
+    java.util.List<PricingDiscountApplicationEntity> findByPricingEstimate_PricingEstimateId(UUID pricingEstimateId);
 }

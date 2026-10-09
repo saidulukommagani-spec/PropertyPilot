@@ -1,9 +1,12 @@
 package com.propertypilot.security;
 
 import com.propertypilot.infrastructure.persistence.entity.*;
+import com.propertypilot.domain.enums.RoleStatus;
 import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 import com.propertypilot.infrastructure.persistence.repository.UserRoleRepository;
+import com.propertypilot.infrastructure.persistence.repository.AgentRepository;
+import com.propertypilot.infrastructure.persistence.repository.AgentAssignmentRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
@@ -31,6 +34,12 @@ class SecurityServiceTest {
     @Mock
     private UserRoleRepository userRoleRepository;
 
+    @Mock
+    private AgentRepository agentRepository;
+
+    @Mock
+    private AgentAssignmentRepository agentAssignmentRepository;
+
     @InjectMocks
     private SecurityService securityService;
 
@@ -49,7 +58,8 @@ class SecurityServiceTest {
                 .setAuthentication(
                         new UsernamePasswordAuthenticationToken(
                                 "admin@test.com",
-                                "password"));
+                                "password",
+                                List.of()));
     }
 
     @AfterEach
@@ -80,6 +90,7 @@ class SecurityServiceTest {
 
         RoleEntity role = new RoleEntity();
         role.setRoleCode("ADMIN");
+        role.setStatus(RoleStatus.ACTIVE);
 
         UserRoleEntity userRole = new UserRoleEntity();
         userRole.setRole(role);
@@ -216,6 +227,49 @@ class SecurityServiceTest {
     }
 
     @Test
+    void validateCustomerAccess_ShouldDenyAnotherCustomersData() {
+        mockNonAdmin();
+        when(customerRepository.findByUser_Email("admin@test.com"))
+                .thenReturn(Optional.of(createCustomer(customerId)));
+
+        assertThrows(AccessDeniedException.class,
+                () -> securityService.validateCustomerAccess(UUID.randomUUID()));
+    }
+
+    @Test
+    void validateCustomerAccess_ShouldAllowOwnCustomerData() {
+        mockNonAdmin();
+        when(customerRepository.findByUser_Email("admin@test.com"))
+                .thenReturn(Optional.of(createCustomer(customerId)));
+
+        assertDoesNotThrow(
+                () -> securityService.validateCustomerAccess(customerId));
+    }
+
+    @Test
+    void validateServiceRequestAccess_ShouldAllowOnlyAssignedAgent() {
+        mockNonAdmin();
+        AgentEntity agent = new AgentEntity();
+        agent.setAgentId(UUID.randomUUID());
+        agent.setUser(createUser());
+        when(agentRepository.findByUser_UserIdAndStatus(userId, "ACTIVE"))
+                .thenReturn(Optional.of(agent));
+
+        ServiceRequestEntity request = new ServiceRequestEntity();
+        request.setServiceRequestId(UUID.randomUUID());
+        request.setCustomer(createCustomer(UUID.randomUUID()));
+        AgentAssignmentEntity assignment = new AgentAssignmentEntity();
+        assignment.setAgent(agent);
+        when(agentAssignmentRepository
+                .findByServiceRequest_ServiceRequestIdAndAssignmentStatusIn(
+                        request.getServiceRequestId(),
+                        List.of("ASSIGNED", "ACCEPTED", "IN_PROGRESS")))
+                .thenReturn(Optional.of(assignment));
+
+        assertDoesNotThrow(() -> securityService.validateServiceRequestAccess(request));
+    }
+
+    @Test
     void validateAdminAccess_ShouldPass() {
 
         mockAdmin();
@@ -340,6 +394,20 @@ class SecurityServiceTest {
     }
 
     @Test
+    void validateLeadOwnership_ShouldPassForOperations() {
+        UserEntity user = createUser();
+        RoleEntity role = new RoleEntity();
+        role.setRoleCode("OPERATIONS");
+        role.setStatus(RoleStatus.ACTIVE);
+        UserRoleEntity userRole = new UserRoleEntity();
+        userRole.setRole(role);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userRoleRepository.findByUser_UserId(userId)).thenReturn(List.of(userRole));
+
+        assertDoesNotThrow(() -> securityService.validateLeadOwnership(new LeadEntity()));
+    }
+
+    @Test
     void validateLeadOwnership_ShouldPassForOwner() {
 
         mockNonAdmin();
@@ -357,6 +425,35 @@ class SecurityServiceTest {
 
         assertDoesNotThrow(
                 () -> securityService.validateLeadOwnership(lead));
+    }
+
+    @Test
+    void validateLeadOwnership_ShouldPassForAssignedAgent() {
+        mockNonAdmin();
+        when(customerRepository.findByUser_Email(anyString())).thenReturn(Optional.empty());
+
+        UserEntity assignedUser = new UserEntity();
+        assignedUser.setUserId(userId);
+        AgentEntity assignedAgent = new AgentEntity();
+        assignedAgent.setUser(assignedUser);
+        LeadEntity lead = new LeadEntity();
+        lead.setAssignedAgent(assignedAgent);
+
+        assertDoesNotThrow(() -> securityService.validateLeadOwnership(lead));
+    }
+
+    @Test
+    void validateLeadOwnership_ShouldDenyUnassignedAgent() {
+        mockNonAdmin();
+        when(customerRepository.findByUser_Email(anyString())).thenReturn(Optional.empty());
+        UserEntity differentAgentUser = new UserEntity();
+        differentAgentUser.setUserId(UUID.randomUUID());
+        AgentEntity assignedAgent = new AgentEntity();
+        assignedAgent.setUser(differentAgentUser);
+        LeadEntity lead = new LeadEntity();
+        lead.setAssignedAgent(assignedAgent);
+
+        assertThrows(AccessDeniedException.class, () -> securityService.validateLeadOwnership(lead));
     }
 
     @Test

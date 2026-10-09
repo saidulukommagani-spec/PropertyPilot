@@ -6,6 +6,8 @@ public class SubscriptionUsageResponse {
 
     private UUID serviceId;
 
+    private String serviceName;
+
     private Integer entitledQuantity;
 
     private Integer consumedQuantity;
@@ -19,6 +21,14 @@ public class SubscriptionUsageResponse {
     public void setServiceId(
             UUID serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public Integer getEntitledQuantity() {

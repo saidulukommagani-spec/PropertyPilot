@@ -2,6 +2,7 @@ package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.CreateCustomerSubscriptionAddOnRequest;
 import com.propertypilot.application.dto.CustomerSubscriptionAddOnResponse;
+import com.propertypilot.application.dto.SubscriptionAddOnCatalogResponse;
 import com.propertypilot.application.service.CustomerSubscriptionAddOnService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/customer-subscriptions")
@@ -27,6 +29,12 @@ public class CustomerSubscriptionAddOnController {
 
     private final CustomerSubscriptionAddOnService
             customerSubscriptionAddOnService;
+
+    @GetMapping("/available")
+    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN','OPERATIONS')")
+    public ResponseEntity<List<SubscriptionAddOnCatalogResponse>> getAvailableAddOns() {
+        return ResponseEntity.ok(customerSubscriptionAddOnService.getAvailableAddOns());
+    }
 
     public CustomerSubscriptionAddOnController(
             CustomerSubscriptionAddOnService

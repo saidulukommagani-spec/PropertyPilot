@@ -34,6 +34,18 @@ public class BillingController {
 
     private final BillingService billingService;
 
+    @PostMapping("/invoices/{invoiceId}/send")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<InvoiceResponse> sendInvoice(@PathVariable UUID invoiceId) {
+        return ResponseEntity.ok(billingService.sendInvoice(invoiceId));
+    }
+
+    @PostMapping("/invoices/{invoiceId}/cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<InvoiceResponse> cancelInvoice(@PathVariable UUID invoiceId) {
+        return ResponseEntity.ok(billingService.cancelInvoice(invoiceId));
+    }
+
     @Operation(
             summary = "Get invoice by id",
             description = "Returns invoice details for a given invoice id"
@@ -45,7 +57,7 @@ public class BillingController {
                     description = "Invoice not found")
     })
     @GetMapping("/invoices/{invoiceId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<InvoiceResponse> getInvoice(
 
             @Parameter(
@@ -70,7 +82,7 @@ public class BillingController {
             description = "Invoices retrieved successfully"
     )
     @GetMapping("/invoices")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InvoiceResponse>>
     getAllInvoices() {
 
@@ -88,7 +100,7 @@ public class BillingController {
             description = "Customer invoices retrieved successfully"
     )
     @GetMapping("/customers/{customerId}/invoices")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     public ResponseEntity<List<InvoiceResponse>>
     getCustomerInvoices(
 
@@ -116,7 +128,7 @@ public class BillingController {
     )
     @GetMapping(
             "/invoices/entity/{entityType}/{entityId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InvoiceResponse>>
     getEntityInvoices(
 

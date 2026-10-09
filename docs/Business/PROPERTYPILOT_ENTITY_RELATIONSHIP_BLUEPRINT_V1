@@ -1,0 +1,427 @@
+PROPERTYPILOT_ENTITY_RELATIONSHIP_BLUEPRINT_V1
+Version: 1.0
+Status: Approved Architecture Baseline
+Owner: PropertyPilot
+Date: October 2026
+Purpose
+This document defines the master relationship model for PropertyPilot.
+It serves as the authoritative reference for:
+Business Model
+Operational Workflow
+Database Design
+JPA Entities
+API Design
+Frontend Screens
+Future Enhancements
+
+Core Design Principle
+PropertyPilot is a:
+Property-Centric Service Platform
+NOT:
+Marketplace
+Classified Portal
+Property Listing Website
+Broker Platform
+
+PropertyPilot revolves around:
+Customer
+    ↓
+Property
+    ↓
+Services
+    ↓
+Subscriptions
+    ↓
+Leads
+    ↓
+Deals
+
+Level 1 Domain Relationships
+Customer
+│
+├── Properties
+├── Subscriptions
+├── Service Requests
+├── Leads
+├── Deals
+├── Invoices
+└── Payments
+
+CUSTOMER DOMAIN
+Customer
+Represents:
+Property Owner
+Buyer
+Seller
+Tenant
+Investor
+NRI Customer
+
+Relationships
+Customer
+    │
+    ├── CustomerAddresses (1:N)
+    ├── CustomerPreferences (1:N)
+    ├── CustomerFavorites (1:N)
+    ├── CustomerSearchHistory (1:N)
+    │
+    ├── Properties (1:N)
+    ├── Subscriptions (1:N)
+    ├── ServiceRequests (1:N)
+    ├── Leads (1:N)
+    ├── Deals (1:N)
+    ├── Invoices (1:N)
+    └── Payments (1:N)
+
+PROPERTY DOMAIN
+Property
+Most important entity in PropertyPilot.
+Everything should ultimately relate to a property.
+Relationships
+Property
+    │
+    ├── Owners (N:N)
+    ├── Documents (1:N)
+    ├── Media (1:N)
+    ├── ServiceRequests (1:N)
+    ├── Visits (1:N)
+    ├── Evidence (1:N)
+    ├── Leads (1:N)
+    ├── Deals (1:N)
+    ├── Reports (1:N)
+    └── TimelineEvents (1:N)
+
+PROPERTY 360 MODEL
+Future Property Dashboard:
+Property
+    │
+    ├── Overview
+    ├── Documents
+    ├── Services
+    ├── Visits
+    ├── Evidence
+    ├── Leads
+    ├── Deals
+    ├── Reports
+    ├── Subscriptions
+    └── Timeline
+
+This becomes the central customer experience.
+SUBSCRIPTION DOMAIN
+Subscription Plan
+Defines:
+Benefits
+Entitlements
+Discounts
+Limits
+
+Relationships
+SubscriptionPlan
+        │
+        ├── PlanBenefits
+        ├── PlanAddons
+        └── PlanVersions
+
+Customer Subscription
+Customer
+      │
+      └── CustomerSubscription
+                  │
+                  ├── Entitlements
+                  ├── Consumption
+                  ├── Renewals
+                  └── Transactions
+
+SERVICE DOMAIN
+Primary revenue engine.
+Service Catalog
+ServiceCategory
+       │
+       └── Service
+                 │
+                 ├── Pricing Rules
+                 ├── Evidence Rules
+                 └── SLA Rules
+
+Service Request
+Customer
+     │
+     └── ServiceRequest
+                 │
+                 ├── Property
+                 ├── Service
+                 ├── PricingEstimate
+                 ├── Assignments
+                 ├── Visits
+                 ├── Evidence
+                 ├── Invoice
+                 └── Payment
+
+SERVICE DELIVERY DOMAIN
+Assignment
+ServiceRequest
+       │
+       └── Assignment
+                   │
+                   ├── Agent
+                   ├── Status
+                   └── Visits
+
+Visit
+Assignment
+      │
+      └── Visit
+               │
+               ├── Evidence
+               ├── GPS
+               ├── Notes
+               ├── Media
+               └── Completion
+
+Evidence
+Visit
+    │
+    └── Evidence
+              │
+              ├── Photos
+              ├── Videos
+              ├── Documents
+              ├── GPS
+              └── Timestamps
+
+LEAD DOMAIN
+Lead is NOT the final goal.
+Lead is an opportunity.
+Relationships
+Lead
+   │
+   ├── Customer
+   ├── Property
+   ├── Services
+   ├── Assessments
+   ├── Activities
+   └── Deal
+
+Lead Lifecycle
+Lead Created
+      ↓
+Qualified
+      ↓
+Assessment
+      ↓
+Required Services Identified
+      ↓
+Service Requests Generated
+      ↓
+Ready For Deal
+      ↓
+Converted
+
+Important Business Rule
+A lead may:
+Generate Services
+Generate Deal
+Generate Both
+Generate Neither
+
+DEAL DOMAIN
+Deal
+Represents:
+Buy
+Sell
+Lease
+Rental
+Commercial
+Agricultural
+
+Relationships
+Deal
+   │
+   ├── Lead
+   ├── Property
+   ├── Buyer
+   ├── Seller
+   ├── Documents
+   ├── Negotiations
+   ├── Activities
+   ├── Invoices
+   └── Payments
+
+Deal Lifecycle
+Initiated
+      ↓
+Verification
+      ↓
+Negotiation
+      ↓
+Agreement
+      ↓
+Closure
+
+COMMERCIAL DOMAIN
+Pricing
+Service
+      │
+      └── PricingEstimate
+                    │
+                    ├── Base Cost
+                    ├── Travel
+                    ├── DA
+                    ├── Margin
+                    ├── GST
+                    └── Discounts
+
+Invoice
+Invoice
+      │
+      ├── Customer
+      ├── Property
+      ├── ServiceRequest
+      ├── Deal
+      └── Payments
+
+Payment
+Payment
+      │
+      ├── Invoice
+      ├── Customer
+      └── Transaction
+
+AGENT DOMAIN
+Agent
+Agent
+    │
+    ├── Skills
+    ├── Assignments
+    ├── Visits
+    ├── Evidence
+    └── Performance
+
+REPORTING DOMAIN
+Reports
+Can be generated from:
+Property
+ServiceRequest
+Visit
+Lead
+Deal
+Subscription
+
+MASTER RELATIONSHIP FLOW
+Customer
+    │
+    ▼
+Property
+    │
+    ├────────────────────┐
+    │                    │
+    ▼                    ▼
+Service Request        Lead
+    │                    │
+    ▼                    ▼
+Assignment         Assessment
+    │                    │
+    ▼                    ▼
+Visit          Required Services
+    │                    │
+    ▼                    ▼
+Evidence      Service Requests
+    │                    │
+    ▼                    ▼
+Invoice      Ready For Deal
+    │                    │
+    ▼                    ▼
+Payment            Deal
+                        │
+                        ▼
+                    Invoice
+                        │
+                        ▼
+                    Payment
+
+Revenue Relationship Blueprint
+Revenue Stream 1
+Service Request
+      ↓
+Visit
+      ↓
+Invoice
+      ↓
+Payment
+
+Primary revenue source.
+Revenue Stream 2
+Subscription
+      ↓
+Renewal
+      ↓
+Recurring Revenue
+
+Revenue Stream 3
+Lead
+      ↓
+Services
+      ↓
+Additional Revenue
+
+Revenue Stream 4
+Lead
+      ↓
+Deal
+      ↓
+Commission / Deal Revenue
+
+PropertyPilot Golden Rule
+Every major business activity should be traceable to:
+Customer
+      +
+Property
+
+If a future feature cannot be connected to:
+Customer
+Property
+Service
+Lead
+Deal
+
+it should be challenged before implementation.
+Architecture Validation Result
+Domain	Status
+Customer	Complete
+Property	Complete
+Services	Complete
+Assignments	Complete
+Visits	Complete
+Evidence	Complete
+Subscriptions	Mature Foundation
+Leads	Needs Lifecycle Completion
+Deals	Needs Lifecycle Completion
+Commercial	Strong Foundation
+Reporting	Needs Expansion
+
+
+Official Conclusion
+PropertyPilot's architecture is based on:
+Customer
+    ↓
+Property
+    ↓
+Services
+    ↓
+Subscriptions
+    ↓
+Leads
+    ↓
+Deals
+    ↓
+Revenue
+
+This blueprint becomes the master reference for:
+- Backend evolution
+- Frontend development
+- Database validation
+- API design
+- Future enhancements
+- Production readiness reviews
+Document: PROPERTYPILOT_ENTITY_RELATIONSHIP_BLUEPRINT_V1
+Status: APPROVED BASELINE

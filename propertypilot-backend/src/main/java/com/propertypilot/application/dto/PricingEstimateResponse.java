@@ -2,6 +2,8 @@ package com.propertypilot.application.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.time.OffsetDateTime;
+import java.util.List;
 
 public class PricingEstimateResponse {
 
@@ -10,6 +12,7 @@ public class PricingEstimateResponse {
     private UUID customerId;
 
     private UUID serviceId;
+    private UUID propertyId;
 
     private String serviceName;
 
@@ -24,6 +27,14 @@ public class PricingEstimateResponse {
     private String currencyCode;
 
     private String status;
+    private OffsetDateTime expiresAt;
+    private BigDecimal standardPrice;
+    private BigDecimal customerPrice;
+    private BigDecimal savings;
+    private PricingBreakdownResponse standardBreakdown;
+    private PricingBreakdownResponse customerBreakdown;
+    private List<PricingEstimateLineResponse> lineItems;
+    private List<PricingDiscountResponse> discounts;
 
     public UUID getPricingEstimateId() {
         return pricingEstimateId;
@@ -48,6 +59,9 @@ public class PricingEstimateResponse {
     public void setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
     }
+
+    public UUID getPropertyId() { return propertyId; }
+    public void setPropertyId(UUID propertyId) { this.propertyId = propertyId; }
 
     public String getServiceName() {
         return serviceName;
@@ -104,4 +118,21 @@ public class PricingEstimateResponse {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public OffsetDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(OffsetDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public BigDecimal getStandardPrice() { return standardPrice; }
+    public void setStandardPrice(BigDecimal standardPrice) { this.standardPrice = standardPrice; }
+    public BigDecimal getCustomerPrice() { return customerPrice; }
+    public void setCustomerPrice(BigDecimal customerPrice) { this.customerPrice = customerPrice; }
+    public BigDecimal getSavings() { return savings; }
+    public void setSavings(BigDecimal savings) { this.savings = savings; }
+    public PricingBreakdownResponse getStandardBreakdown() { return standardBreakdown; }
+    public void setStandardBreakdown(PricingBreakdownResponse value) { standardBreakdown = value; }
+    public PricingBreakdownResponse getCustomerBreakdown() { return customerBreakdown; }
+    public void setCustomerBreakdown(PricingBreakdownResponse value) { customerBreakdown = value; }
+    public List<PricingEstimateLineResponse> getLineItems() { return lineItems; }
+    public void setLineItems(List<PricingEstimateLineResponse> value) { lineItems = value; }
+    public List<PricingDiscountResponse> getDiscounts() { return discounts; }
+    public void setDiscounts(List<PricingDiscountResponse> value) { discounts = value; }
 }

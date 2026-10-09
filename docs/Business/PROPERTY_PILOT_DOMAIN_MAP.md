@@ -1,0 +1,12 @@
+Customer
+Lead
+Deal
+Property
+Service
+ServiceRequest
+Visit
+Evidence
+Subscription
+Pricing
+Agent
+Vendor

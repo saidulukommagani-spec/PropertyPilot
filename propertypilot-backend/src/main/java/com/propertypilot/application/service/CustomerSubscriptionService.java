@@ -18,6 +18,7 @@ public interface CustomerSubscriptionService {
 
     List<CustomerSubscriptionResponse> getCustomerSubscriptions(
             UUID customerId);
+    List<CustomerSubscriptionResponse> getAllSubscriptionsForOperations();
 
     CustomerSubscriptionResponse updateSubscription(
             UUID customerSubscriptionId,

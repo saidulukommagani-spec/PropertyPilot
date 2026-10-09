@@ -7,6 +7,7 @@ import com.propertypilot.application.dto.UpdateCustomerAddressRequest;
 import com.propertypilot.application.service.CustomerAddressService;
 import com.propertypilot.security.CustomUserDetailsService;
 import com.propertypilot.security.JwtService;
+import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class CustomerAddressControllerTest {
 
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
+
+    @MockitoBean
+    private SecurityService securityService;
 
     @Test
     @DisplayName("Create Address")

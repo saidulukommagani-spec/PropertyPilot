@@ -14,4 +14,7 @@ public interface LeadActivityRepository
     List<LeadActivityEntity>
     findByLead_LeadIdOrderByOccurredAtDesc(
             UUID leadId);
+
+    List<LeadActivityEntity> findByLead_LeadIdAndVisibilityOrderByOccurredAtDesc(
+            UUID leadId, String visibility);
 }

@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -73,13 +71,14 @@ class UserControllerTest {
         mockMvc.perform(
                         post("/api/v1/users")
                                 .contentType("application/json")
-                                .content(
-                                        objectMapper.writeValueAsString(request)))
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.fullName")
                         .value("John Doe"))
                 .andExpect(jsonPath("$.email")
-                        .value("john@example.com"));
+                        .value("john@example.com"))
+                .andExpect(jsonPath("$.roles[0]")
+                        .value("CUSTOMER"));
     }
 
     @Test
@@ -109,14 +108,14 @@ class UserControllerTest {
     void getAllUsers_success() throws Exception {
 
         when(userService.getAllUsers())
-                .thenReturn(
-                        List.of(buildUserResponse()));
+                .thenReturn(List.of(buildUserResponse()));
 
-        mockMvc.perform(
-                        get("/api/v1/users"))
+        mockMvc.perform(get("/api/v1/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].fullName")
-                        .value("John Doe"));
+                        .value("John Doe"))
+                .andExpect(jsonPath("$[0].roles[0]")
+                        .value("CUSTOMER"));
     }
 
     @Test
@@ -129,11 +128,12 @@ class UserControllerTest {
                 .thenReturn(buildUserResponse());
 
         mockMvc.perform(
-                        get("/api/v1/users/{userId}",
-                                userId))
+                        get("/api/v1/users/{userId}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName")
-                        .value("John Doe"));
+                        .value("John Doe"))
+                .andExpect(jsonPath("$.roles[0]")
+                        .value("CUSTOMER"));
     }
 
     @Test
@@ -155,7 +155,8 @@ class UserControllerTest {
                         "John Updated",
                         "updated@example.com",
                         "9999999999",
-                        "ACTIVE"
+                        "ACTIVE",
+                        List.of("CUSTOMER")
                 );
 
         when(userService.updateUser(
@@ -164,14 +165,14 @@ class UserControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(
-                        put("/api/v1/users/{userId}",
-                                userId)
+                        put("/api/v1/users/{userId}", userId)
                                 .contentType("application/json")
-                                .content(
-                                        objectMapper.writeValueAsString(request)))
+                                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName")
-                        .value("John Updated"));
+                        .value("John Updated"))
+                .andExpect(jsonPath("$.roles[0]")
+                        .value("CUSTOMER"));
     }
 
     @Test
@@ -189,29 +190,13 @@ class UserControllerTest {
                 """;
 
         mockMvc.perform(
-                        put("/api/v1/users/{userId}",
-                                userId)
+                        put("/api/v1/users/{userId}", userId)
                                 .contentType("application/json")
                                 .content(request))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("Validation failed"));
     }
-
-//    @Test
-// @DisplayName("Get Current User")
-// void getCurrentUser_success() throws Exception {
-
-//     when(userService.getCurrentUser("john@example.com"))
-//             .thenReturn(buildUserResponse());
-
-//     mockMvc.perform(
-//                     get("/api/v1/users/me")
-//                             .principal(() -> "john@example.com"))
-//             .andExpect(status().isOk())
-//             .andExpect(jsonPath("$.email")
-//                     .value("john@example.com"));
-// }
 
     @Test
     @DisplayName("Delete User")
@@ -224,8 +209,7 @@ class UserControllerTest {
                 .deleteUser(userId);
 
         mockMvc.perform(
-                        delete("/api/v1/users/{userId}",
-                                userId))
+                        delete("/api/v1/users/{userId}", userId))
                 .andExpect(status().isNoContent());
     }
 
@@ -236,7 +220,8 @@ class UserControllerTest {
                 "John Doe",
                 "john@example.com",
                 "9876543210",
-                "ACTIVE"
+                "ACTIVE",
+                List.of("CUSTOMER")
         );
     }
 }

@@ -2,12 +2,15 @@ package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.CreateSubscriptionRenewalRequest;
 import com.propertypilot.application.dto.SubscriptionRenewalResponse;
+import com.propertypilot.application.dto.InvoiceResponse;
+import com.propertypilot.application.dto.SubscriptionRenewalInvoiceRequest;
 import com.propertypilot.application.service.SubscriptionRenewalService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/subscription-renewals")
+@PreAuthorize("hasAnyRole('ADMIN','OPERATIONS','CUSTOMER')")
 @Tag(
         name = "Subscription Renewal Management",
         description = "APIs for subscription renewals"
@@ -31,6 +35,14 @@ public class SubscriptionRenewalController {
 
         this.renewalService =
                 renewalService;
+    }
+
+    @PostMapping("/invoice")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create or retrieve the invoice for a subscription renewal period")
+    public InvoiceResponse createRenewalInvoice(
+            @Valid @RequestBody SubscriptionRenewalInvoiceRequest request) {
+        return renewalService.createRenewalInvoice(request);
     }
 
     @PostMapping

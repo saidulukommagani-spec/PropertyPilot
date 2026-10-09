@@ -1,0 +1,15 @@
+import { useMemo, useState } from 'react';
+import { Alert, Card, CardContent, Chip, MenuItem, Skeleton, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import SearchRounded from '@mui/icons-material/SearchRounded';
+import { useCustomerDocuments } from '../hooks/useCustomerPortal';
+import { CustomerPageHeading, CustomerQueryError } from '../components/CustomerStates';
+
+export default function CustomerDocumentsPage() {
+  const query=useCustomerDocuments(); const [search,setSearch]=useState('');const[category,setCategory]=useState('ALL');const docs=query.documents.data??[];const categories=[...new Set(docs.map((doc)=>doc.documentType))].sort();
+  const filtered=useMemo(()=>docs.filter((doc)=>`${doc.documentName} ${doc.documentType}`.toLowerCase().includes(search.toLowerCase())&&(category==='ALL'||doc.documentType===category)),[docs,search,category]);
+  return <Stack spacing={3}><CustomerPageHeading title="My documents" subtitle="Browse documents connected to your properties." />{query.properties.isError&&<CustomerQueryError error={query.properties.error} retry={()=>void query.properties.refetch()}/ >}{query.documents.isError&&<CustomerQueryError error={query.documents.error} retry={()=>void query.documents.refetch()}/ >}
+    <Stack direction={{xs:'column',sm:'row'}} spacing={1.5}><TextField size="small" label="Search documents" value={search} onChange={(event)=>setSearch(event.target.value)} InputProps={{startAdornment:<SearchRounded color="action" sx={{mr:1}}/>}}/><TextField select size="small" label="Category" value={category} onChange={(event)=>setCategory(event.target.value)} sx={{minWidth:180}}><MenuItem value="ALL">All categories</MenuItem>{categories.map((type)=><MenuItem key={type} value={type}>{type}</MenuItem>)}</TextField></Stack>
+    <Card variant="outlined"><CardContent sx={{p:0,'&:last-child':{pb:0}}}><Table aria-label="Property documents"><TableHead><TableRow>{['Document','Category','Property','Status'].map((label)=><TableCell key={label}>{label}</TableCell>)}</TableRow></TableHead><TableBody>{query.documents.isLoading&&Array.from({length:4},(_,i)=><TableRow key={i}><TableCell colSpan={4}><Skeleton/></TableCell></TableRow>)}{filtered.map((doc)=><TableRow key={doc.documentId}><TableCell>{doc.documentName}</TableCell><TableCell>{doc.documentType}</TableCell><TableCell>{query.properties.data?.find((property)=>property.propertyId===doc.propertyId)?.title||'Property'}</TableCell><TableCell><Chip size="small" label={doc.status}/></TableCell></TableRow>)}{!query.documents.isLoading&&!query.documents.isError&&!filtered.length&&<TableRow><TableCell colSpan={4} align="center"><Typography color="text.secondary" sx={{py:4}}>{docs.length?'No documents match your search.':'No property documents are available.'}</Typography></TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+    {!query.documents.isError&&<Alert severity="info">Document records currently include metadata only; the document API does not provide file downloads.</Alert>}
+  </Stack>;
+}

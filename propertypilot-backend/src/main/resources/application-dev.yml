@@ -12,13 +12,13 @@ spring:
   jpa:
     show-sql: false
 
+security:
+  jwt:
+    secret: ${JWT_SECRET:PropertyPilotDevelopmentJwtSecretKeyMustBeAtLeast32CharactersLong}
+
 logging:
   level:
-    com.propertypilot: DEBUG
-    org.springframework.security: DEBUG
-
-    spring:
-security:
-  user:
-    name: admin
-    password: admin123
+    com.propertypilot: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

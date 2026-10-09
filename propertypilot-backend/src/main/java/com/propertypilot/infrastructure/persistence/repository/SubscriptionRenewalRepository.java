@@ -12,6 +12,8 @@ public interface SubscriptionRenewalRepository
                 SubscriptionRenewalEntity,
                 UUID> {
 
+    boolean existsByPaymentId(UUID paymentId);
+
     List<SubscriptionRenewalEntity>
     findByCustomerSubscription_CustomerSubscriptionId(
             UUID customerSubscriptionId);

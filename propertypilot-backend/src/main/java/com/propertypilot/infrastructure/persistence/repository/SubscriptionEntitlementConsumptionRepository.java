@@ -21,10 +21,13 @@ public interface SubscriptionEntitlementConsumptionRepository
             UUID customerSubscriptionId,
             UUID serviceId);
 
-    Optional<SubscriptionEntitlementConsumptionEntity>
+    List<SubscriptionEntitlementConsumptionEntity>
     findByCustomerSubscription_CustomerSubscriptionIdAndService_ServiceIdAndPeriodEndIsNull(
             UUID customerSubscriptionId,
             UUID serviceId);
+
+    Optional<SubscriptionEntitlementConsumptionEntity>
+    findByServiceRequest_ServiceRequestIdAndPeriodEndIsNull(UUID serviceRequestId);
 
     List<SubscriptionEntitlementConsumptionEntity>
     findByCustomerSubscription_CustomerSubscriptionIdAndPeriodEndIsNull(

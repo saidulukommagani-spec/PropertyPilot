@@ -4,6 +4,8 @@ import com.propertypilot.infrastructure.persistence.entity.ServiceRequestEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +16,12 @@ public interface ServiceRequestRepository
 
     List<ServiceRequestEntity> findByProperty_PropertyId(
             UUID propertyId);
+
+    List<ServiceRequestEntity> findByService_ServiceIdAndStatusIn(UUID serviceId, List<String> statuses);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select sr from ServiceRequestEntity sr where sr.serviceRequestId = :serviceRequestId")
+    Optional<ServiceRequestEntity> findByIdForUpdate(@Param("serviceRequestId") UUID serviceRequestId);
             @Query("""
 SELECT sr
 FROM ServiceRequestEntity sr
@@ -66,5 +74,9 @@ long countByStatus(
 long countByCustomer_CustomerIdAndStatus(
         UUID customerId,
         String status);
+
+    boolean existsByPricingEstimate_PricingEstimateId(UUID pricingEstimateId);
+
+    List<ServiceRequestEntity> findByLead_LeadIdOrderByRequestedAtDesc(UUID leadId);
 
     }

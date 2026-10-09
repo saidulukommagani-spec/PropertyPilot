@@ -23,5 +23,7 @@ public interface PricingProfileParameterRepository
 findByPricingProfileProfileCode(
         String profileCode);
 
+    List<PricingProfileParameterEntity> findByPricingProfileProfileCodeAndActiveFlagTrue(String profileCode);
+
         
 }

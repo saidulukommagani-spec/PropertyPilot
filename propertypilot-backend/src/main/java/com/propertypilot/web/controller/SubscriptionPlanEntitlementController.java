@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/subscription-plan-entitlements")
@@ -24,6 +25,7 @@ public class SubscriptionPlanEntitlementController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanEntitlementResponse
     createEntitlement(
             @RequestBody
@@ -51,6 +53,7 @@ public class SubscriptionPlanEntitlementController {
     }
 
     @PutMapping("/{entitlementId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public SubscriptionPlanEntitlementResponse
     updateEntitlement(
             @PathVariable UUID entitlementId,

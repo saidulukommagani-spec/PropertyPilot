@@ -20,7 +20,13 @@ public class PaymentResponse {
 
     private UUID customerId;
 
+    private String customerName;
+
+    private String invoiceNumber;
+
     private BigDecimal amount;
+
+    private String currencyCode;
 
     private PaymentMethod paymentMethod;
 
@@ -31,6 +37,7 @@ public class PaymentResponse {
     private String providerPaymentId;
 
     private OffsetDateTime paymentDate;
+    private OffsetDateTime settledAt;
 
     public UUID getPaymentId() {
         return paymentId;
@@ -59,6 +66,11 @@ public class PaymentResponse {
         this.customerId = customerId;
     }
 
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getInvoiceNumber() { return invoiceNumber; }
+    public void setInvoiceNumber(String invoiceNumber) { this.invoiceNumber = invoiceNumber; }
+
     public BigDecimal getAmount() {
         return amount;
     }
@@ -67,6 +79,9 @@ public class PaymentResponse {
             BigDecimal amount) {
         this.amount = amount;
     }
+
+    public String getCurrencyCode() { return currencyCode; }
+    public void setCurrencyCode(String currencyCode) { this.currencyCode = currencyCode; }
 
     public PaymentMethod getPaymentMethod() {
         return paymentMethod;
@@ -113,4 +128,7 @@ public class PaymentResponse {
             OffsetDateTime paymentDate) {
         this.paymentDate = paymentDate;
     }
+
+    public OffsetDateTime getSettledAt() { return settledAt; }
+    public void setSettledAt(OffsetDateTime settledAt) { this.settledAt = settledAt; }
 }

@@ -38,11 +38,20 @@ public class PricingProfileLoaderServiceImpl
                             + profileCode);
         }
 
+        if (parameters.get(0).getPricingProfile() == null
+                || !Boolean.TRUE.equals(parameters.get(0).getPricingProfile().getActiveFlag())) {
+            throw new IllegalArgumentException("Pricing profile is not active: " + profileCode);
+        }
+
         Map<String, String> result =
                 new HashMap<>();
 
         for (PricingProfileParameterEntity parameter
                 : parameters) {
+
+            if (!Boolean.TRUE.equals(parameter.getActiveFlag())) {
+                continue;
+            }
 
             result.put(
                     parameter.getParameterCode(),

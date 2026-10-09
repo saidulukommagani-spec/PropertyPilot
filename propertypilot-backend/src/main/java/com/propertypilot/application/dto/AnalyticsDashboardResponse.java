@@ -27,6 +27,12 @@ public class AnalyticsDashboardResponse {
     )
     private long totalDeals;
 
+    private long readyForDealLeads;
+
+    private long convertedLeads;
+
+    private double leadToDealConversionRate;
+
     @Schema(
             description = "Total Service Requests"
     )
@@ -72,6 +78,13 @@ public class AnalyticsDashboardResponse {
             long totalDeals) {
         this.totalDeals = totalDeals;
     }
+
+    public long getReadyForDealLeads() { return readyForDealLeads; }
+    public void setReadyForDealLeads(long value) { this.readyForDealLeads = value; }
+    public long getConvertedLeads() { return convertedLeads; }
+    public void setConvertedLeads(long value) { this.convertedLeads = value; }
+    public double getLeadToDealConversionRate() { return leadToDealConversionRate; }
+    public void setLeadToDealConversionRate(double value) { this.leadToDealConversionRate = value; }
 
     public long getTotalServiceRequests() {
         return totalServiceRequests;

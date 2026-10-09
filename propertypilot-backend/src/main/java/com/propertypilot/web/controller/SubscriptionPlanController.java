@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/subscription-plans")
@@ -36,6 +37,7 @@ public class SubscriptionPlanController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
             summary = "Create subscription plan",
@@ -78,6 +80,7 @@ public class SubscriptionPlanController {
     }
 
     @PutMapping("/{planId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Update subscription plan",
             description =

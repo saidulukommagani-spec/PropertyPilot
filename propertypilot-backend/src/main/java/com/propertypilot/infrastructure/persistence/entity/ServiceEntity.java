@@ -11,6 +11,7 @@ public class ServiceEntity
         extends AuditableEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "service_id")
     private UUID serviceId;
 
@@ -24,14 +25,47 @@ public class ServiceEntity
     private String category;
 
     @Column(name = "base_price")
-    private BigDecimal basePrice;
+    private BigDecimal basePrice = BigDecimal.ZERO;
 
     @Column(name = "active_flag")
-    private Boolean activeFlag;
+    private Boolean activeFlag = true;
 
     @Version
     @Column(name = "version")
     private Long version;
+
+    @Column(name = "requires_visit", nullable = false)
+    private Boolean requiresVisit = false;
+
+    @Column(name = "visit_mandatory", nullable = false)
+    private Boolean visitMandatory = false;
+
+    @Column(name = "max_visits_allowed", nullable = false)
+    private Integer maxVisitsAllowed = 0;
+
+    @Column(name = "requires_gps", nullable = false)
+    private Boolean requiresGps = false;
+
+    @Column(name = "gps_radius_km", nullable = false, precision = 8, scale = 3)
+    private BigDecimal gpsRadiusKm = new BigDecimal("0.200");
+
+    @Column(name = "requires_before_photo", nullable = false)
+    private Boolean requiresBeforePhoto = false;
+
+    @Column(name = "requires_after_photo", nullable = false)
+    private Boolean requiresAfterPhoto = false;
+
+    @Column(name = "requires_signature", nullable = false)
+    private Boolean requiresSignature = false;
+
+    @Column(name = "requires_document_upload", nullable = false)
+    private Boolean requiresDocumentUpload = false;
+
+    @Column(name = "is_remote", nullable = false)
+    private Boolean remote = false;
+
+    @Column(name = "billable", nullable = false)
+    private Boolean billable = true;
 
     public UUID getServiceId() {
         return serviceId;
@@ -81,30 +115,78 @@ public class ServiceEntity
         this.activeFlag = activeFlag;
     }
 
-    @Column(name = "requires_visit")
-private Boolean requiresVisit = false;
+public Boolean getRequiresVisit() {
+    return requiresVisit;
+}
 
-@Column(name = "visit_mandatory")
-private Boolean visitMandatory = false;
+public void setRequiresVisit(Boolean requiresVisit) {
+    this.requiresVisit = requiresVisit;
+}
 
-@Column(name = "max_visits_allowed")
-private Integer maxVisitsAllowed = 0;
+public Boolean getVisitMandatory() {
+    return visitMandatory;
+}
 
-@Column(name = "requires_gps")
-private Boolean requiresGps = false;
+public void setVisitMandatory(Boolean visitMandatory) {
+    this.visitMandatory = visitMandatory;
+}
 
-@Column(name = "requires_before_photo")
-private Boolean requiresBeforePhoto = false;
+public Integer getMaxVisitsAllowed() {
+    return maxVisitsAllowed;
+}
 
-@Column(name = "requires_after_photo")
-private Boolean requiresAfterPhoto = false;
+public void setMaxVisitsAllowed(Integer maxVisitsAllowed) {
+    this.maxVisitsAllowed = maxVisitsAllowed;
+}
 
-@Column(name = "requires_signature")
-private Boolean requiresSignature = false;
+public Boolean getRequiresGps() {
+    return requiresGps;
+}
 
-@Column(name = "requires_document_upload")
-private Boolean requiresDocumentUpload = false;
+public void setRequiresGps(Boolean requiresGps) {
+    this.requiresGps = requiresGps;
+}
 
+public BigDecimal getGpsRadiusKm() { return gpsRadiusKm; }
+public void setGpsRadiusKm(BigDecimal gpsRadiusKm) { this.gpsRadiusKm = gpsRadiusKm; }
 
+public Boolean getRequiresBeforePhoto() {
+    return requiresBeforePhoto;
+}
+
+public void setRequiresBeforePhoto(Boolean requiresBeforePhoto) {
+    this.requiresBeforePhoto = requiresBeforePhoto;
+}
+
+public Boolean getRequiresAfterPhoto() {
+    return requiresAfterPhoto;
+}
+
+public void setRequiresAfterPhoto(Boolean requiresAfterPhoto) {
+    this.requiresAfterPhoto = requiresAfterPhoto;
+}
+
+public Boolean getRequiresSignature() {
+    return requiresSignature;
+}
+
+public void setRequiresSignature(Boolean requiresSignature) {
+    this.requiresSignature = requiresSignature;
+}
+
+public Boolean getRequiresDocumentUpload() {
+    return requiresDocumentUpload;
+}
+
+public void setRequiresDocumentUpload(
+        Boolean requiresDocumentUpload) {
+    this.requiresDocumentUpload =
+            requiresDocumentUpload;
+}
+
+    public Boolean getRemote() { return remote; }
+    public void setRemote(Boolean remote) { this.remote = remote; }
+    public Boolean getBillable() { return billable; }
+    public void setBillable(Boolean billable) { this.billable = billable; }
 
 }

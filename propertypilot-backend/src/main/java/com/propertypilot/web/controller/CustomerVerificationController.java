@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -135,6 +136,7 @@ public class CustomerVerificationController {
                     description = "Verification not found")
     })
     @PutMapping("/verifications/{verificationId}/approve")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('OPERATIONS')")
     public ResponseEntity<CustomerVerificationResponse>
     approveVerification(
 
@@ -167,6 +169,7 @@ public class CustomerVerificationController {
                     description = "Verification not found")
     })
     @PutMapping("/verifications/{verificationId}/reject")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('OPERATIONS')")
     public ResponseEntity<CustomerVerificationResponse>
     rejectVerification(
 

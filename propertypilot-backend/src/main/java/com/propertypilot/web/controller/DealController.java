@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +40,7 @@ public class DealController {
     })
     @PostMapping
     public ResponseEntity<DealResponse> createDeal(
-            @RequestBody CreateDealRequest request) {
+            @Valid @RequestBody CreateDealRequest request) {
 
         return ResponseEntity.ok(
                 dealService.createDeal(request));
@@ -189,7 +190,7 @@ public class DealController {
             @ApiResponse(responseCode = "200", description = "Deal completed")
     })
     @PutMapping("/{dealId}/complete")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DealResponse> completeDeal(
             @PathVariable UUID dealId,
             @RequestBody CompleteDealRequest request) {

@@ -1,8 +1,8 @@
 package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.CreatePricingEstimateRequest;
-import com.propertypilot.application.dto.PricingCalculationResponse;
-import com.propertypilot.application.service.PricingCalculatorService;
+import com.propertypilot.application.dto.PricingEstimateResponse;
+import com.propertypilot.application.service.PricingEngineService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/pricing")
@@ -20,14 +21,11 @@ import org.springframework.web.bind.annotation.*;
 )
 public class PricingController {
 
-    private final PricingCalculatorService
-            pricingCalculatorService;
+    private final PricingEngineService pricingEngineService;
 
     public PricingController(
-            PricingCalculatorService pricingCalculatorService) {
-
-        this.pricingCalculatorService =
-                pricingCalculatorService;
+            PricingEngineService pricingEngineService) {
+        this.pricingEngineService = pricingEngineService;
     }
 
     @PostMapping("/calculate")
@@ -36,16 +34,15 @@ public class PricingController {
             description =
                     "Calculates standard price, customer price, discounts and savings."
     )
-    public ResponseEntity<PricingCalculationResponse>
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS')")
+    public ResponseEntity<PricingEstimateResponse>
     calculatePricing(
 
             @Valid
             @RequestBody
             CreatePricingEstimateRequest request) {
 
-        PricingCalculationResponse response =
-                pricingCalculatorService
-                        .calculate(request);
+        PricingEstimateResponse response = pricingEngineService.calculateEstimate(request);
 
         return ResponseEntity.ok(
                 response);

@@ -129,3 +129,14 @@
 
 ### Conclusion
 This roadmap provides a structured approach to building a production-grade React application. Each section can be expanded with more specific tasks and considerations based on the project's requirements. Regularly review and iterate on the roadmap as the project evolves and new technologies or best practices emerge.
+
+### Local browser E2E tests
+
+Playwright tests are run with `npm run test:e2e`. The default browser is Playwright-managed Chromium. To use an installed browser without downloading a browser binary, set `PLAYWRIGHT_EXECUTABLE_PATH` to its executable before running the command:
+
+```powershell
+$env:PLAYWRIGHT_EXECUTABLE_PATH = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+npm run test:e2e
+```
+
+For Google Chrome, use `C:\Program Files\Google\Chrome\Application\chrome.exe`. The `test:e2e:headed` script runs the same suite with a visible browser window. Browser screenshots and failure traces are written under `test-results/`, which is git-ignored. Tests under `e2e/` explicitly labeled as mocked UI tests intercept API responses and do not verify live backend authorization or business data.
