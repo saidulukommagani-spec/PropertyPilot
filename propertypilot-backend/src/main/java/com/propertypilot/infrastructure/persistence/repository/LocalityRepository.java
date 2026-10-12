@@ -15,6 +15,13 @@ public interface LocalityRepository
     List<LocalityEntity> findByPincode(
             String pincode);
 
+    java.util.Optional<LocalityEntity>
+    findFirstByLocalityNameIgnoreCaseAndPincodeAndDistrict_DistrictNameIgnoreCaseAndDistrict_State_StateNameIgnoreCase(
+            String localityName,
+            String pincode,
+            String districtName,
+            String stateName);
+
     boolean existsByDistrictDistrictIdAndLocalityName(
             UUID districtId,
             String localityName);

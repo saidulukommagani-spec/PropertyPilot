@@ -10,4 +10,6 @@ public interface UserRoleRepository extends JpaRepository<UserRoleEntity, UUID> 
 
     List<UserRoleEntity> findByUser_UserId(UUID userId);
 
+    List<UserRoleEntity> findByUser_UserIdAndEffectiveToIsNull(UUID userId);
+
 }

@@ -23,7 +23,7 @@ describe('Sidebar role navigation', () => {
     expect(screen.getAllByRole('link', { name: 'Service requests' })[0].getAttribute('href')).toBe('/service-requests');
     expect(screen.getAllByRole('link', { name: 'Agent assignments' })[0].getAttribute('href')).toBe('/operations/assignments');
     expect(screen.getByRole('link', { name: 'Lead queue' }).getAttribute('href')).toBe('/operations/leads');
-    expect(screen.getAllByRole('img', { name: 'PropertyPilot' })[0].getAttribute('src')).toBe('/brand/propertypilot-mark-light.svg');
+    expect(screen.getByRole('img', { name: /PropertyPilot.*Your property/ }).getAttribute('src')).toBe('/brand/propertypilot-logo-dark.svg');
   });
 
   it('links field agents to their assigned lead queue', () => {

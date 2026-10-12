@@ -7,4 +7,6 @@ public interface PricingEngineService {
 
     PricingEstimateResponse calculateEstimate(
             CreatePricingEstimateRequest request);
+
+    PricingEstimateResponse calculateCustomerEstimate(CreatePricingEstimateRequest request);
 }

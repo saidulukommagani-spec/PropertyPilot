@@ -3,6 +3,8 @@ package com.propertypilot.application.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,6 +35,38 @@ public class PropertyUpdateRequest {
     )
     @NotBlank
     private String propertyType;
+
+    @Schema(description = "Primary service address", example = "12 Lake View Road, Jubilee Hills")
+    @Size(max = 255)
+    private String addressLine1;
+
+    @Schema(description = "Additional address information", example = "Building B, Flat 302")
+    @Size(max = 255)
+    private String addressLine2;
+
+    @Schema(description = "Locality or neighborhood")
+    @Size(max = 120)
+    private String localityName;
+
+    @Schema(description = "City or town")
+    @Size(max = 120)
+    private String city;
+
+    @Schema(description = "District")
+    @Size(max = 120)
+    private String district;
+
+    @Schema(description = "State")
+    @Size(max = 120)
+    private String state;
+
+    @Schema(description = "Postal or PIN code")
+    @Size(max = 20)
+    private String postalCode;
+
+    @Schema(description = "ISO 3166-1 alpha-2 country code")
+    @Pattern(regexp = "[A-Z]{2}", message = "Use a 2-letter country code")
+    private String countryCode;
 
     @Schema(
             description = "Listing status",

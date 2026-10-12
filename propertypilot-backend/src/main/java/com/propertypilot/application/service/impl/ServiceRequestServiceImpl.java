@@ -131,10 +131,6 @@ this.agentAssignmentRepository = agentAssignmentRepository;
                 || quote.getAcceptedAt().isAfter(quote.getExpiresAt())) {
             throw new BusinessException("Only a valid accepted quote can create a service request");
         }
-        if (serviceRequestRepository.existsByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId())) {
-            throw new BusinessException("A service request already exists for this quote");
-        }
-
         CustomerEntity customer = quote.getCustomer();
         Property property = quote.getProperty();
         ServiceEntity service = quote.getService();
@@ -144,6 +140,22 @@ this.agentAssignmentRepository = agentAssignmentRepository;
             throw new BusinessException("The accepted quote has incomplete or inconsistent customer/property/service data");
         }
         securityService.validatePropertyOwnership(property);
+        boolean suppliedSelection = request.getPropertyId() != null || request.getServiceId() != null
+                || request.getServiceType() != null;
+        if (suppliedSelection && (request.getPropertyId() == null || request.getServiceId() == null
+                || request.getServiceType() == null || request.getServiceType().isBlank())) {
+            throw new BusinessException("Property, service type, and service must be selected together");
+        }
+        if (suppliedSelection && (!property.getPropertyId().equals(request.getPropertyId())
+                || !service.getServiceId().equals(request.getServiceId())
+                || !normalizeServiceType(service.getCategory()).equals(normalizeServiceType(request.getServiceType())))) {
+            throw new BusinessException("The accepted quote does not match the selected property and service");
+        }
+        ServiceRequestEntity existingRequest = serviceRequestRepository
+                .findByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId()).orElse(null);
+        if (existingRequest != null) {
+            return buildResponse(existingRequest);
+        }
         LeadEntity lead = null;
         if (request.getLeadId() != null) {
             lead = leadRepository.findByLeadId(request.getLeadId())
@@ -154,7 +166,7 @@ this.agentAssignmentRepository = agentAssignmentRepository;
             }
         }
         if (!Boolean.TRUE.equals(service.getActiveFlag())) {
-            throw new BusinessException("The quoted service is no longer available for request creation");
+            throw new BusinessException("This service is inactive and is no longer available for request creation");
         }
         eligibilityEngine.validateEligibility(service.getServiceId(), property.getPropertyId());
 
@@ -193,6 +205,10 @@ this.agentAssignmentRepository = agentAssignmentRepository;
         }
         return buildResponse(saved);
 }
+
+    private String normalizeServiceType(String value) {
+        return value == null ? "" : value.trim().toUpperCase(java.util.Locale.ROOT).replaceAll("[\\s-]+", "_");
+    }
 
     @Override
     public ServiceRequestResponse createEntitledMonitoringRequest(

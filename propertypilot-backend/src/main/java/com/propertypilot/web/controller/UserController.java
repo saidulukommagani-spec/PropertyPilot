@@ -3,6 +3,7 @@ package com.propertypilot.web.controller;
 import com.propertypilot.application.dto.UserCreateRequest;
 import com.propertypilot.application.dto.UserResponse;
 import com.propertypilot.application.dto.UserUpdateRequest;
+import com.propertypilot.application.dto.UserAccessProvisionRequest;
 import com.propertypilot.application.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -124,6 +125,14 @@ public class UserController {
         return userService.updateUser(
                 userId,
                 request);
+    }
+
+    @Operation(summary = "Provision staff or agent access", description = "Changes an existing account's active access. Customer data is retained.")
+    @PutMapping("/{userId}/access")
+    public UserResponse provisionAccess(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UserAccessProvisionRequest request) {
+        return userService.provisionAccess(userId, request);
     }
 
     @Operation(

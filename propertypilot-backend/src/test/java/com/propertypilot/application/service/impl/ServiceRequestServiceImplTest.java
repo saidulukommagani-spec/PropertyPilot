@@ -216,8 +216,6 @@ void createRequest_success_usesAcceptedQuoteAndDoesNotCreateInvoice() {
     request.setDescription("Please inspect the property");
     when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId()))
             .thenReturn(Optional.of(quote));
-    when(serviceRequestRepository.existsByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId()))
-            .thenReturn(false);
     when(serviceRequestRepository.saveAndFlush(any())).thenAnswer(invocation -> {
         ServiceRequestEntity entity = invocation.getArgument(0);
         entity.setServiceRequestId(UUID.randomUUID());
@@ -246,7 +244,6 @@ void createRequest_capturesTheActiveSlaDeadlineAtRequestCreation() {
     policy.setSlaPolicyId(policyId);
     policy.setCompletionMinutes(90);
     when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId())).thenReturn(Optional.of(quote));
-    when(serviceRequestRepository.existsByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId())).thenReturn(false);
     when(slaPolicyRepository.findByService_ServiceIdAndStatusIgnoreCaseOrderByCreatedAtDesc(
             quote.getService().getServiceId(), "ACTIVE")).thenReturn(List.of(policy));
     when(serviceRequestRepository.saveAndFlush(any())).thenAnswer(invocation -> {
@@ -295,7 +292,6 @@ void createRequest_withLeadPersistsLinkAndAddsLeadAuditActivity() {
     request.setPriority("HIGH");
     request.setDescription("Please inspect the property");
     when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId())).thenReturn(Optional.of(quote));
-    when(serviceRequestRepository.existsByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId())).thenReturn(false);
     when(leadRepository.findByLeadId(leadId)).thenReturn(Optional.of(lead));
     when(serviceRequestRepository.saveAndFlush(any())).thenAnswer(invocation -> {
         ServiceRequestEntity entity = invocation.getArgument(0);
@@ -325,19 +321,64 @@ void createRequest_rejectsQuoteThatIsNotAccepted() {
 }
 
 @Test
-void createRequest_preventsDuplicateForAcceptedQuote() {
+void createRequestReturnsExistingRequestForIdempotentRetry() {
     PricingEstimateEntity quote = acceptedQuote();
+    ServiceRequestEntity existing = new ServiceRequestEntity();
+    UUID requestId = UUID.randomUUID();
+    existing.setServiceRequestId(requestId);
+    existing.setPricingEstimate(quote);
+    existing.setCustomer(quote.getCustomer());
+    existing.setProperty(quote.getProperty());
+    existing.setService(quote.getService());
+    existing.setRequestType("PROPERTY_INSPECTION");
+    existing.setPriority("MEDIUM");
+    existing.setStatus("NEW");
+    existing.setAmount(quote.getTotalAmount());
     CreateServiceRequestRequest request = new CreateServiceRequestRequest();
     request.setQuoteId(quote.getPricingEstimateId());
     when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId()))
             .thenReturn(Optional.of(quote));
-    when(serviceRequestRepository.existsByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId()))
-            .thenReturn(true);
+    when(serviceRequestRepository.findByPricingEstimate_PricingEstimateId(quote.getPricingEstimateId()))
+            .thenReturn(Optional.of(existing));
+
+    ServiceRequestResponse response = service.createRequest(request);
+
+    assertThat(response.getServiceRequestId()).isEqualTo(requestId);
+    assertThat(response.getQuoteId()).isEqualTo(quote.getPricingEstimateId());
+    verify(serviceRequestRepository, never()).saveAndFlush(any());
+}
+
+@Test
+void createRequest_rejectsSelectionThatDoesNotMatchAcceptedQuote() {
+    PricingEstimateEntity quote = acceptedQuote();
+    quote.getService().setCategory("INSPECTION");
+    CreateServiceRequestRequest request = new CreateServiceRequestRequest();
+    request.setQuoteId(quote.getPricingEstimateId());
+    request.setPropertyId(quote.getProperty().getPropertyId());
+    request.setServiceId(UUID.randomUUID());
+    request.setServiceType("INSPECTION");
+    when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId())).thenReturn(Optional.of(quote));
 
     assertThatThrownBy(() -> service.createRequest(request))
             .isInstanceOf(BusinessException.class)
-            .hasMessageContaining("already exists");
+            .hasMessageContaining("does not match the selected property and service");
     verify(serviceRequestRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(eligibilityEngine);
+}
+
+@Test
+void createRequest_rejectsServiceDeactivatedAfterQuoteAcceptance() {
+    PricingEstimateEntity quote = acceptedQuote();
+    quote.getService().setActiveFlag(false);
+    CreateServiceRequestRequest request = new CreateServiceRequestRequest();
+    request.setQuoteId(quote.getPricingEstimateId());
+    when(pricingEstimateRepository.findByIdForUpdate(quote.getPricingEstimateId())).thenReturn(Optional.of(quote));
+
+    assertThatThrownBy(() -> service.createRequest(request))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("service is inactive");
+    verify(serviceRequestRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(eligibilityEngine);
 }
 
 

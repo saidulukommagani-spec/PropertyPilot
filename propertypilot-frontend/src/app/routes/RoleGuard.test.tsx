@@ -15,11 +15,11 @@ afterEach(() => {
   auth.roles = [];
 });
 
-function renderProtectedPage() {
+function renderProtectedPage(allowedRoles = ['ADMIN', 'OPERATIONS']) {
   return render(
     <MemoryRouter initialEntries={['/protected']}>
       <Routes>
-        <Route element={<RoleGuard allowedRoles={['ADMIN', 'OPERATIONS']} />}>
+        <Route element={<RoleGuard allowedRoles={allowedRoles} />}>
           <Route path="/protected" element={<h1>Authorized workspace</h1>} />
         </Route>
       </Routes>
@@ -47,5 +47,14 @@ describe('RoleGuard', () => {
     renderProtectedPage();
 
     expect(screen.getByRole('alert').textContent).toContain('No roles are assigned');
+  });
+
+  it('keeps Admin-only pages restricted and offers Operations users a route to their workspace', () => {
+    auth.roles = ['ROLE_OPERATIONS'];
+    renderProtectedPage(['ADMIN']);
+
+    expect(screen.getByRole('alert').textContent).toContain('does not have an authorized role');
+    expect(screen.queryByRole('heading', { name: 'Authorized workspace' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Go to Operations workspace' }).getAttribute('href')).toBe('/staff');
   });
 });

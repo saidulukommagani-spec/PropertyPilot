@@ -5,6 +5,9 @@ import com.propertypilot.infrastructure.persistence.entity.PricingEstimateEntity
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.ServiceEntity;
 import com.propertypilot.infrastructure.persistence.entity.UserEntity;
+import com.propertypilot.application.service.ServiceRequestService;
+import com.propertypilot.application.dto.CreateServiceRequestRequest;
+import com.propertypilot.application.dto.ServiceRequestResponse;
 import com.propertypilot.infrastructure.persistence.repository.CouponRedemptionRepository;
 import com.propertypilot.infrastructure.persistence.repository.CouponRepository;
 import com.propertypilot.infrastructure.persistence.repository.PricingDiscountApplicationRepository;
@@ -33,8 +36,9 @@ class QuoteServiceImplTest {
     private final CouponRepository coupons = mock(CouponRepository.class);
     private final CouponRedemptionRepository redemptions = mock(CouponRedemptionRepository.class);
     private final SecurityService security = mock(SecurityService.class);
+    private final ServiceRequestService requests = mock(ServiceRequestService.class);
     private final QuoteServiceImpl service = new QuoteServiceImpl(
-            estimates, lineItems, discounts, coupons, redemptions, security);
+            estimates, lineItems, discounts, coupons, redemptions, security, requests);
 
     private PricingEstimateEntity estimate;
     private UUID quoteId;
@@ -127,5 +131,34 @@ class QuoteServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("not open");
         verify(estimates, never()).save(any(PricingEstimateEntity.class));
+    }
+
+    @Test
+    void acceptsAndCreatesRequestWithinTheQuoteTransaction() {
+        CreateServiceRequestRequest request = new CreateServiceRequestRequest();
+        ServiceRequestResponse created = new ServiceRequestResponse();
+        when(requests.createRequest(request)).thenReturn(created);
+
+        assertThat(service.acceptAndCreateRequest(quoteId, request)).isSameAs(created);
+        assertThat(estimate.getStatus()).isEqualTo("ACCEPTED");
+        assertThat(request.getQuoteId()).isEqualTo(quoteId);
+        assertThat(request.getPropertyId()).isEqualTo(estimate.getProperty().getPropertyId());
+        assertThat(request.getServiceId()).isEqualTo(estimate.getService().getServiceId());
+        verify(estimates).save(estimate);
+        verify(requests).createRequest(request);
+    }
+
+    @Test
+    void repeatedAcceptAndBookCallUsesTheSameQuoteToReturnExistingRequest() {
+        estimate.setStatus("ACCEPTED");
+        estimate.setAcceptedAt(OffsetDateTime.now().minusMinutes(1));
+        CreateServiceRequestRequest request = new CreateServiceRequestRequest();
+        ServiceRequestResponse existing = new ServiceRequestResponse();
+        when(requests.createRequest(request)).thenReturn(existing);
+
+        assertThat(service.acceptAndCreateRequest(quoteId, request)).isSameAs(existing);
+        verify(requests).createRequest(request);
+        verify(estimates, never()).save(any(PricingEstimateEntity.class));
+        verifyNoInteractions(coupons, redemptions);
     }
 }

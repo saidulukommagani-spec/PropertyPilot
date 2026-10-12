@@ -28,6 +28,9 @@ public class UserRoleEntity extends AuditableEntity {
     @Column(name = "effective_to")
     private OffsetDateTime effectiveTo;
 
+    @Column(name = "change_reason", length = 500)
+    private String changeReason;
+
     @PrePersist
     protected void onCreateUserRole() {
 
@@ -75,4 +78,8 @@ public class UserRoleEntity extends AuditableEntity {
     public void setEffectiveTo(OffsetDateTime effectiveTo) {
         this.effectiveTo = effectiveTo;
     }
+
+    public String getChangeReason() { return changeReason; }
+
+    public void setChangeReason(String changeReason) { this.changeReason = changeReason; }
 }

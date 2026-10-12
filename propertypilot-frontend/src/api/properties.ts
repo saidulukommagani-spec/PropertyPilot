@@ -5,6 +5,14 @@ export interface PropertyRecord {
   customerId: string;
   title: string;
   propertyType: string;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  localityName?: string | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  countryCode?: string | null;
   listingStatus: string | null;
   price: number | null;
   status: string;
@@ -13,6 +21,14 @@ export interface PropertyRecord {
 export interface PropertyMutation {
   title: string;
   propertyType: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  localityName?: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
   listingStatus?: string;
   price?: number;
   status: string;

@@ -4,6 +4,7 @@ import com.propertypilot.application.dto.*;
 import com.propertypilot.application.service.PricingCalculatorService;
 import com.propertypilot.application.service.PricingEngineService;
 import com.propertypilot.application.service.PricingProfileLoaderService;
+import com.propertypilot.application.service.EligibilityEngine;
 import com.propertypilot.application.service.SubscriptionPaymentVerificationService;
 import com.propertypilot.domain.constants.LaunchPricingParameterCodes;
 import com.propertypilot.infrastructure.persistence.entity.*;
@@ -46,6 +47,7 @@ public class PricingEngineServiceImpl implements PricingEngineService {
     private final PricingDiscountApplicationRepository discountRepository;
     private final SecurityService securityService;
     private final SubscriptionPaymentVerificationService subscriptionPaymentVerificationService;
+    private final EligibilityEngine eligibilityEngine;
 
     public PricingEngineServiceImpl(CustomerJpaRepository customerRepository,
             PropertyRepository propertyRepository, ServiceRepository serviceRepository,
@@ -57,7 +59,8 @@ public class PricingEngineServiceImpl implements PricingEngineService {
             CustomerSubscriptionRepository subscriptionRepository, PricingEstimateRepository estimateRepository,
             PricingQuoteLineItemRepository lineItemRepository,
             PricingDiscountApplicationRepository discountRepository, SecurityService securityService,
-            SubscriptionPaymentVerificationService subscriptionPaymentVerificationService) {
+            SubscriptionPaymentVerificationService subscriptionPaymentVerificationService,
+            EligibilityEngine eligibilityEngine) {
         this.customerRepository = customerRepository;
         this.propertyRepository = propertyRepository;
         this.serviceRepository = serviceRepository;
@@ -76,11 +79,43 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         this.discountRepository = discountRepository;
         this.securityService = securityService;
         this.subscriptionPaymentVerificationService = subscriptionPaymentVerificationService;
+        this.eligibilityEngine = eligibilityEngine;
+    }
+
+    @Override
+    public PricingEstimateResponse calculateCustomerEstimate(CreatePricingEstimateRequest request) {
+        CustomerEntity customer = securityService.getCurrentCustomer();
+        Property property = propertyRepository.findById(request.getPropertyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        if (property.getCustomer() == null
+                || !customer.getCustomerId().equals(property.getCustomer().getCustomerId())) {
+            throw new BusinessException("The selected property has no valid customer owner");
+        }
+        securityService.validatePropertyOwnership(property);
+        if (property.getArchivedAt() != null || "ARCHIVED".equalsIgnoreCase(property.getStatus())) {
+            throw new BusinessException("Archived properties cannot be used for a pricing estimate");
+        }
+        ServiceEntity service = serviceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
+        if (!Boolean.TRUE.equals(service.getActiveFlag()) || !Boolean.TRUE.equals(service.getBillable())) {
+            throw new BusinessException("This service is no longer available for pricing");
+        }
+        eligibilityEngine.validateEligibility(service.getServiceId(), property.getPropertyId());
+        if (Boolean.TRUE.equals(service.getRequiresVisit()) || Boolean.TRUE.equals(service.getVisitMandatory())) {
+            throw new BusinessException("A travel-based estimate is not available yet. PropertyPilot Operations will prepare this quote.");
+        }
+        request.setCustomerId(customer.getCustomerId());
+        // Remote/no-visit estimates use no travel component. Client-supplied distance is ignored.
+        request.setOneWayDistanceKm(0d);
+        return calculateEstimateFor(customer, property, service, request);
     }
 
     @Override
     public PricingEstimateResponse calculateEstimate(CreatePricingEstimateRequest request) {
         securityService.validateOperationsAccess();
+        if (request.getCustomerId() == null || request.getOneWayDistanceKm() == null) {
+            throw new BusinessException("Customer and one-way distance are required for Operations pricing");
+        }
         CustomerEntity customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         Property property = propertyRepository.findById(request.getPropertyId())
@@ -93,6 +128,12 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         if (!Boolean.TRUE.equals(service.getActiveFlag()) || !Boolean.TRUE.equals(service.getBillable())) {
             throw new BusinessException("Only active, billable services can be priced");
         }
+
+        return calculateEstimateFor(customer, property, service, request);
+    }
+
+    private PricingEstimateResponse calculateEstimateFor(CustomerEntity customer, Property property,
+            ServiceEntity service, CreatePricingEstimateRequest request) {
 
         OffsetDateTime now = OffsetDateTime.now();
         PricingRuleEntity activeRule = pricingRuleRepository.findByServiceServiceIdAndStatus(
@@ -127,10 +168,17 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         remainingSubtotal = append(applied, "CLUSTER", "Cluster demand discount", clusterDiscount,
                 remainingSubtotal, null, Map.of());
 
-        BigDecimal etaPercent = decimalParameter(customerProfile, LaunchPricingParameterCodes.ETA_DISCOUNT_PERCENT);
-        int etaMinimumDays = integerParameter(customerProfile, LaunchPricingParameterCodes.ETA_DISCOUNT_MIN_DAYS);
-        DiscountResult etaDiscount = request.getEtaDays() != null && request.getEtaDays() >= etaMinimumDays
-                ? percentageDiscount(remainingSubtotal, etaPercent) : DiscountResult.none();
+        // ETA discount configuration is optional. Do not parse it unless the customer
+        // actually requested an ETA-based discount; invalid dormant settings must not
+        // prevent a normal service estimate from being generated.
+        DiscountResult etaDiscount = DiscountResult.none();
+        if (request.getEtaDays() != null) {
+            int etaMinimumDays = integerParameter(customerProfile, LaunchPricingParameterCodes.ETA_DISCOUNT_MIN_DAYS);
+            if (request.getEtaDays() >= etaMinimumDays) {
+                BigDecimal etaPercent = decimalParameter(customerProfile, LaunchPricingParameterCodes.ETA_DISCOUNT_PERCENT);
+                etaDiscount = percentageDiscount(remainingSubtotal, etaPercent);
+            }
+        }
         remainingSubtotal = append(applied, "ETA", "Flexible ETA discount", etaDiscount,
                 remainingSubtotal, null, Map.of("etaDays", request.getEtaDays() == null ? 0 : request.getEtaDays()));
 

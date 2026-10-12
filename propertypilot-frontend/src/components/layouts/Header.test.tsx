@@ -26,8 +26,9 @@ describe('Header workspace identity', () => {
     render(<MemoryRouter initialEntries={['/staff']}><Header onMenuClick={() => undefined} /></MemoryRouter>);
 
     expect(screen.getByRole('group', { name: `${title} workspace` })).toBeTruthy();
-    expect(screen.getByText(title)).toBeTruthy();
-    expect(screen.getByRole('group', { name: `${title} workspace` }).textContent).toContain(description);
+    const workspace = screen.getByRole('group', { name: `${title} workspace` });
+    expect(workspace.textContent).toContain(title);
+    expect(workspace.textContent).toContain(description);
   });
 
   it('shows the current business section without exposing a record identifier', () => {

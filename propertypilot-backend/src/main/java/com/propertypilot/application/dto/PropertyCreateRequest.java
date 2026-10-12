@@ -2,6 +2,8 @@ package com.propertypilot.application.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,6 +26,45 @@ public class PropertyCreateRequest {
     )
     @NotBlank(message = "Property Type is required")
     private String propertyType;
+
+    @Schema(description = "Primary service address", example = "12 Lake View Road, Jubilee Hills")
+    @NotBlank(message = "Property address is required")
+    @Size(max = 255)
+    private String addressLine1;
+
+    @Schema(description = "Additional address information", example = "Building B, Flat 302")
+    @Size(max = 255)
+    private String addressLine2;
+
+    @Schema(description = "Locality or neighborhood", example = "Jubilee Hills")
+    @NotBlank(message = "Locality is required")
+    @Size(max = 120)
+    private String localityName;
+
+    @Schema(description = "City or town", example = "Hyderabad")
+    @NotBlank(message = "City is required")
+    @Size(max = 120)
+    private String city;
+
+    @Schema(description = "District", example = "Hyderabad")
+    @NotBlank(message = "District is required")
+    @Size(max = 120)
+    private String district;
+
+    @Schema(description = "State", example = "Telangana")
+    @NotBlank(message = "State is required")
+    @Size(max = 120)
+    private String state;
+
+    @Schema(description = "Postal or PIN code", example = "500033")
+    @NotBlank(message = "PIN code is required")
+    @Size(max = 20)
+    private String postalCode;
+
+    @Schema(description = "ISO 3166-1 alpha-2 country code", example = "IN", defaultValue = "IN")
+    @NotBlank(message = "Country is required")
+    @Pattern(regexp = "[A-Z]{2}", message = "Use a 2-letter country code")
+    private String countryCode = "IN";
 
     @Schema(
             description = "Listing status",

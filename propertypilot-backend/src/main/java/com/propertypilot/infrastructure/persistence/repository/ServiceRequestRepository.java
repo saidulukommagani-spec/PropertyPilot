@@ -77,6 +77,8 @@ long countByCustomer_CustomerIdAndStatus(
 
     boolean existsByPricingEstimate_PricingEstimateId(UUID pricingEstimateId);
 
+    java.util.Optional<ServiceRequestEntity> findByPricingEstimate_PricingEstimateId(UUID pricingEstimateId);
+
     List<ServiceRequestEntity> findByLead_LeadIdOrderByRequestedAtDesc(UUID leadId);
 
     }

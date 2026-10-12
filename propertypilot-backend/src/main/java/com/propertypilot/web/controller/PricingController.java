@@ -47,4 +47,13 @@ public class PricingController {
         return ResponseEntity.ok(
                 response);
     }
+
+    @PostMapping("/customer-estimates")
+    @Operation(summary = "Create a customer pricing estimate",
+            description = "Calculates a customer estimate using the authenticated customer's property and active service catalogue.")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<PricingEstimateResponse> calculateCustomerEstimate(
+            @Valid @RequestBody CreatePricingEstimateRequest request) {
+        return ResponseEntity.ok(pricingEngineService.calculateCustomerEstimate(request));
+    }
 }

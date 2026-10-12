@@ -148,6 +148,7 @@ public class PricingRuleController {
             )
             @PathVariable UUID ruleId,
 
+            @Valid
             @RequestBody
             UpdatePricingRuleRequest request) {
 

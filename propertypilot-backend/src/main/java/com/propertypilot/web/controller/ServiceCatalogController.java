@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.application.dto.EligibleServiceTypeResponse;
 
 @RestController
 @RequestMapping("/api/services")
@@ -23,6 +24,20 @@ public class ServiceCatalogController {
     @GetMapping
     public List<ServiceConfigurationResponse> getActiveServices() {
         return service.getActiveServices();
+    }
+
+    @GetMapping("/eligible-types")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public List<EligibleServiceTypeResponse> getEligibleServiceTypes(@RequestParam UUID propertyId) {
+        return service.getEligibleServiceTypes(propertyId);
+    }
+
+    @GetMapping("/eligible")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public List<ServiceConfigurationResponse> getEligibleServices(
+            @RequestParam UUID propertyId,
+            @RequestParam String serviceType) {
+        return service.getEligibleServices(propertyId, serviceType);
     }
 
     @GetMapping("/admin")

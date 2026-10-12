@@ -43,9 +43,10 @@ export default function CustomerPropertiesPage() {
             <CardContent>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
                 <Typography variant="h6" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>{property.title}</Typography>
-                <Chip size="small" label={formatCustomerStatus(property.status ?? 'ACTIVE')} color={(property.status ?? 'ACTIVE') === 'ACTIVE' ? 'success' : 'default'} />
+                <Chip size="small" label={formatCustomerStatus(property.status ?? 'AVAILABLE')} color={['ACTIVE', 'AVAILABLE'].includes(property.status ?? 'AVAILABLE') ? 'success' : property.status === 'UNDER_MAINTENANCE' ? 'warning' : 'default'} />
               </Stack>
-              <Typography color="text.secondary" sx={{ mt: 1 }}>{property.propertyType || 'Property type not provided'}</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1 }}>{property.propertyType ? formatCustomerStatus(property.propertyType) : 'Property type not provided'}</Typography>
+              {(property.city || property.state || property.postalCode) && <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>{[property.localityName, property.city, property.state, property.postalCode].filter(Boolean).join(', ')}</Typography>}
               {property.listingStatus && <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>Listing status: {formatCustomerStatus(property.listingStatus)}</Typography>}
               <Typography variant="body2" color="primary.main" fontWeight={650} sx={{ mt: 2 }}>View property details</Typography>
             </CardContent>

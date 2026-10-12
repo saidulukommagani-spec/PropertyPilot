@@ -19,6 +19,8 @@ public interface AgentRepository
 
     Optional<AgentEntity> findByAgentCode(String agentCode);
 
+    boolean existsByAgentCode(String agentCode);
+
     Optional<AgentEntity> findByAgentIdAndStatus(
             UUID agentId,
             String status

@@ -22,7 +22,7 @@ export default function AgentDashboardPage() {
   const weekly = dayKeys.map((date) => ({ label: date.toLocaleDateString(undefined, { weekday: 'short' }), value: completed.filter((visit) => visit.endedAt && sameDay(visit.endedAt, date)).length }));
   const max = Math.max(1, ...weekly.map((item) => item.value));
   return <Stack spacing={3}>
-    <PageHeading title="Agent dashboard" subtitle="Your assigned field work, visit schedule, and completion progress." action={<Button component={Link} to="/agent/visits" variant="contained">Today's work</Button>} />
+    <PageHeading title="Agent Dashboard" subtitle="Your assigned field work, visit schedule, and completion progress." action={<Button component={Link} to="/agent/visits" variant="contained">Today's work</Button>} />
     {query.isError && <QueryFailure message={query.error.message} retry={() => void query.refetch()} />}
     {evidenceSummaries.some((summary) => summary.isError) && <Alert severity="error">Some evidence requirements could not be loaded. Refresh the page to retry.</Alert>}
     <MetricCards items={counts} loading={query.isLoading || evidenceSummaries.some((summary) => summary.isLoading)} />

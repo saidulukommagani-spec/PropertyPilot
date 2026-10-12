@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.propertypilot.application.dto.CreateServiceRequestRequest;
+import com.propertypilot.application.dto.ServiceRequestResponse;
 
 @RestController
 @RequestMapping("/api/v1/quotes")
@@ -42,6 +44,13 @@ public class QuoteController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<QuoteResponse> acceptQuote(@PathVariable UUID quoteId) {
         return ResponseEntity.ok(quoteService.acceptQuote(quoteId));
+    }
+
+    @PostMapping("/{quoteId}/accept-and-create-request")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ServiceRequestResponse> acceptAndCreateRequest(
+            @PathVariable UUID quoteId, @Valid @RequestBody CreateServiceRequestRequest request) {
+        return ResponseEntity.ok(quoteService.acceptAndCreateRequest(quoteId, request));
     }
 
     @PostMapping("/{quoteId}/reject")

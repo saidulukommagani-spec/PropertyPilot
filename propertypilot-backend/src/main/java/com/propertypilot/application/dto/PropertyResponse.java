@@ -23,6 +23,19 @@ public class PropertyResponse {
     @Schema(description = "Property Type")
     private String propertyType;
 
+    @Schema(description = "Primary service address")
+    private String addressLine1;
+
+    @Schema(description = "Additional address information")
+    private String addressLine2;
+
+    private String localityName;
+    private String city;
+    private String district;
+    private String state;
+    private String postalCode;
+    private String countryCode;
+
     @Schema(description = "Listing Status")
     private String listingStatus;
 

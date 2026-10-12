@@ -7,6 +7,21 @@ import BrandLogo from '../../../components/layouts/BrandLogo';
 
 interface LoginLocationState { from?: string; registrationComplete?: boolean }
 
+function getWorkspaceDestination(roles: string[]): string {
+  return roles.includes('CUSTOMER') && !roles.some((role) => ['ADMIN', 'OPERATIONS', 'AGENT'].includes(role))
+    ? '/customer/dashboard'
+    : roles.includes('AGENT') && !roles.some((role) => ['ADMIN', 'OPERATIONS'].includes(role))
+      ? '/agent/dashboard'
+      : '/staff';
+}
+
+function canReturnToPath(path: string, roles: string[]): boolean {
+  // The staff directory is specifically Admin-only. A saved URL from before
+  // an account's role changed must not strand an Operations user there.
+  if (/^\/staff\/users(?:\/|$)/i.test(path)) return roles.includes('ADMIN');
+  return true;
+}
+
 export default function LoginPage() {
   const { signIn, isSigningIn } = useAuth();
   const navigate = useNavigate();
@@ -23,12 +38,9 @@ export default function LoginPage() {
       const state = location.state as LoginLocationState | null;
       const currentUser = await authApi.currentUser();
       const roles = getUserRoles(currentUser);
-      const destination = roles.includes('CUSTOMER') && !roles.some((role) => ['ADMIN', 'OPERATIONS', 'AGENT'].includes(role))
-        ? '/customer/dashboard'
-        : roles.includes('AGENT') && !roles.some((role) => ['ADMIN', 'OPERATIONS'].includes(role))
-          ? '/agent/dashboard'
-          : '/staff';
-      navigate(state?.from ?? destination, { replace: true });
+      const destination = getWorkspaceDestination(roles);
+      const requestedPath = state?.from;
+      navigate(requestedPath && canReturnToPath(requestedPath, roles) ? requestedPath : destination, { replace: true });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Sign in failed. Please try again.');
     }

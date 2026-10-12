@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 public class ServiceConfigurationRequest {
     @NotBlank @Pattern(regexp = "^[A-Z][A-Z0-9_]{1,79}$") private String serviceCode;
     @NotBlank private String serviceName;
-    @NotBlank private String category;
+    @NotBlank @Pattern(regexp = "^[A-Z][A-Z0-9_]{1,79}$") private String category;
     @NotNull @PositiveOrZero private BigDecimal basePrice;
     @NotNull private Boolean activeFlag;
     @NotNull private Boolean requiresVisit;

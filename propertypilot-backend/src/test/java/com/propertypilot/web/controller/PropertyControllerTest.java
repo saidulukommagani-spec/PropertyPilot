@@ -66,6 +66,14 @@ class PropertyControllerTest {
 
         request.setTitle("Luxury Villa");
         request.setPropertyType("VILLA");
+        request.setAddressLine1("12 Lake View Road");
+        request.setLocalityName("Jubilee Hills");
+        request.setCity("Hyderabad");
+        request.setDistrict("Hyderabad");
+        request.setState("Telangana");
+        request.setPostalCode("500033");
+        request.setListingStatus("DRAFT");
+        request.setStatus("AVAILABLE");
         request.setPrice(BigDecimal.valueOf(5000000));
 
         mockMvc.perform(

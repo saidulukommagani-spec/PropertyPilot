@@ -3,6 +3,9 @@ package com.propertypilot.application.service.impl;
 import com.propertypilot.application.dto.QuoteLineItemResponse;
 import com.propertypilot.application.dto.QuoteResponse;
 import com.propertypilot.application.service.QuoteService;
+import com.propertypilot.application.service.ServiceRequestService;
+import com.propertypilot.application.dto.CreateServiceRequestRequest;
+import com.propertypilot.application.dto.ServiceRequestResponse;
 import com.propertypilot.infrastructure.persistence.entity.CouponEntity;
 import com.propertypilot.infrastructure.persistence.entity.CouponRedemptionEntity;
 import com.propertypilot.infrastructure.persistence.entity.PricingDiscountApplicationEntity;
@@ -35,19 +38,22 @@ public class QuoteServiceImpl implements QuoteService {
     private final CouponRepository couponRepository;
     private final CouponRedemptionRepository redemptionRepository;
     private final SecurityService securityService;
+    private final ServiceRequestService serviceRequestService;
 
     public QuoteServiceImpl(PricingEstimateRepository estimateRepository,
             PricingQuoteLineItemRepository lineItemRepository,
             PricingDiscountApplicationRepository discountRepository,
             CouponRepository couponRepository,
             CouponRedemptionRepository redemptionRepository,
-            SecurityService securityService) {
+            SecurityService securityService,
+            ServiceRequestService serviceRequestService) {
         this.estimateRepository = estimateRepository;
         this.lineItemRepository = lineItemRepository;
         this.discountRepository = discountRepository;
         this.couponRepository = couponRepository;
         this.redemptionRepository = redemptionRepository;
         this.securityService = securityService;
+        this.serviceRequestService = serviceRequestService;
     }
 
     @Override
@@ -94,6 +100,39 @@ public class QuoteServiceImpl implements QuoteService {
         estimate.setAcceptedAt(now);
         estimate.setAcceptedByUserId(securityService.getCurrentUserId());
         return toResponse(estimateRepository.save(estimate));
+    }
+
+    @Override
+    @Transactional
+    public ServiceRequestResponse acceptAndCreateRequest(UUID quoteId, CreateServiceRequestRequest request) {
+        if (request == null) {
+            throw new BusinessException("Service request details are required");
+        }
+        PricingEstimateEntity estimate = findAuthorizedQuoteForUpdate(quoteId);
+        OffsetDateTime now = OffsetDateTime.now();
+        if (expireIfNeeded(estimate, now)) {
+            estimateRepository.save(estimate);
+            throw new BusinessException("This quote has expired. Request a new estimate before booking");
+        }
+        if ("ACCEPTED".equals(estimate.getStatus())) {
+            request.setQuoteId(quoteId);
+            request.setPropertyId(estimate.getProperty().getPropertyId());
+            request.setServiceId(estimate.getService().getServiceId());
+            request.setServiceType(estimate.getService().getCategory());
+            return serviceRequestService.createRequest(request);
+        }
+        requireOpen(estimate);
+        reserveCouponDiscounts(estimate, now);
+        estimate.setStatus("ACCEPTED");
+        estimate.setAcceptedAt(now);
+        estimate.setAcceptedByUserId(securityService.getCurrentUserId());
+        estimateRepository.save(estimate);
+
+        request.setQuoteId(quoteId);
+        request.setPropertyId(estimate.getProperty().getPropertyId());
+        request.setServiceId(estimate.getService().getServiceId());
+        request.setServiceType(estimate.getService().getCategory());
+        return serviceRequestService.createRequest(request);
     }
 
     @Override

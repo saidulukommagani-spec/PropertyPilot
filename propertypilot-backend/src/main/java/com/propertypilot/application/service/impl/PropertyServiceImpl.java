@@ -8,10 +8,15 @@ import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
+import com.propertypilot.infrastructure.persistence.entity.PropertyLocationEntity;
+import com.propertypilot.infrastructure.persistence.repository.PropertyLocationRepository;
+import com.propertypilot.infrastructure.persistence.repository.LocalityRepository;
+import com.propertypilot.infrastructure.persistence.entity.LocalityEntity;
 import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,19 +28,26 @@ public class PropertyServiceImpl
 
     private final PropertyRepository propertyRepository;
     private final CustomerRepository customerRepository;
+    private final PropertyLocationRepository propertyLocationRepository;
+    private final LocalityRepository localityRepository;
     private final SecurityService securityService;
 
     public PropertyServiceImpl(
             PropertyRepository propertyRepository,
             CustomerRepository customerRepository,
+            PropertyLocationRepository propertyLocationRepository,
+            LocalityRepository localityRepository,
             SecurityService securityService) {
 
         this.propertyRepository = propertyRepository;
         this.customerRepository = customerRepository;
+        this.propertyLocationRepository = propertyLocationRepository;
+        this.localityRepository = localityRepository;
         this.securityService = securityService;
     }
 
     @Override
+    @Transactional
     public PropertyResponse createProperty(
             PropertyCreateRequest request) {
 
@@ -53,16 +65,32 @@ public class PropertyServiceImpl
                 request.getPropertyType());
 
         property.setListingStatus(
-                request.getListingStatus());
+                request.getListingStatus() == null || request.getListingStatus().isBlank()
+                        ? "DRAFT" : request.getListingStatus().trim().toUpperCase());
 
         property.setPrice(
                 request.getPrice());
 
         property.setStatus(
-                request.getStatus());
+                request.getStatus() == null || request.getStatus().isBlank()
+                        ? "AVAILABLE" : request.getStatus().trim().toUpperCase());
 
         Property savedProperty =
                 propertyRepository.save(property);
+
+        PropertyLocationEntity location = new PropertyLocationEntity();
+        location.setProperty(savedProperty);
+        location.setAddressLine1(request.getAddressLine1().trim());
+        location.setAddressLine2(normalizeOptional(request.getAddressLine2()));
+        location.setLocalityName(request.getLocalityName().trim());
+        location.setCity(request.getCity().trim());
+        location.setDistrict(request.getDistrict().trim());
+        location.setState(request.getState().trim());
+        location.setPostalCode(request.getPostalCode().trim());
+        location.setCountryCode(normalizeCountryCode(request.getCountryCode()));
+        location.setLocalityId(resolveLocalityId(request.getLocalityName(), request.getPostalCode(), request.getDistrict(), request.getState()));
+        location.setMapVerificationStatus("PENDING");
+        propertyLocationRepository.save(location);
 
         return buildResponse(savedProperty);
     }
@@ -135,6 +163,7 @@ public List<PropertyResponse> getAllProperties() {
     }
 
     @Override
+    @Transactional
     public PropertyResponse updateProperty(
             UUID propertyId,
             PropertyUpdateRequest request) {
@@ -163,14 +192,39 @@ public List<PropertyResponse> getAllProperties() {
         property.setPropertyType(
                 request.getPropertyType());
 
-        property.setListingStatus(
-                request.getListingStatus());
+        if (request.getListingStatus() != null) {
+            property.setListingStatus(request.getListingStatus().trim().toUpperCase());
+        }
 
         property.setPrice(
                 request.getPrice());
 
-        property.setStatus(
-                request.getStatus());
+        if (request.getStatus() != null) {
+            property.setStatus(request.getStatus().trim().toUpperCase());
+        }
+
+        if (request.getAddressLine1() != null && !request.getAddressLine1().isBlank()) {
+            PropertyLocationEntity location = propertyLocationRepository
+                    .findByProperty_PropertyId(propertyId)
+                    .orElseGet(PropertyLocationEntity::new);
+            location.setProperty(property);
+            location.setAddressLine1(request.getAddressLine1().trim());
+            location.setAddressLine2(normalizeOptional(request.getAddressLine2()));
+            if (request.getLocalityName() != null) location.setLocalityName(request.getLocalityName().trim());
+            if (request.getCity() != null) location.setCity(request.getCity().trim());
+            if (request.getDistrict() != null) location.setDistrict(request.getDistrict().trim());
+            if (request.getState() != null) location.setState(request.getState().trim());
+            if (request.getPostalCode() != null) location.setPostalCode(request.getPostalCode().trim());
+            if (request.getCountryCode() != null) location.setCountryCode(normalizeCountryCode(request.getCountryCode()));
+            if (request.getLocalityName() != null && request.getPostalCode() != null
+                    && request.getDistrict() != null && request.getState() != null) {
+                location.setLocalityId(resolveLocalityId(request.getLocalityName(), request.getPostalCode(), request.getDistrict(), request.getState()));
+            }
+            if (location.getMapVerificationStatus() == null) {
+                location.setMapVerificationStatus("PENDING");
+            }
+            propertyLocationRepository.save(location);
+        }
 
         Property updatedProperty =
                 propertyRepository.save(property);
@@ -311,6 +365,18 @@ public List<PropertyResponse> getAllProperties() {
         response.setPropertyType(
                 property.getPropertyType());
 
+        propertyLocationRepository.findByProperty_PropertyId(property.getPropertyId())
+                .ifPresent(location -> {
+                    response.setAddressLine1(location.getAddressLine1());
+                    response.setAddressLine2(location.getAddressLine2());
+                    response.setLocalityName(location.getLocalityName());
+                    response.setCity(location.getCity());
+                    response.setDistrict(location.getDistrict());
+                    response.setState(location.getState());
+                    response.setPostalCode(location.getPostalCode());
+                    response.setCountryCode(location.getCountryCode());
+                });
+
         response.setListingStatus(
                 property.getListingStatus());
 
@@ -321,5 +387,21 @@ public List<PropertyResponse> getAllProperties() {
                 property.getStatus());
 
         return response;
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizeCountryCode(String value) {
+        return value == null || value.isBlank() ? "IN" : value.trim().toUpperCase();
+    }
+
+    private UUID resolveLocalityId(String localityName, String postalCode, String district, String state) {
+        return localityRepository
+                .findFirstByLocalityNameIgnoreCaseAndPincodeAndDistrict_DistrictNameIgnoreCaseAndDistrict_State_StateNameIgnoreCase(
+                        localityName.trim(), postalCode.trim(), district.trim(), state.trim())
+                .map(LocalityEntity::getLocalityId)
+                .orElse(null);
     }
 }

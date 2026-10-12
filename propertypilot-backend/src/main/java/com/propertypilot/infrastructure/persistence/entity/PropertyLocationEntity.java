@@ -1,6 +1,8 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -40,6 +42,25 @@ public class PropertyLocationEntity extends AuditableEntity {
 
     @Column(name = "address_line_2")
     private String addressLine2;
+
+    @Column(name = "locality_name", length = 120)
+    private String localityName;
+
+    @Column(name = "city", length = 120)
+    private String city;
+
+    @Column(name = "district", length = 120)
+    private String district;
+
+    @Column(name = "state", length = 120)
+    private String state;
+
+    @Column(name = "postal_code", length = 20)
+    private String postalCode;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "country_code", nullable = false, length = 2)
+    private String countryCode = "IN";
 
     @Column(
             name = "latitude",
@@ -123,6 +144,19 @@ public class PropertyLocationEntity extends AuditableEntity {
     public void setAddressLine2(String addressLine2) {
         this.addressLine2 = addressLine2;
     }
+
+    public String getLocalityName() { return localityName; }
+    public void setLocalityName(String localityName) { this.localityName = localityName; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public String getPostalCode() { return postalCode; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
+    public String getCountryCode() { return countryCode; }
+    public void setCountryCode(String countryCode) { this.countryCode = countryCode; }
 
     public BigDecimal getLatitude() {
         return latitude;

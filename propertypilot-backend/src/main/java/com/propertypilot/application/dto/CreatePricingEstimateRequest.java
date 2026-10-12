@@ -9,8 +9,6 @@ import java.util.UUID;
 
 public class CreatePricingEstimateRequest {
 
-    @NotNull(
-            message = "Customer Id is required")
     private UUID customerId;
 
     @NotNull(
@@ -21,7 +19,6 @@ public class CreatePricingEstimateRequest {
             message = "Service Id is required")
     private UUID serviceId;
 
-    @NotNull(message = "One way distance is required")
     @PositiveOrZero(message = "Distance cannot be negative")
     private Double oneWayDistanceKm;
 

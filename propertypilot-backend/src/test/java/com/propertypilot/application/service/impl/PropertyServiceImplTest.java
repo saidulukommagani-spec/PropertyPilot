@@ -7,6 +7,9 @@ import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.repository.CustomerRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
+import com.propertypilot.infrastructure.persistence.entity.PropertyLocationEntity;
+import com.propertypilot.infrastructure.persistence.repository.PropertyLocationRepository;
+import com.propertypilot.infrastructure.persistence.repository.LocalityRepository;
 import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -36,6 +39,12 @@ class PropertyServiceImplTest {
     private CustomerRepository customerRepository;
 
     @Mock
+    private PropertyLocationRepository propertyLocationRepository;
+
+    @Mock
+    private LocalityRepository localityRepository;
+
+    @Mock
     private SecurityService securityService;
 
     @InjectMocks
@@ -51,9 +60,16 @@ class PropertyServiceImplTest {
 
         request.setTitle("My Plot");
         request.setPropertyType("PLOT");
-        request.setListingStatus("AVAILABLE");
+        request.setAddressLine1("12 Lake View Road");
+        request.setAddressLine2("Building B");
+        request.setLocalityName("Jubilee Hills");
+        request.setCity("Hyderabad");
+        request.setDistrict("Hyderabad");
+        request.setState("Telangana");
+        request.setPostalCode("500033");
+        request.setListingStatus("DRAFT");
         request.setPrice(BigDecimal.valueOf(100000));
-        request.setStatus("ACTIVE");
+        request.setStatus("AVAILABLE");
 
         when(securityService.getCurrentCustomer())
                 .thenReturn(customer);
@@ -68,6 +84,10 @@ class PropertyServiceImplTest {
 
                     return property;
                 });
+        when(propertyLocationRepository.save(any(PropertyLocationEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(propertyLocationRepository.findByProperty_PropertyId(any(UUID.class)))
+                .thenAnswer(invocation -> Optional.ofNullable(null));
 
         PropertyResponse response =
                 service.createProperty(request);
@@ -78,6 +98,10 @@ class PropertyServiceImplTest {
 
         verify(propertyRepository)
                 .save(any(Property.class));
+        verify(propertyLocationRepository).save(argThat(location ->
+                "12 Lake View Road".equals(location.getAddressLine1())
+                        && "Building B".equals(location.getAddressLine2())
+                        && "PENDING".equals(location.getMapVerificationStatus())));
     }
 
     @Test
@@ -380,9 +404,9 @@ when(securityService.getCurrentCustomer())
 
         request.setTitle("Updated");
         request.setPropertyType("HOUSE");
-        request.setListingStatus("SOLD");
+        request.setListingStatus("DRAFT");
         request.setPrice(BigDecimal.valueOf(500000));
-        request.setStatus("ACTIVE");
+        request.setStatus("AVAILABLE");
 
         when(propertyRepository.findById(
                 property.getPropertyId()))

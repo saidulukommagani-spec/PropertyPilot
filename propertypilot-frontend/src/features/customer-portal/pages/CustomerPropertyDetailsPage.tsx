@@ -37,6 +37,11 @@ export default function CustomerPropertyDetailsPage() {
   const retryEvidence = () => { void Promise.all(evidenceQueries.map((query) => query.refetch())); };
   const requestLink = `/customer/service-requests/new?propertyId=${encodeURIComponent(id)}`;
   const serviceRequests = [...requests].sort((a, b) => Date.parse(b.requestedAt) - Date.parse(a.requestedAt));
+  const propertyAddress = [
+    item.addressLine1, item.addressLine2, item.localityName, item.city,
+    item.district ? `${item.district} District` : null, item.state, item.postalCode,
+    item.countryCode === 'IN' ? 'India' : item.countryCode,
+  ].map((part) => part?.trim()).filter((part): part is string => Boolean(part)).join(', ');
 
   return <Stack spacing={3}>
     <CustomerPageHeading title={item.title} subtitle={[item.propertyType, item.status ? formatCustomerStatus(item.status) : 'Active'].filter(Boolean).join(' · ')} action={<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -50,7 +55,11 @@ export default function CustomerPropertyDetailsPage() {
       <Typography variant="h6" fontWeight={700}>Property overview</Typography>
       <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2,minmax(0,1fr))' }} gap={2} sx={{ mt: 2 }}>
         <PropertyFact label="Property name" value={item.title} />
-        <PropertyFact label="Property type" value={item.propertyType || 'Not provided'} />
+        <PropertyFact label="Property type" value={item.propertyType ? formatCustomerStatus(item.propertyType) : 'Not provided'} />
+        <Box>
+          <PropertyFact label="Property address" value={propertyAddress || 'No property address on file'} />
+          {!propertyAddress && item.status !== 'ARCHIVED' && <Button component={Link} to={`/customer/properties/${id}/edit`} size="small" sx={{ mt: .5, px: 0 }}>Add property address</Button>}
+        </Box>
         {item.listingStatus && <PropertyFact label="Listing status" value={formatCustomerStatus(item.listingStatus)} />}
         <PropertyFact label="Account status" value={formatCustomerStatus(item.status || 'ACTIVE')} />
       </Box>

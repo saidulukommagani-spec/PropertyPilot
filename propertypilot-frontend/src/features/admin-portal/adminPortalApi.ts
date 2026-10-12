@@ -23,8 +23,9 @@ const row = (resource: AdminResource, source: RowSource): AdminDirectoryRow => {
   const customerName = stringValue(source.fullName ?? source.customerName);
   const title = stringValue(source.fullName ?? source.customerName ?? source.title ?? source.propertyTitle ?? source.requestNumber ?? source.visitNumber ?? source.fileName ?? source.documentName ?? source.invoiceNumber ?? source.quoteNumber ?? source.dealNumber ?? source.serviceName ?? source.name ?? source.agentName ?? source.evidenceTypeName ?? source.dealType)
     || `${resource.replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase())} record`;
-  const status = stringValue(source.status ?? source.dealStatus ?? source.paymentStatus ?? source.listingStatus);
-  const type = stringValue(source.customerType ?? source.propertyType ?? source.requestType ?? source.assignmentStatus ?? source.evidenceTypeCode ?? source.serviceName ?? source.entityType ?? source.invoiceType ?? source.paymentMethod ?? source.planName ?? source.roles);
+  const status = stringValue(source.status ?? source.dealStatus ?? source.paymentStatus ?? source.listingStatus ?? (typeof source.activeFlag === 'boolean' ? source.activeFlag ? 'ACTIVE' : 'INACTIVE' : undefined));
+  const roles = Array.isArray(source.roles) ? source.roles.filter((role): role is string => typeof role === 'string') : [];
+  const type = roles.length ? roles.map((role) => role.replaceAll('_', ' ')).join(', ') : stringValue(source.customerType ?? source.propertyType ?? source.requestType ?? source.assignmentStatus ?? source.evidenceTypeCode ?? (resource === 'services' ? source.category : undefined) ?? source.serviceName ?? source.entityType ?? source.invoiceType ?? source.paymentMethod ?? source.planName ?? source.roles);
   const date = stringValue(source.createdAt ?? source.requestedAt ?? source.scheduledAt ?? source.capturedAt ?? source.issuedAt ?? source.startDate ?? source.expiresAt ?? source.paymentDate);
   const amount = currencyValue(source.totalAmount ?? source.invoiceAmount ?? source.amount ?? source.finalAmount ?? source.expectedAmount, source.currencyCode);
   const secondary = resource === 'payments'

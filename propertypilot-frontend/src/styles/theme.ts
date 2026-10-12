@@ -1,5 +1,8 @@
 import { createTheme } from '@mui/material/styles';
 
+const interfaceFont = 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const displayFont = 'Georgia, "Times New Roman", serif';
+
 export const propertyPilotTokens = {
   color: {
     navy: '#0B2D43',
@@ -68,21 +71,26 @@ export const theme = createTheme({
   },
   shape: { borderRadius: propertyPilotTokens.radius.card },
   typography: {
-    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    h1: { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.875rem, 2.8vw, 2.25rem)', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.025em' },
-    h2: { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.625rem, 2.35vw, 1.875rem)', fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em' },
-    h3: { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.5rem, 2vw, 1.625rem)', fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.015em' },
-    h4: { fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 'clamp(1.375rem, 1.8vw, 1.5rem)', fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.015em' },
-    h5: { fontSize: '1.25rem', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.015em' },
-    h6: { fontSize: '1.0625rem', fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.01em' },
-    body1: { fontSize: '0.9375rem', lineHeight: 1.55 },
-    body2: { fontSize: '0.875rem', lineHeight: 1.5 },
-    caption: { fontSize: '0.75rem', lineHeight: 1.45 },
-    button: { textTransform: 'none', fontWeight: 650, letterSpacing: 0 },
+    fontFamily: interfaceFont,
+    h1: { fontFamily: displayFont, fontSize: 'clamp(1.875rem, 2.8vw, 2.25rem)', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.025em' },
+    h2: { fontFamily: displayFont, fontSize: 'clamp(1.625rem, 2.35vw, 1.875rem)', fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.02em' },
+    h3: { fontFamily: displayFont, fontSize: 'clamp(1.5rem, 2vw, 1.625rem)', fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.015em' },
+    h4: { fontFamily: displayFont, fontSize: 'clamp(1.375rem, 1.8vw, 1.5rem)', fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.015em' },
+    h5: { fontFamily: interfaceFont, fontSize: '1.25rem', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.015em' },
+    h6: { fontFamily: interfaceFont, fontSize: '1.0625rem', fontWeight: 700, lineHeight: 1.4, letterSpacing: '-0.01em' },
+    subtitle1: { fontFamily: interfaceFont },
+    subtitle2: { fontFamily: interfaceFont },
+    body1: { fontFamily: interfaceFont, fontSize: '0.9375rem', lineHeight: 1.55 },
+    body2: { fontFamily: interfaceFont, fontSize: '0.875rem', lineHeight: 1.5 },
+    caption: { fontFamily: interfaceFont, fontSize: '0.75rem', lineHeight: 1.45 },
+    overline: { fontFamily: interfaceFont },
+    button: { fontFamily: interfaceFont, textTransform: 'none', fontWeight: 650, letterSpacing: 0 },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        'html, body, #root': { fontFamily: interfaceFont },
+        'button, input, select, textarea': { fontFamily: 'inherit' },
         ':focus-visible': {
           outline: propertyPilotTokens.focus.outline,
           outlineOffset: 2,
@@ -100,6 +108,38 @@ export const theme = createTheme({
           boxShadow: propertyPilotTokens.elevation.card,
           backgroundImage: 'none',
         },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          fontFamily: interfaceFont,
+          fontSize: '0.875rem',
+          lineHeight: 1.5,
+          color: propertyPilotTokens.color.text,
+          borderColor: propertyPilotTokens.color.border,
+        },
+        head: {
+          color: propertyPilotTokens.color.navy,
+          backgroundColor: propertyPilotTokens.color.surfaceSubtle,
+          fontWeight: 700,
+          whiteSpace: 'nowrap',
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          '&.MuiTableRow-hover:hover': { backgroundColor: 'rgba(22, 127, 131, 0.045)' },
+        },
+      },
+    },
+    MuiTablePagination: {
+      styleOverrides: {
+        root: { fontFamily: interfaceFont, color: propertyPilotTokens.color.muted },
+        selectLabel: { fontFamily: interfaceFont },
+        displayedRows: { fontFamily: interfaceFont },
+        select: { fontFamily: interfaceFont },
       },
     },
     MuiButton: {
