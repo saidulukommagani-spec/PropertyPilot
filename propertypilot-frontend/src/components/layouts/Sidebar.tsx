@@ -67,7 +67,6 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     { label: 'Service Requests', to: '/customer/service-requests', icon: <AssignmentRounded /> },
     { label: 'My Visits', to: '/customer/visits', icon: <EventNoteRounded /> },
     { label: 'Evidence', to: '/customer/evidence', icon: <FactCheckRounded /> },
-    { label: 'Documents', to: '/customer/documents', icon: <Inventory2Rounded /> },
     { label: 'Subscriptions', to: '/subscriptions', icon: <LayersRounded /> },
     { label: 'Quotes', to: '/quotes', icon: <ReceiptLongRounded /> },
     { label: 'Subscription overview', to: '/subscriptions/dashboard', icon: <DashboardRounded /> },

@@ -46,19 +46,22 @@ public class ServiceRequestEntity
 
     @Column(
             name = "request_type",
-            nullable = false
+            nullable = false,
+            length = 100
     )
     private String requestType;
 
     @Column(
             name = "priority",
-            nullable = false
+            nullable = false,
+            length = 30
     )
     private String priority;
 
     @Column(
             name = "status",
-            nullable = false
+            nullable = false,
+            length = 30
     )
     private String status;
 
@@ -68,7 +71,7 @@ public class ServiceRequestEntity
     @Column(name = "cluster_id")
     private UUID clusterId;
 
-    @Column(name = "requested_at")
+    @Column(name = "requested_at", nullable = false)
     private Instant requestedAt;
 
     @Column(name = "sla_due_at")
@@ -86,10 +89,10 @@ public class ServiceRequestEntity
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    @Column(name = "amount")
+    @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "cancellation_reason_code")
@@ -105,7 +108,7 @@ public class ServiceRequestEntity
     private UUID assignedBy;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
     public UUID getServiceRequestId() {

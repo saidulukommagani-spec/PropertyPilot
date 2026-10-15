@@ -27,13 +27,13 @@ private UUID pricingParameterHistoryId;
     @Column(
             name = "old_value",
             nullable = false,
-            length = 255)
+            length = 500)
     private String oldValue;
 
     @Column(
             name = "new_value",
             nullable = false,
-            length = 255)
+            length = 500)
     private String newValue;
 
     @Column(name = "changed_by")
@@ -45,7 +45,7 @@ private UUID pricingParameterHistoryId;
     private OffsetDateTime changedAt;
 
     @Column(
-            name = "remarks",
+            name = "change_reason",
             length = 500)
     private String remarks;
 

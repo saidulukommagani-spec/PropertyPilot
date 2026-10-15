@@ -12,6 +12,10 @@ import { CustomerPageHeading, CustomerQueryError } from '../../customer-portal/c
 const schema = z.object({
   title: z.string().trim().min(2, 'Enter a property name.').max(160),
   propertyType: z.string().trim().min(2, 'Choose a property type.').max(80),
+  surveyNumber: z.string().trim().max(120, 'Survey number must be 120 characters or fewer.'),
+  areaValue: z.string().trim().refine((value) => value !== '' && Number.isFinite(Number(value)) && Number(value) >= 0, 'Enter a valid property area.'),
+  areaUnit: z.enum(['SQ_FT', 'SQ_YD', 'ACRES_GUNTAS']),
+  areaGuntas: z.string().trim(),
   addressLine1: z.string().trim().min(5, 'Enter the property address.').max(255),
   addressLine2: z.string().trim().max(255),
   localityName: z.string().trim().min(2, 'Enter the locality or neighborhood.').max(120),
@@ -21,12 +25,25 @@ const schema = z.object({
   postalCode: z.string().trim().regex(/^\d{6}$/, 'Enter a valid 6-digit Indian PIN code.'),
   status: z.enum(['AVAILABLE', 'OCCUPIED', 'UNDER_MAINTENANCE', 'INACTIVE']),
   price: z.string().refine((value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0), 'Enter a valid non-negative price.'),
+}).superRefine((values, context) => {
+  const agricultural = ['LAND', 'AGRICULTURAL_LAND'].includes(values.propertyType);
+  if (agricultural) {
+    if (values.areaUnit !== 'ACRES_GUNTAS') context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaUnit'], message: 'Choose acres and guntas for agricultural land.' });
+    if (!Number.isInteger(Number(values.areaValue))) context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaValue'], message: 'Enter whole acres; use guntas for the remaining area.' });
+    if (!/^\d+$/.test(values.areaGuntas) || Number(values.areaGuntas) < 0 || Number(values.areaGuntas) > 39) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaGuntas'], message: 'Enter guntas from 0 to 39.' });
+    }
+    if (Number(values.areaValue) === 0 && Number(values.areaGuntas) === 0) context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaValue'], message: 'Enter a non-zero area in acres and guntas.' });
+  } else {
+    if (Number(values.areaValue) <= 0) context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaValue'], message: 'Enter a property area greater than zero.' });
+    if (!['SQ_FT', 'SQ_YD'].includes(values.areaUnit)) context.addIssue({ code: z.ZodIssueCode.custom, path: ['areaUnit'], message: 'Choose square feet or square yards.' });
+  }
 });
 type Values = z.infer<typeof schema>;
 
 const propertyTypes = [
   ['HOUSE', 'House'], ['APARTMENT', 'Apartment'], ['VILLA', 'Villa'], ['TOWNHOUSE', 'Townhouse'],
-  ['COMMERCIAL', 'Commercial property'], ['INDUSTRIAL', 'Industrial property'], ['LAND', 'Land'], ['OTHER', 'Other'],
+  ['COMMERCIAL', 'Commercial property'], ['INDUSTRIAL', 'Industrial property'], ['LAND', 'Agricultural land'], ['OTHER', 'Other'],
 ] as const;
 const propertyStatuses = [
   ['AVAILABLE', 'Available for services'], ['OCCUPIED', 'Occupied'],
@@ -43,10 +60,11 @@ export default function PropertyFormPage() {
   const client = useQueryClient();
   const profile = useCustomerProfile();
   const property = useCustomerProperty(id);
-  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { title: '', propertyType: '', addressLine1: '', addressLine2: '', localityName: '', city: '', district: '', state: '', postalCode: '', status: 'AVAILABLE', price: '' } });
+  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { title: '', propertyType: '', surveyNumber: '', areaValue: '', areaUnit: 'SQ_FT', areaGuntas: '', addressLine1: '', addressLine2: '', localityName: '', city: '', district: '', state: '', postalCode: '', status: 'AVAILABLE', price: '' } });
   const mutation = useMutation({
     mutationFn: async (values: Values) => {
-      const request: PropertyMutation = { title: values.title.trim(), propertyType: values.propertyType, addressLine1: values.addressLine1.trim(), addressLine2: values.addressLine2.trim() || undefined, localityName: values.localityName.trim(), city: values.city.trim(), district: values.district.trim(), state: values.state.trim(), postalCode: values.postalCode.trim(), countryCode: 'IN', listingStatus: property.data?.listingStatus ?? 'DRAFT', price: values.price ? Number(values.price) : undefined, status: values.status };
+      const agricultural = ['LAND', 'AGRICULTURAL_LAND'].includes(values.propertyType);
+      const request: PropertyMutation = { title: values.title.trim(), propertyType: values.propertyType, surveyNumber: values.surveyNumber.trim(), areaValue: Number(values.areaValue), areaUnit: agricultural ? 'ACRES_GUNTAS' : values.areaUnit, areaGuntas: agricultural ? Number(values.areaGuntas) : undefined, addressLine1: values.addressLine1.trim(), addressLine2: values.addressLine2.trim() || undefined, localityName: values.localityName.trim(), city: values.city.trim(), district: values.district.trim(), state: values.state.trim(), postalCode: values.postalCode.trim(), countryCode: 'IN', listingStatus: property.data?.listingStatus ?? 'DRAFT', price: values.price ? Number(values.price) : undefined, status: values.status };
       if (editing) {
         if (!property.data) throw new Error('Property details are not available.');
         return propertiesApi.update(id, property.data.customerId, request);
@@ -60,7 +78,7 @@ export default function PropertyFormPage() {
   });
 
   useEffect(() => {
-    if (property.data) form.reset({ title: property.data.title, propertyType: property.data.propertyType ?? '', addressLine1: property.data.addressLine1 ?? '', addressLine2: property.data.addressLine2 ?? '', localityName: property.data.localityName ?? '', city: property.data.city ?? '', district: property.data.district ?? '', state: property.data.state ?? '', postalCode: property.data.postalCode ?? '', status: supportedPropertyStatus(property.data.status), price: property.data.price == null ? '' : String(property.data.price) });
+    if (property.data) { const agricultural = ['LAND', 'AGRICULTURAL_LAND'].includes(property.data.propertyType ?? ''); form.reset({ title: property.data.title, propertyType: property.data.propertyType ?? '', surveyNumber: property.data.surveyNumber ?? '', areaValue: property.data.areaValue == null ? '' : String(property.data.areaValue), areaUnit: agricultural ? 'ACRES_GUNTAS' : property.data.areaUnit === 'SQ_YD' ? 'SQ_YD' : 'SQ_FT', areaGuntas: property.data.areaGuntas == null ? '' : String(property.data.areaGuntas), addressLine1: property.data.addressLine1 ?? '', addressLine2: property.data.addressLine2 ?? '', localityName: property.data.localityName ?? '', city: property.data.city ?? '', district: property.data.district ?? '', state: property.data.state ?? '', postalCode: property.data.postalCode ?? '', status: supportedPropertyStatus(property.data.status), price: property.data.price == null ? '' : String(property.data.price) }); }
   }, [property.data, form]);
 
   const loading = editing ? property.isLoading : profile.isLoading;
@@ -74,7 +92,16 @@ export default function PropertyFormPage() {
     <Card variant="outlined"><CardContent><Stack component="form" spacing={2.5} noValidate onSubmit={(event) => { void form.handleSubmit((values) => mutation.mutateAsync(values))(event); }}>
       <Typography variant="h6" fontWeight={700}>Property information</Typography>
       <TextField label="Property name" {...form.register('title')} error={Boolean(form.formState.errors.title)} helperText={form.formState.errors.title?.message} required />
-      <Controller name="propertyType" control={form.control} render={({ field }) => <TextField select {...field} label="Property type" required error={Boolean(form.formState.errors.propertyType)} helperText={form.formState.errors.propertyType?.message || 'Choose the type that best describes this property.'}>{propertyTypes.map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>} />
+      <Controller name="propertyType" control={form.control} render={({ field }) => <TextField select {...field} label="Property type" required error={Boolean(form.formState.errors.propertyType)} helperText={form.formState.errors.propertyType?.message || 'Choose the type that best describes this property.'} onChange={(event) => { field.onChange(event); const agricultural = ['LAND', 'AGRICULTURAL_LAND'].includes(event.target.value); form.setValue('areaUnit', agricultural ? 'ACRES_GUNTAS' : 'SQ_FT', { shouldValidate: true }); form.setValue('areaValue', ''); form.setValue('areaGuntas', ''); }}>{propertyTypes.map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>} />
+      <Typography variant="subtitle2" fontWeight={700} sx={{ pt: 1 }}>Survey and property area</Typography>
+      <TextField label="Survey number (optional)" placeholder="For example: 125/2A" {...form.register('surveyNumber')} error={Boolean(form.formState.errors.surveyNumber)} helperText={form.formState.errors.surveyNumber?.message || 'Enter the land or municipal survey number if available.'} />
+      {['LAND', 'AGRICULTURAL_LAND'].includes(form.watch('propertyType')) ? <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField fullWidth label="Area (acres)" type="number" inputProps={{ min: 0, step: 1 }} {...form.register('areaValue')} error={Boolean(form.formState.errors.areaValue)} helperText={form.formState.errors.areaValue?.message || 'Enter the whole number of acres.'} required />
+        <TextField fullWidth label="Area (guntas)" type="number" inputProps={{ min: 0, max: 39, step: 1 }} {...form.register('areaGuntas')} error={Boolean(form.formState.errors.areaGuntas)} helperText={form.formState.errors.areaGuntas?.message || 'Enter 0–39 guntas.'} required />
+      </Stack> : <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField fullWidth label="Property area" type="number" inputProps={{ min: 0, step: '0.01' }} {...form.register('areaValue')} error={Boolean(form.formState.errors.areaValue)} helperText={form.formState.errors.areaValue?.message || 'Enter the total area (built-up area for a home or apartment).'} required />
+        <Controller name="areaUnit" control={form.control} render={({ field }) => <TextField select {...field} label="Area unit" required error={Boolean(form.formState.errors.areaUnit)} helperText={form.formState.errors.areaUnit?.message || 'Choose the unit used for the area.'}>{[['SQ_FT', 'Square feet (sq ft)'], ['SQ_YD', 'Square yards (sq yd)']].map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>} />
+      </Stack>}
       <Typography variant="subtitle2" fontWeight={700} sx={{ pt: 1 }}>Property address</Typography>
       <TextField label="Address line 1" placeholder="House or flat number and street" {...form.register('addressLine1')} error={Boolean(form.formState.errors.addressLine1)} helperText={form.formState.errors.addressLine1?.message || 'Helps us identify the property and coordinate services when needed.'} required />
       <TextField label="Apartment, suite or additional details" {...form.register('addressLine2')} error={Boolean(form.formState.errors.addressLine2)} helperText={form.formState.errors.addressLine2?.message} />

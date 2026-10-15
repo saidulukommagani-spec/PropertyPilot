@@ -56,8 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         session = await authApi.login(credentials);
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          throw new Error('The email or password was not accepted.');
+        if (axios.isAxiosError(error) && error.response) {
+          if (error.response.status === 401) {
+            throw new Error('The email or password was not accepted.');
+          }
+          if (error.response.status === 403) {
+            throw new Error('This account is not authorized to sign in. Contact an administrator.');
+          }
+          throw new Error('The sign-in service returned an error. Please try again.');
         }
         throw new Error('We could not connect to the sign-in service. Try again.');
       }

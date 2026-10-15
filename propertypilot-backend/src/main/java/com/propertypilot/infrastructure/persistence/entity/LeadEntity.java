@@ -22,21 +22,21 @@ private UUID leadId;
 @ManyToOne(fetch = FetchType.LAZY)
 @JoinColumn(name = "assigned_agent_id")
 private AgentEntity assignedAgent;
-    @Column(name = "source")
+@Column(name = "source", nullable = false, length = 80)
     private String source;
 
   
 @Enumerated(EnumType.STRING)
-@Column(name = "status")
+@Column(name = "status", nullable = false, length = 30)
 private LeadStatus status;
 
-    @Column(name = "budget_min")
+    @Column(name = "budget_min", precision = 15, scale = 2)
     private BigDecimal budgetMin;
 
-    @Column(name = "budget_max")
+    @Column(name = "budget_max", precision = 15, scale = 2)
     private BigDecimal budgetMax;
 
-    @Column(name = "notes")
+    @Column(name = "notes", columnDefinition = "text")
     private String notes;
 
     public UUID getLeadId() {

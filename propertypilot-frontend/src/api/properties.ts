@@ -5,6 +5,10 @@ export interface PropertyRecord {
   customerId: string;
   title: string;
   propertyType: string;
+  surveyNumber?: string | null;
+  areaValue?: number | null;
+  areaUnit?: 'SQ_FT' | 'SQ_YD' | 'ACRES_GUNTAS' | null;
+  areaGuntas?: number | null;
   addressLine1?: string | null;
   addressLine2?: string | null;
   localityName?: string | null;
@@ -21,6 +25,10 @@ export interface PropertyRecord {
 export interface PropertyMutation {
   title: string;
   propertyType: string;
+  surveyNumber?: string;
+  areaValue?: number;
+  areaUnit?: 'SQ_FT' | 'SQ_YD' | 'ACRES_GUNTAS';
+  areaGuntas?: number;
   addressLine1?: string;
   addressLine2?: string;
   localityName?: string;

@@ -56,6 +56,7 @@ public PricingRuleResponse createRule(
     validateDates(
             request.getEffectiveFrom(),
             request.getEffectiveTo());
+    ServicePricingRuleDefinition.validate(request.getRuleDefinition(), request.getBaseAmount());
 
     ServiceEntity service =
             serviceRepository.findById(
@@ -196,6 +197,10 @@ public PricingRuleResponse updateRule(
     if (request.getEffectiveTo() != null) {
         entity.setEffectiveTo(
                 request.getEffectiveTo());
+    }
+
+    if (request.getBaseAmount() != null || request.getRuleDefinition() != null) {
+        ServicePricingRuleDefinition.validate(entity.getRuleDefinition(), entity.getBaseAmount());
     }
 
     return buildResponse(

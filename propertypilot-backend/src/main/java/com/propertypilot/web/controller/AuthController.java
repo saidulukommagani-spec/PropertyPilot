@@ -38,6 +38,10 @@ public class AuthController {
                     description = "Validation failed"
             ),
             @ApiResponse(
+                    responseCode = "401",
+                    description = "Email or password was not accepted"
+            ),
+            @ApiResponse(
                     responseCode = "500",
                     description = "Unexpected error"
             )

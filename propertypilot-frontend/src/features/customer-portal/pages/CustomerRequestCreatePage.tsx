@@ -5,8 +5,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CustomerPageHeading, CustomerQueryError } from '../components/CustomerStates';
-import { useCustomerProperties, useCustomerEligibleServiceTypes, useCustomerEligibleServices, useCreateCustomerEstimate, useCreateCustomerRequest } from '../hooks/useCustomerPortal';
-import type { CustomerEstimate, CustomerRequestCreated } from '../types/customerPortal';
+import { useCustomerProperties, useCustomerEligibleServiceTypes, useCustomerEligibleServices, useCreateCustomerEstimate, useCreateCustomerRequest, useCustomerEstimateRequirements } from '../hooks/useCustomerPortal';
+import type { CustomerEstimate, CustomerEstimateRequirements, CustomerRequestCreated } from '../types/customerPortal';
 
 const schema = z.object({
   propertyId: z.string().uuid('Choose one of your properties.'),
@@ -29,6 +29,7 @@ export default function CustomerRequestCreatePage() {
   const mutation = useCreateCustomerRequest();
   const [created, setCreated] = useState<CustomerRequestCreated | null>(null);
   const [estimate, setEstimate] = useState<CustomerEstimate | null>(null);
+  const [requestedLoanAmount, setRequestedLoanAmount] = useState('');
   const estimateKey = useRef('');
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -39,9 +40,43 @@ export default function CustomerRequestCreatePage() {
   const serviceId = form.watch('serviceId');
   const serviceTypes = useCustomerEligibleServiceTypes(propertyId);
   const services = useCustomerEligibleServices(propertyId, serviceCategory);
+  const estimateRequirements = useCustomerEstimateRequirements(propertyId, serviceId);
   const serviceCategories = serviceTypes.data ?? [];
   const categoryServices = services.data ?? [];
   const hasProperties = (properties.data ?? []).some((property) => property.status !== 'ARCHIVED');
+  const percentagePricing = estimateRequirements.data?.pricingModel === 'PERCENT_OF_LOAN_AMOUNT';
+  const canRetryEstimate = !percentagePricing || (Number.isFinite(Number(requestedLoanAmount)) && Number(requestedLoanAmount) > 0);
+  const travelLineItem = estimate?.lineItems?.find((item) => item.description.trim().toLowerCase() === 'travel');
+
+  const calculateEstimate = (requirements: CustomerEstimateRequirements, loanAmount?: number) => {
+    if (!propertyId || !serviceId) return;
+    const requestKey = `${propertyId}:${serviceId}:${requirements.pricingModel === 'PERCENT_OF_LOAN_AMOUNT' ? loanAmount : 'FIXED'}`;
+    if (estimateKey.current === requestKey) return;
+    estimateKey.current = requestKey;
+    setEstimate(null);
+    estimateMutation.reset();
+    form.setValue('quoteId', '');
+    void estimateMutation.mutateAsync({ propertyId, serviceId, ...(loanAmount !== undefined ? { requestedLoanAmount: loanAmount } : {}) }).then((result) => {
+      if (estimateKey.current === requestKey) {
+        setEstimate(result);
+        form.setValue('quoteId', result.pricingEstimateId, { shouldValidate: true });
+      }
+    }).catch(() => { /* The estimate error is shown below. */ });
+  };
+
+  const retryEstimate = () => {
+    if (!estimateRequirements.data || !canRetryEstimate) return;
+    estimateKey.current = '';
+    calculateEstimate(estimateRequirements.data, percentagePricing ? Number(requestedLoanAmount) : undefined);
+  };
+
+  useEffect(() => {
+    if (serviceId && estimateRequirements.isSuccess && estimateRequirements.data.pricingModel === 'FIXED') {
+      calculateEstimate(estimateRequirements.data);
+    }
+  // Estimate is keyed to the selected property, service, and authoritative pricing requirements.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId, serviceId, estimateRequirements.data, estimateRequirements.isSuccess]);
   useEffect(() => {
     if (properties.isSuccess && preselectedPropertyId && form.getValues('propertyId') !== preselectedPropertyId && properties.data.some((property) => property.propertyId === preselectedPropertyId && property.status !== 'ARCHIVED')) {
       form.setValue('propertyId', preselectedPropertyId, { shouldValidate: true });
@@ -49,7 +84,8 @@ export default function CustomerRequestCreatePage() {
   }, [form, preselectedPropertyId, properties.data, properties.isSuccess]);
 
   const submit = form.handleSubmit(async (values) => {
-    if (!estimate || estimate.pricingEstimateId !== values.quoteId || estimate.propertyId !== values.propertyId || estimate.serviceId !== values.serviceId) {
+    const expectedKey = `${values.propertyId}:${values.serviceId}:${percentagePricing ? Number(requestedLoanAmount) : 'FIXED'}`;
+    if (!estimate || estimate.pricingEstimateId !== values.quoteId || estimate.propertyId !== values.propertyId || estimate.serviceId !== values.serviceId || estimateKey.current !== expectedKey) {
       form.setError('quoteId', { message: 'Generate a current estimate for the selected property and service.' });
       return;
     }
@@ -72,6 +108,7 @@ export default function CustomerRequestCreatePage() {
   const propertyQueryError = properties.isError;
   const chosenProperty = (properties.data ?? []).find((property) => property.propertyId === (created?.propertyId || propertyId));
   const chosenService = categoryServices.find((service) => service.serviceId === (created?.serviceId || serviceId));
+  const visitRequired = Boolean(chosenService?.requiresVisit || chosenService?.visitMandatory);
 
   if (created) return <Stack spacing={3}>
     <CustomerPageHeading title="Service request submitted" subtitle="Your request has been received by PropertyPilot." />
@@ -99,23 +136,33 @@ export default function CustomerRequestCreatePage() {
       <Stack component="form" spacing={2.5} onSubmit={(event) => void submit(event)} noValidate>
         <Typography variant="h6" fontWeight={700}>Service request details</Typography>
 
-        {properties.isLoading ? <Skeleton variant="rounded" height={56} /> : <Controller name="propertyId" control={form.control} render={({ field }) => <TextField {...field} select label="Property" error={Boolean(form.formState.errors.propertyId)} helperText={form.formState.errors.propertyId?.message || 'Choose the property that needs this service.'} disabled={propertyQueryError || !hasProperties} onChange={(event) => { field.onChange(event); estimateKey.current = ''; setEstimate(null); estimateMutation.reset(); form.setValue('serviceCategory', ''); form.setValue('serviceId', ''); form.setValue('quoteId', ''); form.clearErrors(['serviceCategory', 'serviceId', 'quoteId']); }}>
+        {properties.isLoading ? <Skeleton variant="rounded" height={56} /> : <Controller name="propertyId" control={form.control} render={({ field }) => <TextField {...field} select label="Property" error={Boolean(form.formState.errors.propertyId)} helperText={form.formState.errors.propertyId?.message || 'Choose the property that needs this service.'} disabled={propertyQueryError || !hasProperties} onChange={(event) => { field.onChange(event); estimateKey.current = ''; setEstimate(null); setRequestedLoanAmount(''); estimateMutation.reset(); form.setValue('serviceCategory', ''); form.setValue('serviceId', ''); form.setValue('quoteId', ''); form.clearErrors(['serviceCategory', 'serviceId', 'quoteId']); }}>
           {(properties.data ?? []).filter((property) => property.status !== 'ARCHIVED').map((property) => <MenuItem key={property.propertyId} value={property.propertyId}>{property.title}{property.propertyType ? ` · ${property.propertyType}` : ''}</MenuItem>)}
         </TextField>} />}
 
-        {serviceTypes.isLoading && propertyId ? <Skeleton variant="rounded" height={56} /> : <Controller name="serviceCategory" control={form.control} render={({ field }) => <TextField {...field} select label="Service type" error={Boolean(form.formState.errors.serviceCategory) && serviceCategories.length > 0} helperText={!propertyId ? 'Choose a property first.' : serviceTypes.isError ? 'Service types could not be loaded. Retry above.' : serviceCategories.length === 0 && serviceTypes.isSuccess ? 'No active service types are configured for this property yet.' : form.formState.errors.serviceCategory?.message || 'Choose a service type to see matching services.'} disabled={!propertyId || serviceTypes.isError || serviceCategories.length === 0} onChange={(event) => { field.onChange(event); estimateKey.current = ''; setEstimate(null); estimateMutation.reset(); form.clearErrors('serviceCategory'); form.setValue('serviceId', ''); form.setValue('quoteId', ''); form.clearErrors(['serviceId', 'quoteId']); }}>
+        {serviceTypes.isLoading && propertyId ? <Skeleton variant="rounded" height={56} /> : <Controller name="serviceCategory" control={form.control} render={({ field }) => <TextField {...field} select label="Service type" error={Boolean(form.formState.errors.serviceCategory) && serviceCategories.length > 0} helperText={!propertyId ? 'Choose a property first.' : serviceTypes.isError ? 'Service types could not be loaded. Retry above.' : serviceCategories.length === 0 && serviceTypes.isSuccess ? 'No active service types are configured for this property yet.' : form.formState.errors.serviceCategory?.message || 'Choose a service type to see matching services.'} disabled={!propertyId || serviceTypes.isError || serviceCategories.length === 0} onChange={(event) => { field.onChange(event); estimateKey.current = ''; setEstimate(null); setRequestedLoanAmount(''); estimateMutation.reset(); form.clearErrors('serviceCategory'); form.setValue('serviceId', ''); form.setValue('quoteId', ''); form.clearErrors(['serviceId', 'quoteId']); }}>
           {serviceCategories.map((category) => <MenuItem key={category.code} value={category.code}>{category.label}</MenuItem>)}
         </TextField>} />}
         {propertyId && serviceTypes.isSuccess && serviceCategories.length === 0 && <Alert severity="info">No services are currently configured for this property. An administrator can add an active service type and service in the Service Catalog.</Alert>}
 
-        {services.isLoading && serviceCategory ? <Skeleton variant="rounded" height={56} /> : <Controller name="serviceId" control={form.control} render={({ field }) => <TextField {...field} select label="Service" error={Boolean(form.formState.errors.serviceId) && categoryServices.length > 0} helperText={!serviceCategory ? 'Choose a service type first.' : services.isError ? 'Services could not be loaded. Retry above.' : categoryServices.length === 0 && services.isSuccess ? 'No active services match this property and service type.' : form.formState.errors.serviceId?.message || 'Choose the specific service you need.'} disabled={!propertyId || !serviceCategory || services.isError || categoryServices.length === 0} onChange={(event) => { const selectedServiceId = event.target.value; field.onChange(selectedServiceId); const requestKey = `${propertyId}:${selectedServiceId}`; estimateKey.current = requestKey; setEstimate(null); estimateMutation.reset(); form.setValue('quoteId', ''); form.clearErrors(['serviceId', 'quoteId']); if (selectedServiceId && propertyId) { void estimateMutation.mutateAsync({ propertyId, serviceId: selectedServiceId }).then((result) => { if (estimateKey.current === requestKey) { setEstimate(result); form.setValue('quoteId', result.pricingEstimateId, { shouldValidate: true }); } }).catch(() => { /* The estimate error is shown below. */ }); } }}>
+        {services.isLoading && serviceCategory ? <Skeleton variant="rounded" height={56} /> : <Controller name="serviceId" control={form.control} render={({ field }) => <TextField {...field} select label="Service" error={Boolean(form.formState.errors.serviceId) && categoryServices.length > 0} helperText={!serviceCategory ? 'Choose a service type first.' : services.isError ? 'Services could not be loaded. Retry above.' : categoryServices.length === 0 && services.isSuccess ? 'No active services match this property and service type.' : form.formState.errors.serviceId?.message || 'Choose the specific service you need.'} disabled={!propertyId || !serviceCategory || services.isError || categoryServices.length === 0} onChange={(event) => { field.onChange(event); estimateKey.current = ''; setEstimate(null); setRequestedLoanAmount(''); estimateMutation.reset(); form.setValue('quoteId', ''); form.clearErrors(['serviceId', 'quoteId']); }}>
           {categoryServices.map((service) => <MenuItem key={service.serviceId} value={service.serviceId}>
             <Box><Typography>{service.serviceName}</Typography><Typography variant="caption" color="text.secondary">{visitDescription(service.requiresVisit, service.visitMandatory, service.remote)}</Typography></Box>
           </MenuItem>)}
         </TextField>} />}
 
+        {serviceId && chosenService && (chosenService.requiresVisit || chosenService.visitMandatory) && <Alert severity="info">To calculate the visit travel charge, PropertyPilot sends this property's saved address to Google Maps to calculate road distance from the LB Nagar office.</Alert>}
+
+        {serviceId && estimateRequirements.isLoading && <Skeleton variant="rounded" height={56} />}
+        {estimateRequirements.isError && <CustomerQueryError error={estimateRequirements.error} retry={() => void estimateRequirements.refetch()} />}
+        {percentagePricing && <Stack spacing={1}>
+          <TextField label="Requested loan amount" type="number" value={requestedLoanAmount} onChange={(event) => { setRequestedLoanAmount(event.target.value); estimateKey.current = ''; setEstimate(null); estimateMutation.reset(); form.setValue('quoteId', ''); }} inputProps={{ min: 0.01, step: '0.01' }} helperText={`The estimate uses ${estimateRequirements.data?.ratePercent ?? 'the configured'}% of the requested loan amount${estimateRequirements.data?.minimumFee != null ? `, with a minimum fee of ${formatCurrency(estimateRequirements.data.minimumFee)}` : ''}${estimateRequirements.data?.maximumFee != null ? ` and a maximum fee of ${formatCurrency(estimateRequirements.data.maximumFee)}` : ''}.`} />
+          <Alert severity="info">This estimate is based on the amount requested. If the sanctioned loan amount changes, request a revised estimate before accepting.</Alert>
+          <Button variant="outlined" onClick={() => calculateEstimate(estimateRequirements.data!, Number(requestedLoanAmount))} disabled={!requestedLoanAmount || !Number.isFinite(Number(requestedLoanAmount)) || Number(requestedLoanAmount) <= 0 || estimateMutation.isPending}>Calculate estimate</Button>
+        </Stack>}
+
         {estimateMutation.isPending && <Skeleton variant="rounded" height={112} />}
-        {estimateMutation.isError && <Alert severity="error">{getEstimateErrorMessage(estimateMutation.error)}</Alert>}
+        {estimateMutation.isError && <Alert severity="error" action={estimateRequirements.data && <Button color="inherit" size="small" disabled={!canRetryEstimate || estimateMutation.isPending} onClick={retryEstimate}>Retry estimate</Button>}>{getEstimateErrorMessage(estimateMutation.error)}</Alert>}
         {estimate && estimate.propertyId === propertyId && estimate.serviceId === serviceId && <Box sx={{ p: 2.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.default' }}>
           <Typography variant="subtitle1" fontWeight={700}>Your price estimate</Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} sx={{ mt: 1.5 }}>
@@ -123,6 +170,9 @@ export default function CustomerRequestCreatePage() {
             <Box><Typography variant="body2" color="text.secondary">Your PropertyPilot price</Typography><Typography variant="h6" fontWeight={750}>{formatCurrency(estimate.customerPrice, estimate.currencyCode)}</Typography></Box>
             <Box><Typography variant="body2" color="text.secondary">Your savings</Typography><Typography fontWeight={700} color="success.main">{formatCurrency(estimate.savings, estimate.currencyCode)}</Typography></Box>
           </Stack>
+          {estimate.pricingModel === 'PERCENT_OF_LOAN_AMOUNT' && estimate.pricingInputAmount != null && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Service fee calculated at {estimate.ratePercent}% of requested loan amount {formatCurrency(estimate.pricingInputAmount, estimate.currencyCode)}.</Typography>}
+          {travelLineItem && <Typography variant="body2" sx={{ mt: 1 }}>Travel charge: {formatCurrency(travelLineItem.amount, estimate.currencyCode)}{!visitRequired ? ' (no on-site visit required)' : ''}</Typography>}
+          {visitRequired && estimate.travelDistanceKm != null && estimate.travelDistanceKm > 0 && <Box sx={{ mt: 1, p: 1.25, borderRadius: 1, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}><Typography variant="body2" color="text.secondary">Road distance from the LB Nagar office: {estimate.travelDistanceKm.toFixed(1)} km one way. Travel pricing: {estimate.travelDistanceMode === 'ROUND_TRIP' ? 'round trip' : 'one way'}.</Typography><Typography component="span" translate="no" sx={{ display: 'inline-block', mt: 0.5, fontFamily: 'Roboto, Arial, sans-serif', fontSize: '0.75rem', fontWeight: 400, color: '#5e5e5e' }}>Google Maps</Typography></Box>}
           <Typography variant="caption" color="text.secondary">Valid until {new Date(estimate.expiresAt).toLocaleString()}. The final amount is frozen when you accept this estimate.</Typography>
         </Box>}
         {form.formState.errors.quoteId && <Typography color="error" variant="caption">{form.formState.errors.quoteId.message}</Typography>}
@@ -134,7 +184,7 @@ export default function CustomerRequestCreatePage() {
         <TextField label="Service details" multiline minRows={4} inputProps={{ maxLength: 2000 }} {...form.register('description')} error={Boolean(form.formState.errors.description)} helperText={form.formState.errors.description?.message || 'Tell us what you need so our team can prepare.'} />
 
         {mutation.isError && <Alert severity="error">{mutation.error instanceof Error ? mutation.error.message : 'Your request could not be submitted. Your entries are still here; review and try again.'}</Alert>}
-        <Button type="submit" variant="contained" disabled={mutation.isPending || estimateMutation.isPending || form.formState.isSubmitting || properties.isLoading || serviceTypes.isLoading || services.isLoading || !hasProperties || !estimate || estimate.pricingEstimateId !== form.watch('quoteId')}>
+        <Button type="submit" variant="contained" disabled={mutation.isPending || estimateMutation.isPending || form.formState.isSubmitting || properties.isLoading || serviceTypes.isLoading || services.isLoading || estimateRequirements.isLoading || !hasProperties || !estimate || estimate.pricingEstimateId !== form.watch('quoteId')}>
           {mutation.isPending || form.formState.isSubmitting ? 'Accepting estimate and submitting…' : 'Accept estimate and submit request'}
         </Button>
       </Stack>

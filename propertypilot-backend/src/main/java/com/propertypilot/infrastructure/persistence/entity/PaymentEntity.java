@@ -34,7 +34,7 @@ public class PaymentEntity extends AuditableEntity {
     @JoinColumn(name = "invoice_id")
     private InvoiceEntity invoice;
 
-    @Column(name = "provider")
+    @Column(name = "provider", length = 80)
     private String provider;
 
     @Column(name = "provider_payment_id")
@@ -48,7 +48,8 @@ public class PaymentEntity extends AuditableEntity {
 
     @Column(
             name = "idempotency_key",
-            nullable = false)
+            nullable = false,
+            length = 120)
     private String idempotencyKey;
 
   
@@ -58,21 +59,21 @@ public class PaymentEntity extends AuditableEntity {
     @JdbcTypeCode(SqlTypes.CHAR)
     private String currencyCode;
 
-    @Column(name = "amount")
+    @Column(name = "amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
    @Enumerated(EnumType.STRING)
-@Column(name = "payment_status")
+@Column(name = "payment_status", nullable = false, length = 30)
 private PaymentStatus paymentStatus;
 
-    @Column(name = "payment_date")
+    @Column(name = "payment_date", nullable = false)
     private OffsetDateTime paymentDate;
 
-    @Column(name = "failure_reason")
+    @Column(name = "failure_reason", columnDefinition = "text")
     private String failureReason;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
 @Enumerated(EnumType.STRING)
@@ -136,7 +137,7 @@ public void setIdempotencyKey(String idempotencyKey) {
 }
 
 @Enumerated(EnumType.STRING)
-@Column(name = "payment_method")
+@Column(name = "payment_method", length = 80)
 private PaymentMethod paymentMethod;
 
 public PaymentMethod getPaymentMethod() {

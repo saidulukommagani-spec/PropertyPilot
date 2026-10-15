@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,6 +38,23 @@ public class PropertyUpdateRequest {
     )
     @NotBlank
     private String propertyType;
+
+    @Schema(description = "Land or municipal survey number", example = "125/2A")
+    @Size(max = 120)
+    private String surveyNumber;
+
+    @Schema(description = "Entered property area. For ACRES_GUNTAS this is the whole acres component.", example = "2")
+    @DecimalMin(value = "0.0", message = "Property area cannot be negative")
+    private BigDecimal areaValue;
+
+    @Schema(description = "Area unit: SQ_FT, SQ_YD, or ACRES_GUNTAS", example = "SQ_FT")
+    @Pattern(regexp = "SQ_FT|SQ_YD|ACRES_GUNTAS", message = "Choose sq ft, sq yd, or acres and guntas")
+    private String areaUnit;
+
+    @Schema(description = "Guntas component when areaUnit is ACRES_GUNTAS", example = "12")
+    @Min(value = 0, message = "Guntas must be between 0 and 39")
+    @Max(value = 39, message = "Guntas must be between 0 and 39")
+    private Integer areaGuntas;
 
     @Schema(description = "Primary service address", example = "12 Lake View Road, Jubilee Hills")
     @Size(max = 255)

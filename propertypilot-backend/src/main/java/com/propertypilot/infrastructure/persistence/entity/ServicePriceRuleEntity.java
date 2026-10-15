@@ -1,6 +1,8 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,6 +42,7 @@ public class ServicePriceRuleEntity extends AuditableEntity {
     @Column(name = "base_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal baseAmount;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "currency_code", nullable = false, length = 3)
     private String currencyCode;
 

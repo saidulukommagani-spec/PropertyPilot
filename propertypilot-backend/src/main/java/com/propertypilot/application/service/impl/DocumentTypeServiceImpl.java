@@ -3,18 +3,21 @@ package com.propertypilot.application.service.impl;
 import com.propertypilot.application.dto.DocumentTypeResponse;
 import com.propertypilot.application.service.DocumentTypeService;
 import com.propertypilot.infrastructure.persistence.repository.DocumentTypeRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class DocumentTypeServiceImpl
         implements DocumentTypeService {
 
     private final DocumentTypeRepository
             documentTypeRepository;
+
+    public DocumentTypeServiceImpl(
+            DocumentTypeRepository documentTypeRepository) {
+        this.documentTypeRepository = documentTypeRepository;
+    }
 
     @Override
     public List<DocumentTypeResponse> getByPropertyCategory(

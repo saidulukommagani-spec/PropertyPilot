@@ -59,6 +59,7 @@ public class PricingEstimateEntity extends AuditableEntity {
     )
     private BigDecimal totalAmount;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(
             name = "currency_code",
             nullable = false,

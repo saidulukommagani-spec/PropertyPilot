@@ -18,7 +18,6 @@ import com.propertypilot.infrastructure.persistence.entity.CustomerSubscriptionE
 import com.propertypilot.infrastructure.persistence.repository.CustomerSubscriptionRepository;
 import com.propertypilot.infrastructure.persistence.repository.SubscriptionPlanVersionRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +29,6 @@ import java.util.List;
 import java.util.UUID;
 import com.propertypilot.security.SecurityService;
 
-@RequiredArgsConstructor
 @Service
 @Transactional
 public class BillingServiceImpl
@@ -45,6 +43,23 @@ public class BillingServiceImpl
     private final PaymentRepository settledPaymentLookup;
     private final CustomerSubscriptionRepository customerSubscriptionRepository;
     private final com.propertypilot.infrastructure.persistence.repository.SubscriptionPlanVersionRepository planVersionRepository;
+
+    public BillingServiceImpl(
+            SecurityService securityService,
+            InvoiceRepository invoiceRepository,
+            CustomerRepository customerRepository,
+            DealRepository dealRepository,
+            PaymentRepository settledPaymentLookup,
+            CustomerSubscriptionRepository customerSubscriptionRepository,
+            SubscriptionPlanVersionRepository planVersionRepository) {
+        this.securityService = securityService;
+        this.invoiceRepository = invoiceRepository;
+        this.customerRepository = customerRepository;
+        this.dealRepository = dealRepository;
+        this.settledPaymentLookup = settledPaymentLookup;
+        this.customerSubscriptionRepository = customerSubscriptionRepository;
+        this.planVersionRepository = planVersionRepository;
+    }
 
    @Override
 public InvoiceResponse  createInvoice(

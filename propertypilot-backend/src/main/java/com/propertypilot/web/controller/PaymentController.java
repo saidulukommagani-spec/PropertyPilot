@@ -6,12 +6,13 @@ import com.propertypilot.application.service.PaymentService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,14 +24,16 @@ import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/payments")
-@RequiredArgsConstructor
 @Tag(
         name = "Payment Management",
         description = "Payment APIs")
-@SecurityRequirement(name = "bearerAuth")
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    public PaymentController(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -60,9 +63,12 @@ public class PaymentController {
     }
 
     @PostMapping(value = "/settlement", consumes = "text/plain")
-    @Operation(summary = "Confirm payment settlement using a signed provider event")
+    @SecurityRequirements
+    @Operation(summary = "Confirm payment settlement using a signed provider event", security = {})
     public ResponseEntity<PaymentResponse> confirmSettlement(
             @RequestBody String rawBody,
+            @Parameter(name = "X-PropertyPilot-Signature", in = ParameterIn.HEADER, required = true,
+                    description = "HMAC-SHA256 signature of the unmodified request body")
             @RequestHeader("X-PropertyPilot-Signature") String signature) {
         return ResponseEntity.ok(paymentService.confirmSettlement(rawBody, signature));
     }

@@ -36,4 +36,38 @@ class PricingRuleEngineServiceImplTest {
         assertThat(result.getGstAmount()).isEqualByComparingTo("270.86");
         assertThat(result.getTotalAmount()).isEqualByComparingTo("1775.66");
     }
+
+    @Test
+    void calculatesOneWayTravelUsingConfiguredRateAndCurrencyRounding() {
+        when(loader.loadProfile("CUSTOMER")).thenReturn(Map.of(
+                "TRAVEL_RATE", "2.00", "AGENT_DA", "100", "OVERHEAD_PERCENT", "10",
+                "PROPERTYPILOT_MARGIN_PERCENT", "20", "GST_PERCENT", "18",
+                "TRAVEL_DISTANCE_MODE", "ONE_WAY"));
+        CreatePricingEstimateRequest request = new CreatePricingEstimateRequest();
+        request.setOneWayDistanceKm(10.0);
+        request.setVendorCost(new BigDecimal("1000.00"));
+
+        PricingBreakdownResponse result = engine.calculateBreakdown(request, "CUSTOMER");
+
+        assertThat(result.getTravelCost()).isEqualByComparingTo("20.00");
+        assertThat(result.getSubtotal()).isEqualByComparingTo("1478.40");
+        assertThat(result.getGstAmount()).isEqualByComparingTo("266.11");
+        assertThat(result.getTotalAmount()).isEqualByComparingTo("1744.51");
+    }
+
+    @Test
+    void nonVisitEstimateHasZeroTravelCost() {
+        when(loader.loadProfile("CUSTOMER")).thenReturn(Map.of(
+                "TRAVEL_RATE", "4.00", "AGENT_DA", "0", "OVERHEAD_PERCENT", "0",
+                "PROPERTYPILOT_MARGIN_PERCENT", "0", "GST_PERCENT", "0",
+                "TRAVEL_DISTANCE_MODE", "ROUND_TRIP"));
+        CreatePricingEstimateRequest request = new CreatePricingEstimateRequest();
+        request.setOneWayDistanceKm(0.0);
+        request.setVendorCost(new BigDecimal("500.00"));
+
+        PricingBreakdownResponse result = engine.calculateBreakdown(request, "CUSTOMER");
+
+        assertThat(result.getTravelCost()).isEqualByComparingTo("0.00");
+        assertThat(result.getTotalAmount()).isEqualByComparingTo("500.00");
+    }
 }

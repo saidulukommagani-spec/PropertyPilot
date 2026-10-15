@@ -21,7 +21,7 @@ const createdRequest = {
 };
 state.properties.data = [{ propertyId, customerId: '00000000-0000-4000-8000-000000000005', title: 'Lakeview House', propertyType: 'House', status: 'ACTIVE' }];
 state.services.data = [{ serviceId, serviceCode: 'DOC_SCAN', serviceName: 'Document review', category: 'DOCUMENTS', requiresVisit: false, visitMandatory: false, remote: true }];
-const customerEstimate = { pricingEstimateId: quoteId, propertyId, serviceId, serviceName: 'Document review', subtotal: 1000, discountAmount: 100, taxAmount: 162, totalAmount: 1062, currencyCode: 'INR', status: 'ACTIVE', expiresAt: '2027-01-01T00:00:00Z', standardPrice: 1200, customerPrice: 1062, savings: 138, lineItems: [] };
+const customerEstimate = { pricingEstimateId: quoteId, propertyId, serviceId, serviceName: 'Document review', subtotal: 1000, discountAmount: 100, taxAmount: 162, totalAmount: 1062, currencyCode: 'INR', status: 'ACTIVE', expiresAt: '2027-01-01T00:00:00Z', standardPrice: 1200, customerPrice: 1062, savings: 138, travelDistanceKm: 0, travelDistanceMode: 'ONE_WAY', lineItems: [{ lineType: 'FEE', description: 'Travel', amount: 0 }] };
 
 vi.mock('../hooks/useCustomerPortal', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
@@ -47,6 +47,14 @@ vi.mock('../hooks/useCustomerPortal', async () => {
     },
     useCustomerEligibleServiceTypes: () => state.serviceTypes,
     useCustomerEligibleServices: () => state.services,
+    useCustomerEstimateRequirements: (_propertyId: string, serviceId: string) => ({
+      data: serviceId ? { pricingModel: 'FIXED' as const } : undefined,
+      isLoading: false,
+      isError: false,
+      isSuccess: Boolean(serviceId),
+      error: null,
+      refetch: vi.fn(),
+    }),
     useCreateCustomerRequest: () => {
       const [mutation, setMutation] = React.useState<{ isPending: boolean; isError: boolean; error: Error | null }>({ isPending: false, isError: false, error: null });
       return {
@@ -95,6 +103,7 @@ beforeEach(() => {
   state.services.isLoading = false;
   state.services.isError = false;
   state.services.isSuccess = true;
+  state.services.data = [{ serviceId, serviceCode: 'DOC_SCAN', serviceName: 'Document review', category: 'DOCUMENTS', requiresVisit: false, visitMandatory: false, remote: true }];
   state.serviceTypes.isLoading = false;
   state.serviceTypes.isError = false;
   state.serviceTypes.isSuccess = true;
@@ -132,6 +141,7 @@ describe('CustomerRequestCreatePage', () => {
     await user.click(screen.getByRole('combobox', { name: 'Service' }));
     await user.click(await screen.findByRole('option', { name: /Document review/ }));
     await screen.findByText('Your price estimate');
+    expect(screen.getByText(/Travel charge:.*no on-site visit required/)).toBeTruthy();
     await user.click(submitButton);
     expect(await screen.findByText('Add at least 10 characters describing the service needed.')).toBeTruthy();
     await user.type(screen.getByRole('textbox', { name: 'Service details' }), 'Inspect the rooftop for possible leaks.');
@@ -171,6 +181,34 @@ describe('CustomerRequestCreatePage', () => {
 
     expect(await screen.findByText(/This service does not have an active price yet/)).toBeTruthy();
     expect(screen.queryByText('Request failed with status code 400')).toBeNull();
+  }, 15000);
+
+  it('lets a customer retry a failed route estimate and then shows the distance and travel charge', async () => {
+    const user = userEvent.setup();
+    state.services.data[0].requiresVisit = true;
+    const unavailableRoute = Object.assign(new Error('Request failed with status code 400'), {
+      response: { data: { status: 400, message: 'Google Maps could not calculate the road distance right now. Operations will prepare the quote.' } },
+    });
+    state.estimateAsync.mockRejectedValueOnce(unavailableRoute).mockResolvedValueOnce({
+      ...customerEstimate,
+      travelDistanceKm: 12.345,
+      travelDistanceMode: 'ROUND_TRIP',
+      lineItems: [{ lineType: 'FEE', description: 'Travel', amount: 50 }],
+    });
+    renderPage();
+    await user.click(screen.getByRole('combobox', { name: 'Service type' }));
+    await user.click(await screen.findByRole('option', { name: 'Inspection' }));
+    await user.click(screen.getByRole('combobox', { name: 'Service' }));
+    await user.click(await screen.findByRole('option', { name: /Document review/ }));
+
+    expect(await screen.findByText(/could not calculate the road distance right now/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Retry estimate' }));
+
+    expect(await screen.findByText('Your price estimate')).toBeTruthy();
+    expect(screen.getByText(/Road distance from the LB Nagar office: 12.3 km one way\. Travel pricing: round trip\./)).toBeTruthy();
+    expect(screen.getByText(/Travel charge:.*50\.00/)).toBeTruthy();
+    expect(screen.getByText('Google Maps')).toBeTruthy();
+    expect(state.estimateAsync).toHaveBeenCalledTimes(2);
   }, 15000);
 
   it('clears the selected type, service, and quote when the property changes', async () => {

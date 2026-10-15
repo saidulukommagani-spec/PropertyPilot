@@ -1,6 +1,8 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -19,6 +21,7 @@ public class CountryEntity extends AuditableEntity {
             length = 100)
     private String countryName;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(
             name = "country_code",
             nullable = false,

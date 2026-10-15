@@ -13,4 +13,7 @@ public interface ServiceEligibilityRuleRepository
     findByService_ServiceIdAndStatusOrderByPriorityAsc(
             UUID serviceId,
             String status);
+
+    java.util.Optional<ServiceEligibilityRuleEntity> findByService_ServiceIdAndRuleName(
+            UUID serviceId, String ruleName);
 }

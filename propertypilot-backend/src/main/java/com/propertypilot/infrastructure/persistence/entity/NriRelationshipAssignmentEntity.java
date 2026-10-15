@@ -11,7 +11,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class NriRelationshipAssignmentEntity extends AuditableEntity {
 
@@ -44,4 +43,23 @@ public class NriRelationshipAssignmentEntity extends AuditableEntity {
 
     @Column(name = "assignment_reason")
     private String assignmentReason;
+
+    public NriRelationshipAssignmentEntity(
+            UUID nriRelationshipAssignmentId,
+            CustomerEntity customer,
+            UserEntity relationshipManager,
+            Property property,
+            OffsetDateTime assignedAt,
+            OffsetDateTime unassignedAt,
+            String status,
+            String assignmentReason) {
+        this.nriRelationshipAssignmentId = nriRelationshipAssignmentId;
+        this.customer = customer;
+        this.relationshipManager = relationshipManager;
+        this.property = property;
+        this.assignedAt = assignedAt;
+        this.unassignedAt = unassignedAt;
+        this.status = status;
+        this.assignmentReason = assignmentReason;
+    }
 }

@@ -33,7 +33,7 @@ describe('AdminDashboardPage', () => {
   it('shows live operations summary values and links to real work queues', () => {
     render(<MemoryRouter><AdminDashboardPage /></MemoryRouter>);
 
-    expect(screen.getByText('Operations overview')).toBeTruthy();
+    expect(screen.getByText('Operations Overview')).toBeTruthy();
     expect(screen.getByText('Awaiting assignment').parentElement?.textContent).toContain('3');
     expect(screen.getByText('Failed payments').parentElement?.textContent).toContain('1');
     expect(screen.getByText('Evidence awaiting review').parentElement?.textContent).toContain('5');

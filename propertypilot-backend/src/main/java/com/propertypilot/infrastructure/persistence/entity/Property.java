@@ -29,16 +29,28 @@ public class Property extends AuditableEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "property_type", nullable = false)
+    @Column(name = "property_type", nullable = false, length = 100)
     private String propertyType;
 
-    @Column(name = "listing_status", nullable = false)
+    @Column(name = "survey_number", length = 120)
+    private String surveyNumber;
+
+    @Column(name = "area_value", precision = 15, scale = 2)
+    private BigDecimal areaValue;
+
+    @Column(name = "area_unit", length = 20)
+    private String areaUnit;
+
+    @Column(name = "area_guntas")
+    private Integer areaGuntas;
+
+    @Column(name = "listing_status", nullable = false, length = 50)
     private String listingStatus;
 
-    @Column(name = "price")
+    @Column(name = "price", precision = 15, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 50)
     private String status;
 
     @Column(name = "archived_at")

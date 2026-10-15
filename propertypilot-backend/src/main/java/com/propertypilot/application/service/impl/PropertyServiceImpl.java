@@ -64,6 +64,8 @@ public class PropertyServiceImpl
         property.setPropertyType(
                 request.getPropertyType());
 
+        applySurveyAndArea(property, request.getSurveyNumber(), request.getAreaValue(), request.getAreaUnit(), request.getAreaGuntas());
+
         property.setListingStatus(
                 request.getListingStatus() == null || request.getListingStatus().isBlank()
                         ? "DRAFT" : request.getListingStatus().trim().toUpperCase());
@@ -191,6 +193,11 @@ public List<PropertyResponse> getAllProperties() {
 
         property.setPropertyType(
                 request.getPropertyType());
+
+        if (request.getSurveyNumber() != null) property.setSurveyNumber(normalizeOptional(request.getSurveyNumber()));
+        if (request.getAreaValue() != null || request.getAreaUnit() != null || request.getAreaGuntas() != null) {
+            applySurveyAndArea(property, property.getSurveyNumber(), request.getAreaValue(), request.getAreaUnit(), request.getAreaGuntas());
+        }
 
         if (request.getListingStatus() != null) {
             property.setListingStatus(request.getListingStatus().trim().toUpperCase());
@@ -365,6 +372,11 @@ public List<PropertyResponse> getAllProperties() {
         response.setPropertyType(
                 property.getPropertyType());
 
+        response.setSurveyNumber(property.getSurveyNumber());
+        response.setAreaValue(property.getAreaValue());
+        response.setAreaUnit(property.getAreaUnit());
+        response.setAreaGuntas(property.getAreaGuntas());
+
         propertyLocationRepository.findByProperty_PropertyId(property.getPropertyId())
                 .ifPresent(location -> {
                     response.setAddressLine1(location.getAddressLine1());
@@ -391,6 +403,26 @@ public List<PropertyResponse> getAllProperties() {
 
     private String normalizeOptional(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void applySurveyAndArea(Property property, String surveyNumber, java.math.BigDecimal areaValue, String areaUnit, Integer areaGuntas) {
+        property.setSurveyNumber(normalizeOptional(surveyNumber));
+        if (areaValue == null && areaUnit == null && areaGuntas == null) return;
+        if (areaValue == null || areaUnit == null) throw new IllegalArgumentException("Provide both property area and area unit");
+        String normalizedUnit = areaUnit.trim().toUpperCase();
+        if (!List.of("SQ_FT", "SQ_YD", "ACRES_GUNTAS").contains(normalizedUnit)) throw new IllegalArgumentException("Area unit must be SQ_FT, SQ_YD, or ACRES_GUNTAS");
+        boolean agriculturalLand = List.of("LAND", "AGRICULTURAL_LAND").contains(property.getPropertyType() == null ? "" : property.getPropertyType().trim().toUpperCase());
+        if (agriculturalLand != "ACRES_GUNTAS".equals(normalizedUnit)) throw new IllegalArgumentException(agriculturalLand ? "Agricultural land area must be entered in acres and guntas" : "Use square feet or square yards for this property type");
+        if ("ACRES_GUNTAS".equals(normalizedUnit)) {
+            if (areaGuntas == null || areaGuntas < 0 || areaGuntas > 39) throw new IllegalArgumentException("Guntas must be between 0 and 39");
+            if (areaValue.stripTrailingZeros().scale() > 0) throw new IllegalArgumentException("Enter whole acres and use guntas for the remaining area");
+            if (areaValue.signum() <= 0 && areaGuntas == 0) throw new IllegalArgumentException("Property area must be greater than zero");
+        } else if (areaValue.signum() <= 0 || areaGuntas != null) {
+            throw new IllegalArgumentException("Enter a positive area in square feet or square yards");
+        }
+        property.setAreaValue(areaValue);
+        property.setAreaUnit(normalizedUnit);
+        property.setAreaGuntas("ACRES_GUNTAS".equals(normalizedUnit) ? areaGuntas : null);
     }
 
     private String normalizeCountryCode(String value) {

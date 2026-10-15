@@ -35,6 +35,12 @@ public class PricingEstimateResponse {
     private PricingBreakdownResponse customerBreakdown;
     private List<PricingEstimateLineResponse> lineItems;
     private List<PricingDiscountResponse> discounts;
+    private String pricingModel;
+    private String amountBasis;
+    private BigDecimal pricingInputAmount;
+    private BigDecimal ratePercent;
+    private BigDecimal travelDistanceKm;
+    private String travelDistanceMode;
 
     public UUID getPricingEstimateId() {
         return pricingEstimateId;
@@ -135,4 +141,16 @@ public class PricingEstimateResponse {
     public void setLineItems(List<PricingEstimateLineResponse> value) { lineItems = value; }
     public List<PricingDiscountResponse> getDiscounts() { return discounts; }
     public void setDiscounts(List<PricingDiscountResponse> value) { discounts = value; }
+    public String getPricingModel() { return pricingModel; }
+    public void setPricingModel(String value) { pricingModel = value; }
+    public String getAmountBasis() { return amountBasis; }
+    public void setAmountBasis(String value) { amountBasis = value; }
+    public BigDecimal getPricingInputAmount() { return pricingInputAmount; }
+    public void setPricingInputAmount(BigDecimal value) { pricingInputAmount = value; }
+    public BigDecimal getRatePercent() { return ratePercent; }
+    public void setRatePercent(BigDecimal value) { ratePercent = value; }
+    public BigDecimal getTravelDistanceKm() { return travelDistanceKm; }
+    public void setTravelDistanceKm(BigDecimal value) { travelDistanceKm = value; }
+    public String getTravelDistanceMode() { return travelDistanceMode; }
+    public void setTravelDistanceMode(String value) { travelDistanceMode = value; }
 }

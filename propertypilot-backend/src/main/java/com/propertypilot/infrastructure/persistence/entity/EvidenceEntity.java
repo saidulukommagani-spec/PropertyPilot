@@ -1,6 +1,8 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -40,14 +42,15 @@ public class EvidenceEntity extends AuditableEntity {
 
     @Column(
             name = "file_url",
-            nullable = false
+            nullable = false,
+            columnDefinition = "text"
     )
     private String fileUrl;
 
-    @Column(name = "remarks")
+    @Column(name = "remarks", columnDefinition = "text")
     private String remarks;
 
-    @Column(name = "media_type")
+    @Column(name = "media_type", length = 100)
     private String mediaType;
 
     @Column(name = "latitude")
@@ -59,6 +62,7 @@ public class EvidenceEntity extends AuditableEntity {
     @Column(name = "captured_at")
     private OffsetDateTime capturedAt;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "checksum_sha256")
     private String checksumSha256;
 

@@ -28,6 +28,8 @@ public interface DocumentService {
             UUID propertyId,
             DocumentCreateRequest request);
 
+    DocumentResponse createPropertyDocumentWithFile(UUID propertyId, String documentName, String documentType, String fileName, String filePath, String mimeType, Long fileSize);
+
     List<DocumentResponse> getDocumentsByProperty(
             UUID propertyId);
 
@@ -45,6 +47,8 @@ public interface DocumentService {
     DocumentVersionResponse createDocumentVersion(
             UUID documentId,
             DocumentVersionCreateRequest request);
+
+    String getCurrentDocumentStorageKey(UUID documentId);
 
     DocumentChecklistResponse getDocumentChecklist(
             UUID propertyId);

@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: propertypilot-backend
   servlet:
@@ -55,5 +57,10 @@ logging:
 propertypilot:
   storage:
     evidence-directory: ${EVIDENCE_STORAGE_DIR:./data/evidence}
+    property-document-directory: ${PROPERTY_DOCUMENT_STORAGE_DIR:./data/property-documents}
   payment:
     webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    office-address: ${PROPERTY_PILOT_OFFICE_ADDRESS:LB Nagar, Hyderabad, Telangana, India}
+    travel-mode: ${PROPERTY_PILOT_TRAVEL_MODE:DRIVE}

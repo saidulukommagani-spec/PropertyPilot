@@ -88,7 +88,7 @@ public class SubscriptionRenewalEntity
     private String status;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
     public UUID getSubscriptionRenewalId() {

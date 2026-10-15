@@ -66,7 +66,7 @@ public class SubscriptionEntitlementConsumptionEntity
     private OffsetDateTime expiredAt;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
     public UUID getEntitlementConsumptionId() {

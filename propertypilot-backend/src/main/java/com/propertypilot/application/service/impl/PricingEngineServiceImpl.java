@@ -48,6 +48,7 @@ public class PricingEngineServiceImpl implements PricingEngineService {
     private final SecurityService securityService;
     private final SubscriptionPaymentVerificationService subscriptionPaymentVerificationService;
     private final EligibilityEngine eligibilityEngine;
+    private final GoogleMapsDistanceService googleMapsDistanceService;
 
     public PricingEngineServiceImpl(CustomerJpaRepository customerRepository,
             PropertyRepository propertyRepository, ServiceRepository serviceRepository,
@@ -60,7 +61,7 @@ public class PricingEngineServiceImpl implements PricingEngineService {
             PricingQuoteLineItemRepository lineItemRepository,
             PricingDiscountApplicationRepository discountRepository, SecurityService securityService,
             SubscriptionPaymentVerificationService subscriptionPaymentVerificationService,
-            EligibilityEngine eligibilityEngine) {
+            EligibilityEngine eligibilityEngine, GoogleMapsDistanceService googleMapsDistanceService) {
         this.customerRepository = customerRepository;
         this.propertyRepository = propertyRepository;
         this.serviceRepository = serviceRepository;
@@ -80,6 +81,36 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         this.securityService = securityService;
         this.subscriptionPaymentVerificationService = subscriptionPaymentVerificationService;
         this.eligibilityEngine = eligibilityEngine;
+        this.googleMapsDistanceService = googleMapsDistanceService;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PricingEstimateRequirementsResponse getCustomerEstimateRequirements(UUID propertyId, UUID serviceId) {
+        CustomerEntity customer = securityService.getCurrentCustomer();
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        if (property.getCustomer() == null || !customer.getCustomerId().equals(property.getCustomer().getCustomerId())) {
+            throw new BusinessException("The selected property has no valid customer owner");
+        }
+        securityService.validatePropertyOwnership(property);
+        if (property.getArchivedAt() != null || "ARCHIVED".equalsIgnoreCase(property.getStatus())) {
+            throw new BusinessException("Archived properties cannot be used for a pricing estimate");
+        }
+        ServiceEntity service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service not found"));
+        if (!Boolean.TRUE.equals(service.getActiveFlag()) || !Boolean.TRUE.equals(service.getBillable())) {
+            throw new BusinessException("This service is no longer available for pricing");
+        }
+        eligibilityEngine.validateEligibility(serviceId, propertyId);
+        PricingRuleEntity rule = activePricingRule(service, OffsetDateTime.now());
+        ServicePricingRuleDefinition definition = ServicePricingRuleDefinition.parse(
+                rule == null ? null : rule.getRuleDefinition());
+        boolean percentage = ServicePricingRuleDefinition.PERCENT_OF_LOAN_AMOUNT.equals(definition.pricingModel());
+        return new PricingEstimateRequirementsResponse(definition.pricingModel(), definition.amountBasis(),
+                percentage && rule != null ? rule.getBaseAmount() : null,
+                percentage ? definition.minimumFee() : null,
+                percentage ? definition.maximumFee() : null);
     }
 
     @Override
@@ -101,13 +132,19 @@ public class PricingEngineServiceImpl implements PricingEngineService {
             throw new BusinessException("This service is no longer available for pricing");
         }
         eligibilityEngine.validateEligibility(service.getServiceId(), property.getPropertyId());
-        if (Boolean.TRUE.equals(service.getRequiresVisit()) || Boolean.TRUE.equals(service.getVisitMandatory())) {
-            throw new BusinessException("A travel-based estimate is not available yet. PropertyPilot Operations will prepare this quote.");
-        }
         request.setCustomerId(customer.getCustomerId());
-        // Remote/no-visit estimates use no travel component. Client-supplied distance is ignored.
-        request.setOneWayDistanceKm(0d);
-        return calculateEstimateFor(customer, property, service, request);
+        boolean visitBased = Boolean.TRUE.equals(service.getRequiresVisit()) || Boolean.TRUE.equals(service.getVisitMandatory());
+        if (visitBased) {
+            PropertyLocationEntity location = propertyLocationRepository.findByProperty_PropertyId(property.getPropertyId())
+                    .orElseThrow(() -> new BusinessException("A travel-based estimate is not available because the property location is missing. Operations will prepare the quote."));
+            BigDecimal routeDistanceKm = googleMapsDistanceService.calculateOneWayRoadDistanceKm(location);
+            // Google returns the authoritative road route; never accept client-supplied distance.
+            request.setOneWayDistanceKm(routeDistanceKm.doubleValue());
+        } else {
+            // No-visit estimates intentionally have no travel component. Client distance is ignored.
+            request.setOneWayDistanceKm(0d);
+        }
+        return calculateEstimateFor(customer, property, service, request, false);
     }
 
     @Override
@@ -129,19 +166,30 @@ public class PricingEngineServiceImpl implements PricingEngineService {
             throw new BusinessException("Only active, billable services can be priced");
         }
 
-        return calculateEstimateFor(customer, property, service, request);
+        return calculateEstimateFor(customer, property, service, request, true);
     }
 
     private PricingEstimateResponse calculateEstimateFor(CustomerEntity customer, Property property,
-            ServiceEntity service, CreatePricingEstimateRequest request) {
+            ServiceEntity service, CreatePricingEstimateRequest request, boolean persistSubmittedDistance) {
 
         OffsetDateTime now = OffsetDateTime.now();
-        PricingRuleEntity activeRule = pricingRuleRepository.findByServiceServiceIdAndStatus(
-                        service.getServiceId(), "ACTIVE").stream()
-                .filter(rule -> rule.getEffectiveFrom() != null && !rule.getEffectiveFrom().isAfter(now))
-                .filter(rule -> rule.getEffectiveTo() == null || !rule.getEffectiveTo().isBefore(now))
-                .max(Comparator.comparing(PricingRuleEntity::getEffectiveFrom)).orElse(null);
-        BigDecimal serverBaseCost = activeRule == null ? service.getBasePrice() : activeRule.getBaseAmount();
+        PricingRuleEntity activeRule = activePricingRule(service, now);
+        ServicePricingRuleDefinition priceDefinition = ServicePricingRuleDefinition.parse(
+                activeRule == null ? null : activeRule.getRuleDefinition());
+        BigDecimal ratePercent = ServicePricingRuleDefinition.PERCENT_OF_LOAN_AMOUNT.equals(priceDefinition.pricingModel())
+                ? activeRule == null ? null : activeRule.getBaseAmount() : null;
+        BigDecimal serverBaseCost;
+        if (ratePercent != null) {
+            BigDecimal loanAmount = request.getRequestedLoanAmount();
+            if (loanAmount == null || loanAmount.signum() <= 0) {
+                throw new BusinessException("Enter a requested loan amount to calculate this estimate");
+            }
+            serverBaseCost = loanAmount.multiply(ratePercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            serverBaseCost = serverBaseCost.max(priceDefinition.minimumFee());
+            if (priceDefinition.maximumFee() != null) serverBaseCost = serverBaseCost.min(priceDefinition.maximumFee());
+        } else {
+            serverBaseCost = activeRule == null ? service.getBasePrice() : activeRule.getBaseAmount();
+        }
         String currency = activeRule == null || activeRule.getCurrencyCode() == null
                 ? "INR" : activeRule.getCurrencyCode();
         if (serverBaseCost == null || serverBaseCost.signum() <= 0) {
@@ -209,9 +257,18 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("calculatedAt", now.toString());
         snapshot.put("pricingRuleId", activeRule == null ? null : activeRule.getPriceRuleId());
-        snapshot.put("oneWayDistanceKm", request.getOneWayDistanceKm());
+        // Google Maps route output is used only for this calculation and response; do not persist
+        // the provider's distance content in the long-lived estimate snapshot.
+        if (persistSubmittedDistance) snapshot.put("oneWayDistanceKm", request.getOneWayDistanceKm());
         snapshot.put("travelDistanceMode", customerProfile.get(LaunchPricingParameterCodes.TRAVEL_DISTANCE_MODE));
         snapshot.put("serverBaseCost", serverBaseCost);
+        snapshot.put("pricingModel", priceDefinition.pricingModel());
+        if (ratePercent != null) {
+            snapshot.put("amountBasis", priceDefinition.amountBasis());
+            snapshot.put("requestedLoanAmount", request.getRequestedLoanAmount());
+            snapshot.put("ratePercent", ratePercent);
+            snapshot.put("calculatedServiceFee", serverBaseCost);
+        }
         snapshot.put("standardBreakdown", breakdownMap(standard));
         snapshot.put("customerBreakdown", breakdownMap(customerBreakdown));
         snapshot.put("discounts", applied.stream().map(AppliedDiscount::snapshot).toList());
@@ -256,7 +313,20 @@ public class PricingEngineServiceImpl implements PricingEngineService {
         response.setCustomerBreakdown(customerBreakdown);
         response.setLineItems(lines);
         response.setDiscounts(discountResponses);
+        response.setPricingModel(priceDefinition.pricingModel());
+        response.setAmountBasis(priceDefinition.amountBasis());
+        response.setPricingInputAmount(ratePercent == null ? null : request.getRequestedLoanAmount());
+        response.setRatePercent(ratePercent);
+        response.setTravelDistanceKm(BigDecimal.valueOf(request.getOneWayDistanceKm()).setScale(3, RoundingMode.HALF_UP));
+        response.setTravelDistanceMode(customerProfile.get(LaunchPricingParameterCodes.TRAVEL_DISTANCE_MODE));
         return response;
+    }
+
+    private PricingRuleEntity activePricingRule(ServiceEntity service, OffsetDateTime now) {
+        return pricingRuleRepository.findByServiceServiceIdAndStatus(service.getServiceId(), "ACTIVE").stream()
+                .filter(rule -> rule.getEffectiveFrom() != null && !rule.getEffectiveFrom().isAfter(now))
+                .filter(rule -> rule.getEffectiveTo() == null || !rule.getEffectiveTo().isBefore(now))
+                .max(Comparator.comparing(PricingRuleEntity::getEffectiveFrom)).orElse(null);
     }
 
     BigDecimal getActiveSubscriptionDiscount(CustomerEntity customer, ServiceEntity service, OffsetDateTime now) {

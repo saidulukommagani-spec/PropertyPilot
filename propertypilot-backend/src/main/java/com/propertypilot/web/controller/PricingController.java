@@ -2,6 +2,7 @@ package com.propertypilot.web.controller;
 
 import com.propertypilot.application.dto.CreatePricingEstimateRequest;
 import com.propertypilot.application.dto.PricingEstimateResponse;
+import com.propertypilot.application.dto.PricingEstimateRequirementsResponse;
 import com.propertypilot.application.service.PricingEngineService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,5 +56,13 @@ public class PricingController {
     public ResponseEntity<PricingEstimateResponse> calculateCustomerEstimate(
             @Valid @RequestBody CreatePricingEstimateRequest request) {
         return ResponseEntity.ok(pricingEngineService.calculateCustomerEstimate(request));
+    }
+
+    @GetMapping("/customer-estimate-requirements")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<PricingEstimateRequirementsResponse> getCustomerEstimateRequirements(
+            @RequestParam java.util.UUID propertyId,
+            @RequestParam java.util.UUID serviceId) {
+        return ResponseEntity.ok(pricingEngineService.getCustomerEstimateRequirements(propertyId, serviceId));
     }
 }

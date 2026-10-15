@@ -9,7 +9,6 @@ import com.propertypilot.domain.enums.InvoiceType;
 import com.propertypilot.infrastructure.persistence.entity.DealEntity;
 import com.propertypilot.infrastructure.persistence.repository.DealRepository;
 import com.propertypilot.web.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class DealBillingServiceImpl
         implements DealBillingService {
@@ -27,6 +25,13 @@ public class DealBillingServiceImpl
     private final DealRepository dealRepository;
 
     private final BillingService billingService;
+
+    public DealBillingServiceImpl(
+            DealRepository dealRepository,
+            BillingService billingService) {
+        this.dealRepository = dealRepository;
+        this.billingService = billingService;
+    }
 
     @Override
     public List<UUID> generateDealInvoices(
@@ -113,11 +118,9 @@ public class DealBillingServiceImpl
     private void validateDeal(
             DealEntity deal) {
 
-    if (deal.getDealStatus()
-        != DealStatus.COMPLETED) {
-
-    throw new IllegalStateException(
-            "Invoices can only be generated for COMPLETED deals");
-}
+        if (deal.getDealStatus() != DealStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Invoices can only be generated for COMPLETED deals");
+        }
     }
 }

@@ -18,4 +18,8 @@ public class DocumentResponse {
     private String documentType;
 
     private String status;
+
+    private Boolean hasFile;
+
+    private String fileName;
 }

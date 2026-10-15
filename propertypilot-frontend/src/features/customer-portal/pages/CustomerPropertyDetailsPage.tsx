@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Skeleton, Stack, TextField, Typography } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { propertiesApi } from '../../../api/properties';
 import CustomerStatusChip, { formatCustomerStatus } from '../components/CustomerStatusChip';
 import { CustomerPageHeading, CustomerQueryError } from '../components/CustomerStates';
 import { customerKeys, useCustomerProperty, useCustomerRequests, useCustomerVisits } from '../hooks/useCustomerPortal';
 import { CustomerPortalApi } from '../services/CustomerPortalApi';
+import PropertyDocumentFileAction from '../../documents/PropertyDocumentFileAction';
 
 export default function CustomerPropertyDetailsPage() {
   const { id = '' } = useParams();
@@ -16,6 +17,9 @@ export default function CustomerPropertyDetailsPage() {
   const navigate = useNavigate();
   const client = useQueryClient();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
+  const [documentType, setDocumentType] = useState('');
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const archive = useMutation({
     mutationFn: () => propertiesApi.archive(id),
     onSuccess: async () => {
@@ -24,6 +28,19 @@ export default function CustomerPropertyDetailsPage() {
     },
   });
   const docs = useQuery({ queryKey: [...customerKeys.documents, id], queryFn: () => CustomerPortalApi.documents(id), enabled: Boolean(id) });
+  const documentChecklist = useQuery({ queryKey: ['property-document-checklist', id], queryFn: () => CustomerPortalApi.propertyDocumentChecklist(id), enabled: Boolean(id) });
+  const uploadDocument = useMutation({
+    mutationFn: () => {
+      if (!documentType || !documentFile) throw new Error('Choose a document type and file.');
+      const selectedType = documentChecklist.data?.documents.find((option) => option.documentCode === documentType);
+      if (!selectedType) throw new Error('Choose an available document type.');
+      return CustomerPortalApi.uploadPropertyDocument(id, selectedType.documentName, documentType, documentFile);
+    },
+    onSuccess: async () => {
+      await Promise.all([client.invalidateQueries({ queryKey: [...customerKeys.documents, id] }), client.invalidateQueries({ queryKey: ['property-document-checklist', id] })]);
+      setDocumentDialogOpen(false); setDocumentType(''); setDocumentFile(null);
+    },
+  });
   const requests = useMemo(() => (requestsQuery.data ?? []).filter((request) => request.propertyId === id), [id, requestsQuery.data]);
   const evidenceQueries = useQueries({ queries: requests.map((request) => ({ queryKey: customerKeys.evidenceForRequest(request.serviceRequestId), queryFn: () => CustomerPortalApi.requestEvidence(request.serviceRequestId) })) });
 
@@ -56,6 +73,8 @@ export default function CustomerPropertyDetailsPage() {
       <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: 'repeat(2,minmax(0,1fr))' }} gap={2} sx={{ mt: 2 }}>
         <PropertyFact label="Property name" value={item.title} />
         <PropertyFact label="Property type" value={item.propertyType ? formatCustomerStatus(item.propertyType) : 'Not provided'} />
+        <PropertyFact label="Survey number" value={item.surveyNumber || 'Not provided'} />
+        <PropertyFact label="Property area" value={formatPropertyArea(item.areaValue, item.areaUnit, item.areaGuntas)} />
         <Box>
           <PropertyFact label="Property address" value={propertyAddress || 'No property address on file'} />
           {!propertyAddress && item.status !== 'ARCHIVED' && <Button component={Link} to={`/customer/properties/${id}/edit`} size="small" sx={{ mt: .5, px: 0 }}>Add property address</Button>}
@@ -87,13 +106,32 @@ export default function CustomerPropertyDetailsPage() {
     </CardContent></Card>}
 
     {docs.isError && <CustomerQueryError error={docs.error} retry={() => void docs.refetch()} />}
-    {!docs.isLoading && (docs.data?.length ?? 0) > 0 && <Card variant="outlined"><CardContent>
-      <Typography variant="h6" fontWeight={700}>Property documents</Typography>
-      <Stack spacing={1} sx={{ mt: 1.5 }}>{docs.data?.slice(0, 4).map((document) => <Box key={document.documentId} display="flex" flexWrap="wrap" justifyContent="space-between" gap={1}>
-        <Typography>{document.documentName}</Typography><Chip size="small" label={formatCustomerStatus(document.status)} />
-      </Box>)}</Stack>
-      <Button component={Link} to="/customer/documents" sx={{ mt: 1 }}>View all documents</Button>
-    </CardContent></Card>}
+    <Card variant="outlined"><CardContent>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" gap={1}>
+        <Box><Typography variant="h6" fontWeight={700}>Property documents</Typography><Typography variant="body2" color="text.secondary">Upload and view files saved with this property.</Typography></Box>
+        <Button variant="contained" onClick={() => setDocumentDialogOpen(true)} disabled={item.status === 'ARCHIVED'}>Upload document</Button>
+      </Stack>
+      {documentChecklist.isError && <CustomerQueryError error={documentChecklist.error} retry={() => void documentChecklist.refetch()} />}
+      {docs.isLoading ? <Skeleton height={55} sx={{ mt: 1 }} /> : docs.data?.length ? <Stack spacing={1.25} sx={{ mt: 2 }}>{docs.data.map((document) => <Box key={document.documentId} display="flex" flexWrap="wrap" alignItems="center" justifyContent="space-between" gap={1}>
+        <Box><Typography fontWeight={650}>{document.documentName}</Typography><Typography variant="body2" color="text.secondary">{formatCustomerStatus(document.documentType)}</Typography></Box>
+        <Stack direction="row" spacing={1} alignItems="center"><Chip size="small" label={formatCustomerStatus(document.status)} />{document.hasFile && <PropertyDocumentFileAction documentId={document.documentId} fileName={document.fileName} />}</Stack>
+      </Box>)}</Stack> : !docs.isError && <Typography color="text.secondary" sx={{ mt: 2 }}>No documents have been uploaded for this property yet.</Typography>}
+    </CardContent></Card>
+
+    <Dialog open={documentDialogOpen} onClose={() => { if (!uploadDocument.isPending) setDocumentDialogOpen(false); }} fullWidth maxWidth="sm" aria-labelledby="upload-property-document-title">
+      <DialogTitle id="upload-property-document-title">Upload a property document</DialogTitle>
+      <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>
+        <Typography color="text.secondary" variant="body2">The file will be stored on this property record and visible to authorized staff.</Typography>
+        <TextField select label="Document type" value={documentType} onChange={(event) => setDocumentType(event.target.value)} required disabled={documentChecklist.isLoading || uploadDocument.isPending}>
+          {(documentChecklist.data?.documents ?? []).map((option) => <MenuItem key={option.documentCode} value={option.documentCode}>{option.documentName}{option.mandatory ? ' · Required' : ''}</MenuItem>)}
+        </TextField>
+        {documentChecklist.isLoading && <Skeleton height={45} />}
+        {!documentChecklist.isLoading && !documentChecklist.isError && !documentChecklist.data?.documents?.length && <Alert severity="info">No document types are configured for this property yet.</Alert>}
+        <TextField type="file" label="Choose file" required InputLabelProps={{ shrink: true }} inputProps={{ accept: '.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.txt' }} onChange={(event) => setDocumentFile((event.target as HTMLInputElement).files?.[0] ?? null)} disabled={uploadDocument.isPending} helperText="PDF, images, Word documents or text files · up to 25 MB" />
+        {uploadDocument.isError && <Alert severity="error">{uploadDocument.error instanceof Error ? uploadDocument.error.message : 'The document could not be uploaded.'}</Alert>}
+      </Stack></DialogContent>
+      <DialogActions><Button onClick={() => setDocumentDialogOpen(false)} disabled={uploadDocument.isPending}>Cancel</Button><Button variant="contained" onClick={() => uploadDocument.mutate()} disabled={!documentType || !documentFile || uploadDocument.isPending}>{uploadDocument.isPending ? 'Uploading…' : 'Upload document'}</Button></DialogActions>
+    </Dialog>
 
     {evidenceFailed && <Alert severity="error" action={<Button color="inherit" size="small" onClick={retryEvidence}>Retry</Button>}>Some evidence records could not be loaded.</Alert>}
     {!evidenceQueries.some((query) => query.isLoading) && !evidenceFailed && evidence.length > 0 && <Card variant="outlined"><CardContent>
@@ -121,4 +159,10 @@ function PropertyFact({ label, value }: { label: string; value: string }) {
 function dateTime(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleString();
+}
+
+function formatPropertyArea(value?: number | null, unit?: string | null, guntas?: number | null): string {
+  if (value == null || !unit) return 'Not provided';
+  if (unit === 'ACRES_GUNTAS') return `${value} ${value === 1 ? 'acre' : 'acres'}${guntas == null ? '' : ` ${guntas} ${guntas === 1 ? 'gunta' : 'guntas'}`}`;
+  return `${value.toLocaleString()} ${unit === 'SQ_YD' ? 'sq yd' : 'sq ft'}`;
 }

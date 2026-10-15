@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.constraints.NotBlank;
 
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/document-types")
-@RequiredArgsConstructor
 @Validated
 @Tag(
         name = "Document Type",
@@ -26,6 +24,10 @@ public class DocumentTypeController {
 
     private final DocumentTypeService
             documentTypeService;
+
+    public DocumentTypeController(DocumentTypeService documentTypeService) {
+        this.documentTypeService = documentTypeService;
+    }
 
     @GetMapping(
             "/property-category/{propertyCategory}")

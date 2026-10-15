@@ -23,6 +23,18 @@ public class PropertyResponse {
     @Schema(description = "Property Type")
     private String propertyType;
 
+    @Schema(description = "Land or municipal survey number")
+    private String surveyNumber;
+
+    @Schema(description = "Entered property area")
+    private BigDecimal areaValue;
+
+    @Schema(description = "Area unit: SQ_FT, SQ_YD, or ACRES_GUNTAS")
+    private String areaUnit;
+
+    @Schema(description = "Guntas component for agricultural land")
+    private Integer areaGuntas;
+
     @Schema(description = "Primary service address")
     private String addressLine1;
 

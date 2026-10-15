@@ -2,10 +2,18 @@ package com.propertypilot.config;
 
 import com.propertypilot.security.CustomUserDetailsService;
 import com.propertypilot.security.JwtAuthenticationFilter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -76,6 +84,17 @@ http
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
+
+                .exceptionHandling(exceptions -> {
+                    LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<>();
+                    entryPoints.put(new AntPathRequestMatcher("/api/payments/**"),
+                            new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
+
+                    DelegatingAuthenticationEntryPoint delegatingEntryPoint =
+                            new DelegatingAuthenticationEntryPoint(entryPoints);
+                    delegatingEntryPoint.setDefaultEntryPoint(new Http403ForbiddenEntryPoint());
+                    exceptions.authenticationEntryPoint(delegatingEntryPoint);
+                })
 
                 .authorizeHttpRequests(auth -> auth
 

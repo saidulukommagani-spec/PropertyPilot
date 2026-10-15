@@ -5,13 +5,22 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class ServiceConfigurationRequest {
     @NotBlank @Pattern(regexp = "^[A-Z][A-Z0-9_]{1,79}$") private String serviceCode;
     @NotBlank private String serviceName;
     @NotBlank @Pattern(regexp = "^[A-Z][A-Z0-9_]{1,79}$") private String category;
+    @NotBlank @Size(max = 100) private String catalogGroup;
+    @NotBlank @Pattern(regexp = "^(CORE|OPTIONAL)$") private String catalogPriority;
+    @Size(max = 255) private String deliveryPolicy;
+    @Size(max = 120) private String frequency;
+    @Size(max = 4000) private String catalogNotes;
+    @NotNull private List<String> eligiblePropertyTypes;
+    @NotNull private List<String> conditionalPropertyTypes;
     @NotNull @PositiveOrZero private BigDecimal basePrice;
     @NotNull private Boolean activeFlag;
     @NotNull private Boolean requiresVisit;
@@ -32,6 +41,20 @@ public class ServiceConfigurationRequest {
     public void setServiceName(String value) { serviceName = value; }
     public String getCategory() { return category; }
     public void setCategory(String value) { category = value; }
+    public String getCatalogGroup() { return catalogGroup; }
+    public void setCatalogGroup(String value) { catalogGroup = value; }
+    public String getCatalogPriority() { return catalogPriority; }
+    public void setCatalogPriority(String value) { catalogPriority = value; }
+    public String getDeliveryPolicy() { return deliveryPolicy; }
+    public void setDeliveryPolicy(String value) { deliveryPolicy = value; }
+    public String getFrequency() { return frequency; }
+    public void setFrequency(String value) { frequency = value; }
+    public String getCatalogNotes() { return catalogNotes; }
+    public void setCatalogNotes(String value) { catalogNotes = value; }
+    public List<String> getEligiblePropertyTypes() { return eligiblePropertyTypes; }
+    public void setEligiblePropertyTypes(List<String> value) { eligiblePropertyTypes = value; }
+    public List<String> getConditionalPropertyTypes() { return conditionalPropertyTypes; }
+    public void setConditionalPropertyTypes(List<String> value) { conditionalPropertyTypes = value; }
     public BigDecimal getBasePrice() { return basePrice; }
     public void setBasePrice(BigDecimal value) { basePrice = value; }
     public Boolean getActiveFlag() { return activeFlag; }

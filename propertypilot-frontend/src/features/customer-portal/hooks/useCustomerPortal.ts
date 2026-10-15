@@ -33,6 +33,7 @@ export function useCustomerEvidenceForRequest(id: string) { return useQuery({ qu
 export function useCustomerEvidenceForVisit(id: string) { return useQuery({ queryKey: customerKeys.evidenceForVisit(id), queryFn: () => CustomerPortalApi.visitEvidence(id), enabled: Boolean(id) }); }
 export function useCustomerQuotes() { return useQuery({ queryKey: customerKeys.quotes, queryFn: CustomerPortalApi.quotes }); }
 export function useCreateCustomerEstimate() { return useMutation({ mutationFn: CustomerPortalApi.customerEstimate }); }
+export function useCustomerEstimateRequirements(propertyId: string, serviceId: string) { return useQuery({ queryKey: ['customer-portal','estimate-requirements',propertyId,serviceId], queryFn: () => CustomerPortalApi.customerEstimateRequirements(propertyId, serviceId), enabled: Boolean(propertyId && serviceId) }); }
 export function useCustomerServices() { return useQuery({ queryKey: ['customer-portal', 'services'], queryFn: CustomerPortalApi.services }); }
 export function useCustomerEligibleServiceTypes(propertyId: string) { return useQuery({ queryKey: customerKeys.eligibleServiceTypes(propertyId), queryFn: () => CustomerPortalApi.eligibleServiceTypes(propertyId), enabled: Boolean(propertyId) }); }
 export function useCustomerEligibleServices(propertyId: string, serviceType: string) { return useQuery({ queryKey: customerKeys.eligibleServices(propertyId, serviceType), queryFn: () => CustomerPortalApi.eligibleServices(propertyId, serviceType), enabled: Boolean(propertyId && serviceType) }); }

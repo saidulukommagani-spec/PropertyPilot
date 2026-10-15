@@ -37,7 +37,6 @@ import com.propertypilot.infrastructure.persistence.repository.ServiceRequestRep
 import com.propertypilot.infrastructure.persistence.repository.UserRepository;
 import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.propertypilot.infrastructure.persistence.repository.DocumentServiceCatalogRepository;
 
@@ -59,7 +58,6 @@ import java.util.stream.Collectors;
 
 @org.springframework.transaction.annotation.Transactional
 @Service
-@RequiredArgsConstructor
 public class DocumentServiceImpl
         implements DocumentService {
 
@@ -86,6 +84,33 @@ private final AgentRepository agentRepository;
 private final AgentAssignmentRepository agentAssignmentRepository;
 
 private final UserRepository userRepository;
+
+    public DocumentServiceImpl(
+            DocumentRepository documentRepository,
+            DocumentTypeRepository documentTypeRepository,
+            DocumentVersionRepository documentVersionRepository,
+            PropertyRepository propertyRepository,
+            SecurityService securityService,
+            DocumentServiceCatalogRepository documentServiceCatalogRepository,
+            ServiceRequestRepository serviceRequestRepository,
+            ServiceRequestStatusHistoryRepository serviceRequestStatusHistoryRepository,
+            ServiceAssignmentRepository serviceAssignmentRepository,
+            AgentRepository agentRepository,
+            AgentAssignmentRepository agentAssignmentRepository,
+            UserRepository userRepository) {
+        this.documentRepository = documentRepository;
+        this.documentTypeRepository = documentTypeRepository;
+        this.documentVersionRepository = documentVersionRepository;
+        this.propertyRepository = propertyRepository;
+        this.securityService = securityService;
+        this.documentServiceCatalogRepository = documentServiceCatalogRepository;
+        this.serviceRequestRepository = serviceRequestRepository;
+        this.serviceRequestStatusHistoryRepository = serviceRequestStatusHistoryRepository;
+        this.serviceAssignmentRepository = serviceAssignmentRepository;
+        this.agentRepository = agentRepository;
+        this.agentAssignmentRepository = agentAssignmentRepository;
+        this.userRepository = userRepository;
+    }
         
     @Override
     public DocumentResponse createDocument(
@@ -131,6 +156,37 @@ private final UserRepository userRepository;
 
         return buildDocumentResponse(
                 savedDocument);
+    }
+
+    @Override
+    public DocumentResponse createPropertyDocumentWithFile(UUID propertyId, String documentName, String documentType, String fileName, String filePath, String mimeType, Long fileSize) {
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        securityService.validatePropertyOwnership(property);
+        validateDocumentTypeForProperty(property, documentType);
+        if ("ARCHIVED".equalsIgnoreCase(property.getStatus())) throw new IllegalStateException("Cannot add documents to archived property");
+
+        DocumentVersionCreateRequest version = new DocumentVersionCreateRequest();
+        version.setFileName(fileName);
+        version.setFilePath(filePath);
+        version.setMimeType(mimeType);
+        version.setFileSize(fileSize);
+        Document existingMetadata = documentRepository.findByProperty_PropertyId(propertyId).stream()
+                .filter(document -> documentType.equalsIgnoreCase(document.getDocumentType()))
+                .filter(document -> "ACTIVE".equalsIgnoreCase(document.getStatus()))
+                .filter(document -> documentVersionRepository.findByDocument_DocumentIdAndCurrentVersionTrue(document.getDocumentId()).isEmpty())
+                .findFirst().orElse(null);
+        if (existingMetadata != null) {
+            createDocumentVersion(existingMetadata.getDocumentId(), version);
+            return getDocument(existingMetadata.getDocumentId());
+        }
+
+        DocumentCreateRequest metadata = new DocumentCreateRequest();
+        metadata.setDocumentName(documentName);
+        metadata.setDocumentType(documentType);
+        DocumentResponse document = createDocument(propertyId, metadata);
+        createDocumentVersion(document.getDocumentId(), version);
+        return getDocument(document.getDocumentId());
     }
 
     @Override
@@ -377,6 +433,16 @@ private final UserRepository userRepository;
     }
 
     @Override
+    public String getCurrentDocumentStorageKey(UUID documentId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found"));
+        securityService.validateDocumentOwnership(document);
+        return documentVersionRepository.findByDocument_DocumentIdAndCurrentVersionTrue(documentId)
+                .map(DocumentVersion::getFilePath)
+                .orElseThrow(() -> new ResourceNotFoundException("No current file is attached to this document"));
+    }
+
+    @Override
     public DocumentResponse archiveDocument(
             UUID documentId) {
 
@@ -493,6 +559,14 @@ private final UserRepository userRepository;
 
         response.setStatus(
                 document.getStatus());
+
+        documentVersionRepository
+                .findByDocument_DocumentIdAndCurrentVersionTrue(document.getDocumentId())
+                .ifPresent(version -> {
+                    response.setHasFile(true);
+                    response.setFileName(version.getFileName());
+                });
+        if (response.getHasFile() == null) response.setHasFile(false);
 
         return response;
     }

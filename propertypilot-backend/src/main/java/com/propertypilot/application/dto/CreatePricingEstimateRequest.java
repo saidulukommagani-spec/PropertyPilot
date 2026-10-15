@@ -25,6 +25,9 @@ public class CreatePricingEstimateRequest {
     // Retained for old clients; the pricing engine ignores this untrusted value.
     private BigDecimal vendorCost;
 
+    @PositiveOrZero(message = "Requested loan amount cannot be negative")
+    private BigDecimal requestedLoanAmount;
+
     @Min(
             value = 0,
             message = "ETA days cannot be negative")
@@ -73,6 +76,9 @@ public class CreatePricingEstimateRequest {
             BigDecimal vendorCost) {
         this.vendorCost = vendorCost;
     }
+
+    public BigDecimal getRequestedLoanAmount() { return requestedLoanAmount; }
+    public void setRequestedLoanAmount(BigDecimal requestedLoanAmount) { this.requestedLoanAmount = requestedLoanAmount; }
 
     public Integer getEtaDays() {
         return etaDays;

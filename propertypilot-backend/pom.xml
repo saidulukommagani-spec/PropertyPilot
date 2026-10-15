@@ -168,6 +168,21 @@
                 <version>3.5.4</version>
             </plugin>
 
+            <!-- PostgreSQL-backed integration tests (*IT) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.5.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Code Coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>

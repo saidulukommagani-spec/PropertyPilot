@@ -1,5 +1,5 @@
 import { apiClient } from '../../../api/client';
-import type { CustomerDashboard, CustomerDocument, CustomerEvidence, CustomerInvoice, CustomerProfile, CustomerProperty, CustomerQuote, CustomerRequest, CustomerRequestCreated, CustomerRequestDetails, CustomerService, EligibleServiceType, CustomerSubscription, CustomerVisit, CreateCustomerRequest, CustomerEstimate, VisitEvidenceSummary } from '../types/customerPortal';
+import type { CustomerDashboard, CustomerDocument, CustomerEvidence, CustomerInvoice, CustomerProfile, CustomerProperty, CustomerQuote, CustomerRequest, CustomerRequestCreated, CustomerRequestDetails, CustomerService, EligibleServiceType, CustomerSubscription, CustomerVisit, CreateCustomerRequest, CustomerEstimate, CustomerEstimateRequirements, VisitEvidenceSummary, PropertyDocumentChecklist } from '../types/customerPortal';
 import type { SubscriptionUsage } from '../types/customerUsage';
 
 export const CustomerPortalApi = {
@@ -13,7 +13,8 @@ export const CustomerPortalApi = {
   },
   async request(requestId: string): Promise<CustomerRequestDetails> { return (await apiClient.get<CustomerRequestDetails>(`/api/service-requests/${requestId}`)).data; },
   async createRequest(request: CreateCustomerRequest): Promise<CustomerRequestCreated> { return (await apiClient.post<CustomerRequestCreated>('/api/service-requests', request)).data; },
-  async customerEstimate(request: { propertyId: string; serviceId: string }): Promise<CustomerEstimate> { return (await apiClient.post<CustomerEstimate>('/api/v1/pricing/customer-estimates', request)).data; },
+  async customerEstimateRequirements(propertyId: string, serviceId: string): Promise<CustomerEstimateRequirements> { return (await apiClient.get<CustomerEstimateRequirements>('/api/v1/pricing/customer-estimate-requirements', { params: { propertyId, serviceId } })).data; },
+  async customerEstimate(request: { propertyId: string; serviceId: string; requestedLoanAmount?: number }): Promise<CustomerEstimate> { return (await apiClient.post<CustomerEstimate>('/api/v1/pricing/customer-estimates', request)).data; },
   async acceptEstimateAndCreateRequest(request: CreateCustomerRequest): Promise<CustomerRequestCreated> { return (await apiClient.post<CustomerRequestCreated>(`/api/v1/quotes/${request.quoteId}/accept-and-create-request`, request)).data; },
   async visits(): Promise<CustomerVisit[]> { return (await apiClient.get<CustomerVisit[]>('/api/v1/visits/customer')).data; },
   async visit(visitId: string): Promise<CustomerVisit> { return (await apiClient.get<CustomerVisit>(`/api/v1/visits/${visitId}`)).data; },
@@ -21,6 +22,8 @@ export const CustomerPortalApi = {
   async visitEvidence(visitId: string): Promise<CustomerEvidence[]> { return (await apiClient.get<CustomerEvidence[]>(`/api/evidence/visit/${visitId}`)).data; },
   async visitEvidenceSummary(visitId: string): Promise<VisitEvidenceSummary> { return (await apiClient.get<VisitEvidenceSummary>(`/api/evidence/visit/${visitId}/summary`)).data; },
   async documents(propertyId: string): Promise<CustomerDocument[]> { return (await apiClient.get<CustomerDocument[]>(`/api/v1/properties/${propertyId}/documents`)).data; },
+  async propertyDocumentChecklist(propertyId: string): Promise<PropertyDocumentChecklist> { return (await apiClient.get<PropertyDocumentChecklist>(`/api/v1/properties/${propertyId}/document-checklist`)).data; },
+  async uploadPropertyDocument(propertyId: string, documentName: string, documentType: string, file: File): Promise<CustomerDocument> { const body = new FormData(); body.append('documentName', documentName); body.append('documentType', documentType); body.append('file', file); return (await apiClient.post<CustomerDocument>(`/api/v1/properties/${propertyId}/documents/upload`, body)).data; },
   async quotes(): Promise<CustomerQuote[]> { return (await apiClient.get<CustomerQuote[]>('/api/v1/quotes')).data; },
   async services(): Promise<CustomerService[]> { return (await apiClient.get<CustomerService[]>('/api/services')).data; },
   async eligibleServiceTypes(propertyId: string): Promise<EligibleServiceType[]> { return (await apiClient.get<EligibleServiceType[]>('/api/services/eligible-types', { params: { propertyId } })).data; },

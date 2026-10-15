@@ -42,7 +42,6 @@ const CustomerRequestDetailsPage = lazy(() => import('../../features/customer-po
 const CustomerVisitsPage = lazy(() => import('../../features/customer-portal/pages/CustomerVisitsPage'));
 const CustomerVisitDetailsPage = lazy(() => import('../../features/customer-portal/pages/CustomerVisitDetailsPage'));
 const CustomerEvidencePage = lazy(() => import('../../features/customer-portal/pages/CustomerEvidencePage'));
-const CustomerDocumentsPage = lazy(() => import('../../features/customer-portal/pages/CustomerDocumentsPage'));
 const CustomerSubscriptionsPage = lazy(() => import('../../features/customer-portal/pages/CustomerSubscriptionsPage'));
 const CustomerInvoicesPage = lazy(() => import('../../features/customer-portal/pages/CustomerInvoicesPage'));
 const PropertyFormPage = lazy(() => import('../../features/properties/pages/PropertyFormPage'));
@@ -167,7 +166,7 @@ export default function AppRoutes() {
         <Route path="/customer/visits" element={<DashboardLayout><CustomerVisitsPage /></DashboardLayout>} />
         <Route path="/customer/visits/:id" element={<DashboardLayout><CustomerVisitDetailsPage /></DashboardLayout>} />
         <Route path="/customer/evidence" element={<DashboardLayout><CustomerEvidencePage /></DashboardLayout>} />
-        <Route path="/customer/documents" element={<DashboardLayout><CustomerDocumentsPage /></DashboardLayout>} />
+        <Route path="/customer/documents" element={<Navigate to="/customer/properties" replace />} />
         <Route path="/customer/subscriptions" element={<DashboardLayout><CustomerSubscriptionsPage /></DashboardLayout>} />
         <Route path="/customer/invoices" element={<DashboardLayout><CustomerInvoicesPage /></DashboardLayout>} />
       </Route>

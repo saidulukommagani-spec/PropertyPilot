@@ -32,7 +32,7 @@ describe('AdminDirectoryPage', () => {
     expect(screen.queryByText('customer-uuid')).toBeNull();
   });
 
-  it('lets an administrator add an active service type and service through the catalogue API', async () => {
+  it('lets an administrator add a service with catalogue eligibility through the admin API', async () => {
     const user = userEvent.setup();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
     render(<QueryClientProvider client={client}><MemoryRouter initialEntries={['/staff/services']}><Routes><Route path="/staff/:resource" element={<AdminDirectoryPage />} /></Routes></MemoryRouter></QueryClientProvider>);
@@ -41,10 +41,12 @@ describe('AdminDirectoryPage', () => {
     const dialog = screen.getByRole('dialog', { name: 'Add catalog service' });
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Service code' }), { target: { value: 'PROPERTY_DOCUMENT_REVIEW' } });
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Service type code' }), { target: { value: 'DOCUMENTS' } });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Catalogue category' }), { target: { value: 'Document Services' } });
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Customer-visible service name' }), { target: { value: 'Property document review' } });
+    await user.click(within(dialog).getAllByText('Plot')[0]);
     await user.click(within(dialog).getByRole('button', { name: 'Add service' }));
 
-    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/api/services/admin', expect.objectContaining({ serviceCode: 'PROPERTY_DOCUMENT_REVIEW', category: 'DOCUMENTS', serviceName: 'Property document review', activeFlag: true })));
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith('/api/services/admin', expect.objectContaining({ serviceCode: 'PROPERTY_DOCUMENT_REVIEW', category: 'DOCUMENTS', catalogGroup: 'Document Services', eligiblePropertyTypes: ['PLOT'], activeFlag: false })));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });

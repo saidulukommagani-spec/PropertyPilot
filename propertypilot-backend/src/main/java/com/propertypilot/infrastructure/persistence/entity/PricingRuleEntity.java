@@ -50,6 +50,7 @@ public class PricingRuleEntity
             scale = 2)
     private BigDecimal baseAmount;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(
             name = "currency_code",
             nullable = false,

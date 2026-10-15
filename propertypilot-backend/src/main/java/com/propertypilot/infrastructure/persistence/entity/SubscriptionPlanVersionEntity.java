@@ -31,6 +31,7 @@ private UUID planVersionId;
     @Column(name = "price")
     private BigDecimal price;
 
+ @JdbcTypeCode(SqlTypes.CHAR)
  @Column(name = "currency_code")
 private String currencyCode;
 

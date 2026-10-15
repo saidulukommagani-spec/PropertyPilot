@@ -24,6 +24,25 @@ public class ServiceEntity
     @Column(name = "category")
     private String category;
 
+    @Column(name = "catalog_group", length = 100)
+    private String catalogGroup;
+
+    @Column(name = "catalog_priority", nullable = false, length = 20)
+    private String catalogPriority = "CORE";
+
+    @Column(name = "delivery_policy", length = 255)
+    private String deliveryPolicy;
+
+    @Column(name = "frequency", length = 120)
+    private String frequency;
+
+    @Column(name = "catalog_notes", columnDefinition = "text")
+    private String catalogNotes;
+
+    @Column(name = "conditional_property_types", nullable = false, columnDefinition = "text[]")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.ARRAY)
+    private String[] conditionalPropertyTypes = new String[0];
+
     @Column(name = "base_price")
     private BigDecimal basePrice = BigDecimal.ZERO;
 
@@ -98,6 +117,19 @@ public class ServiceEntity
     public void setCategory(String category) {
         this.category = category;
     }
+
+    public String getCatalogGroup() { return catalogGroup; }
+    public void setCatalogGroup(String catalogGroup) { this.catalogGroup = catalogGroup; }
+    public String getCatalogPriority() { return catalogPriority; }
+    public void setCatalogPriority(String catalogPriority) { this.catalogPriority = catalogPriority; }
+    public String getDeliveryPolicy() { return deliveryPolicy; }
+    public void setDeliveryPolicy(String deliveryPolicy) { this.deliveryPolicy = deliveryPolicy; }
+    public String getFrequency() { return frequency; }
+    public void setFrequency(String frequency) { this.frequency = frequency; }
+    public String getCatalogNotes() { return catalogNotes; }
+    public void setCatalogNotes(String catalogNotes) { this.catalogNotes = catalogNotes; }
+    public String[] getConditionalPropertyTypes() { return conditionalPropertyTypes; }
+    public void setConditionalPropertyTypes(String[] conditionalPropertyTypes) { this.conditionalPropertyTypes = conditionalPropertyTypes; }
 
     public BigDecimal getBasePrice() {
         return basePrice;

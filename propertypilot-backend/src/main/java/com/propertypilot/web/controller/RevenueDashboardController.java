@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/revenue")
-@RequiredArgsConstructor
 @Tag(
         name = "Revenue Dashboard",
         description = "Revenue analytics and billing dashboard APIs"
@@ -25,6 +23,10 @@ public class RevenueDashboardController {
 
     private final RevenueDashboardService
             revenueDashboardService;
+
+    public RevenueDashboardController(RevenueDashboardService revenueDashboardService) {
+        this.revenueDashboardService = revenueDashboardService;
+    }
 
     @Operation(
             summary = "Get Revenue Dashboard",

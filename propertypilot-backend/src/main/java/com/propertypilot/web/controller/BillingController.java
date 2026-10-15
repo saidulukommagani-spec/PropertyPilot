@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import jakarta.validation.constraints.NotNull;
 
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,7 +23,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/billing")
-@RequiredArgsConstructor
 @Validated
 @Tag(
         name = "Billing Management",
@@ -33,6 +31,10 @@ import java.util.UUID;
 public class BillingController {
 
     private final BillingService billingService;
+
+    public BillingController(BillingService billingService) {
+        this.billingService = billingService;
+    }
 
     @PostMapping("/invoices/{invoiceId}/send")
     @PreAuthorize("hasRole('ADMIN')")

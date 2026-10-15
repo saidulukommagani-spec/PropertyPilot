@@ -11,7 +11,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class NriRelationshipMessageEntity extends AuditableEntity {
 
@@ -40,4 +39,21 @@ public class NriRelationshipMessageEntity extends AuditableEntity {
 
     @Column(name = "read_at")
     private OffsetDateTime readAt;
+
+    public NriRelationshipMessageEntity(
+            UUID nriRelationshipMessageId,
+            NriRelationshipAssignmentEntity assignment,
+            UserEntity senderUser,
+            String messageBody,
+            String channel,
+            OffsetDateTime sentAt,
+            OffsetDateTime readAt) {
+        this.nriRelationshipMessageId = nriRelationshipMessageId;
+        this.assignment = assignment;
+        this.senderUser = senderUser;
+        this.messageBody = messageBody;
+        this.channel = channel;
+        this.sentAt = sentAt;
+        this.readAt = readAt;
+    }
 }

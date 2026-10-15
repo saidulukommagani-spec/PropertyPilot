@@ -4,6 +4,7 @@ import com.propertypilot.application.dto.ServiceConfigurationRequest;
 import com.propertypilot.infrastructure.persistence.entity.ServiceEntity;
 import com.propertypilot.infrastructure.persistence.repository.ServiceRepository;
 import com.propertypilot.infrastructure.persistence.repository.PropertyRepository;
+import com.propertypilot.infrastructure.persistence.repository.ServiceEligibilityRuleRepository;
 import com.propertypilot.application.service.EligibilityEngine;
 import com.propertypilot.security.SecurityService;
 import com.propertypilot.infrastructure.persistence.entity.Property;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ServiceCatalogConfigurationServiceImplTest {
     @Mock private ServiceRepository serviceRepository;
+    @Mock private ServiceEligibilityRuleRepository eligibilityRuleRepository;
     @Mock private PropertyRepository propertyRepository;
     @Mock private EligibilityEngine eligibilityEngine;
     @Mock private SecurityService securityService;
@@ -128,6 +130,10 @@ class ServiceCatalogConfigurationServiceImplTest {
         request.setServiceCode("PROPERTY_AUDIT");
         request.setServiceName("Property Audit");
         request.setCategory("PROPERTY_HEALTH");
+        request.setCatalogGroup("Property Services");
+        request.setCatalogPriority("CORE");
+        request.setEligiblePropertyTypes(java.util.List.of("HOUSE"));
+        request.setConditionalPropertyTypes(java.util.List.of());
         request.setBasePrice(BigDecimal.ZERO);
         request.setActiveFlag(true);
         request.setRequiresVisit(false);

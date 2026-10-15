@@ -1,6 +1,8 @@
 package com.propertypilot.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -51,6 +53,7 @@ public class CustomerAddressEntity extends AuditableEntity {
     @Column(name = "postal_code", nullable = false, length = 20)
     private String postalCode;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "country_code", nullable = false, length = 2)
     private String countryCode;
 

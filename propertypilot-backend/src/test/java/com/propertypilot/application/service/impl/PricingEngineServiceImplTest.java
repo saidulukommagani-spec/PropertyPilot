@@ -8,6 +8,7 @@ import com.propertypilot.infrastructure.persistence.entity.PricingEstimateEntity
 import com.propertypilot.infrastructure.persistence.entity.CustomerEntity;
 import com.propertypilot.infrastructure.persistence.entity.Property;
 import com.propertypilot.infrastructure.persistence.entity.ServiceEntity;
+import com.propertypilot.infrastructure.persistence.entity.PropertyLocationEntity;
 import com.propertypilot.infrastructure.persistence.repository.*;
 import com.propertypilot.security.SecurityService;
 import com.propertypilot.web.exception.BusinessException;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class PricingEngineServiceImplTest {
@@ -44,9 +46,10 @@ class PricingEngineServiceImplTest {
     private final SecurityService security = mock(SecurityService.class);
     private final SubscriptionPaymentVerificationService paymentVerification = mock(SubscriptionPaymentVerificationService.class);
     private final EligibilityEngine eligibility = mock(EligibilityEngine.class);
+    private final GoogleMapsDistanceService googleMaps = mock(GoogleMapsDistanceService.class);
     private final PricingEngineServiceImpl engine = new PricingEngineServiceImpl(customers, properties, services,
             rules, calculator, profiles, locations, coverage, clusters, requests, coupons, redemptions,
-            subscriptions, estimates, lines, discounts, security, paymentVerification, eligibility);
+            subscriptions, estimates, lines, discounts, security, paymentVerification, eligibility, googleMaps);
 
     private UUID propertyId;
     private UUID serviceId;
@@ -74,22 +77,45 @@ class PricingEngineServiceImplTest {
     }
 
     @Test
-    void customerEstimateIgnoresSubmittedCustomerAndDistanceAndRoutesVisitServicesToOperations() {
+    void customerVisitEstimateUsesServerRouteInsteadOfSubmittedDistance() {
         service.setRequiresVisit(true);
-        var request = new com.propertypilot.application.dto.CreatePricingEstimateRequest();
+        service.setBasePrice(new BigDecimal("100.00"));
+        service.setServiceName("Site inspection");
+        PropertyLocationEntity location = new PropertyLocationEntity();
+        location.setAddressLine1("Property address");
+        when(locations.findByProperty_PropertyId(propertyId)).thenReturn(Optional.of(location));
+        when(googleMaps.calculateOneWayRoadDistanceKm(location)).thenReturn(new BigDecimal("12.345"));
+        when(rules.findByServiceServiceIdAndStatus(serviceId, "ACTIVE")).thenReturn(List.of());
+        when(profiles.loadProfile("CUSTOMER")).thenReturn(Map.of(
+                "GST_PERCENT", "0", "TRAVEL_DISTANCE_MODE", "ONE_WAY"));
+        when(subscriptions.findByCustomer_CustomerIdAndStatus(customer.getCustomerId(), "ACTIVE"))
+                .thenReturn(List.of());
+        PricingBreakdownResponse standard = breakdown(new BigDecimal("100.00"));
+        PricingBreakdownResponse customerPrice = breakdown(new BigDecimal("100.00"));
+        PricingCalculationResponse calculated = new PricingCalculationResponse();
+        calculated.setStandardBreakdown(standard);
+        calculated.setCustomerBreakdown(customerPrice);
+        when(calculator.calculate(any())).thenReturn(calculated);
+        when(estimates.save(any(PricingEstimateEntity.class))).thenAnswer(call -> call.getArgument(0));
+
+        var request = new CreatePricingEstimateRequest();
         request.setCustomerId(UUID.randomUUID());
         request.setPropertyId(propertyId);
         request.setServiceId(serviceId);
         request.setOneWayDistanceKm(999d);
+        request.setVendorCost(new BigDecimal("999999.00"));
 
-        assertThatThrownBy(() -> engine.calculateCustomerEstimate(request))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("travel-based estimate is not available");
+        var response = engine.calculateCustomerEstimate(request);
 
+        assertThat(response.getTravelDistanceKm()).isEqualByComparingTo("12.345");
+        assertThat(request.getOneWayDistanceKm()).isEqualTo(12.345d);
+        assertThat(request.getVendorCost()).isEqualByComparingTo("100.00");
         verify(security).getCurrentCustomer();
         verify(security).validatePropertyOwnership(property);
         verify(eligibility).validateEligibility(serviceId, propertyId);
-        verifyNoInteractions(calculator, estimates);
+        verify(googleMaps).calculateOneWayRoadDistanceKm(location);
+        verify(calculator).calculate(request);
+        verify(estimates).save(any(PricingEstimateEntity.class));
     }
 
     @Test
@@ -134,6 +160,8 @@ class PricingEngineServiceImplTest {
 
         org.assertj.core.api.Assertions.assertThat(response.getCustomerPrice()).isEqualByComparingTo("100.00");
         verify(estimates).save(any(PricingEstimateEntity.class));
+        verifyNoInteractions(googleMaps);
+        verify(calculator).calculate(argThat(estimate -> estimate.getOneWayDistanceKm() == 0d));
     }
 
     private PricingBreakdownResponse breakdown(BigDecimal amount) {

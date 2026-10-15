@@ -18,7 +18,7 @@ vi.mock('../hooks/useCustomerPortal', () => ({
   useCustomerRequests: () => state.requests,
   useCustomerVisits: () => state.visits,
 }));
-vi.mock('../services/CustomerPortalApi', () => ({ CustomerPortalApi: { documents: state.documents, requestEvidence: state.requestEvidence } }));
+vi.mock('../services/CustomerPortalApi', () => ({ CustomerPortalApi: { documents: state.documents, propertyDocumentChecklist: vi.fn(async () => ({ documents: [] })), requestEvidence: state.requestEvidence } }));
 vi.mock('../../../api/properties', () => ({ propertiesApi: { archive: state.archive } }));
 
 import CustomerPropertyDetailsPage from './CustomerPropertyDetailsPage';
@@ -52,7 +52,8 @@ describe('CustomerPropertyDetailsPage', () => {
     expect(screen.getByText('Property inspection')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'View request' }).getAttribute('href')).toBe('/customer/service-requests/request-private-id');
     expect(screen.getByRole('link', { name: 'Request a service for this property' }).getAttribute('href')).toBe('/customer/service-requests/new?propertyId=property-1');
-    expect(screen.queryByRole('heading', { name: 'Property documents' })).toBeNull();
+    expect(await screen.findByRole('heading', { name: 'Property documents' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Upload document' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Visit history' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Service evidence' })).toBeNull();
     expect(screen.queryByText('request-private-id')).toBeNull();

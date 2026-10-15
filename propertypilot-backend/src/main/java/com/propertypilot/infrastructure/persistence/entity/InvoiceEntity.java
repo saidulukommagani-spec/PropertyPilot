@@ -37,7 +37,8 @@ public class InvoiceEntity extends AuditableEntity {
 
     @Column(
             name = "invoice_number",
-            nullable = false)
+            nullable = false,
+            length = 80)
     private String invoiceNumber;
 
     @Column(
@@ -46,17 +47,17 @@ public class InvoiceEntity extends AuditableEntity {
     @JdbcTypeCode(SqlTypes.CHAR)
     private String currencyCode;
 
-    @Column(name = "invoice_amount")
+    @Column(name = "invoice_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal invoiceAmount;
 
-    @Column(name = "tax_amount")
+    @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal taxAmount;
 
    @Enumerated(EnumType.STRING)
-@Column(name = "status")
+@Column(name = "status", nullable = false, length = 30)
 private InvoiceStatus status;
 
-    @Column(name = "issued_at")
+    @Column(name = "issued_at", nullable = false)
     private OffsetDateTime issuedAt;
 
     @Column(name = "due_at")
@@ -66,7 +67,7 @@ private InvoiceStatus status;
     private OffsetDateTime paidAt;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
  @Enumerated(EnumType.STRING)
