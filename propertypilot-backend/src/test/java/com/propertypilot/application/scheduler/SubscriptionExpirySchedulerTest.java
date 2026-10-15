@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDate;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,7 +28,8 @@ class SubscriptionExpirySchedulerTest {
 
         scheduler =
                 new SubscriptionExpiryScheduler(
-                        repository);
+                        repository,
+                        Clock.systemDefaultZone());
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.propertypilot.web.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,7 @@ public class SubscriptionEntitlementConsumptionServiceImpl
             serviceRequestRepository;
     private final SubscriptionPaymentVerificationService paymentVerificationService;
     private final SecurityService securityService;
+    private final Clock businessClock;
 
     public SubscriptionEntitlementConsumptionServiceImpl(
             SubscriptionEntitlementConsumptionRepository consumptionRepository,
@@ -54,7 +56,8 @@ public class SubscriptionEntitlementConsumptionServiceImpl
             ServiceRepository serviceRepository,
             ServiceRequestRepository serviceRequestRepository,
             SubscriptionPaymentVerificationService paymentVerificationService,
-            SecurityService securityService) {
+            SecurityService securityService,
+            Clock businessClock) {
 
         this.consumptionRepository =
                 consumptionRepository;
@@ -72,6 +75,7 @@ public class SubscriptionEntitlementConsumptionServiceImpl
                 serviceRequestRepository;
         this.paymentVerificationService = paymentVerificationService;
         this.securityService = securityService;
+        this.businessClock = businessClock;
     }
 
     @Override
@@ -87,7 +91,7 @@ public class SubscriptionEntitlementConsumptionServiceImpl
                                         "Customer subscription not found"));
         securityService.validateCustomerAccess(subscription.getCustomer());
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(businessClock);
         if (!"ACTIVE".equalsIgnoreCase(subscription.getStatus())
                 || (subscription.getStartDate() != null && subscription.getStartDate().isAfter(today))
                 || (subscription.getEndDate() != null && subscription.getEndDate().isBefore(today))) {
@@ -182,7 +186,7 @@ public class SubscriptionEntitlementConsumptionServiceImpl
         consumption.setCustomerSubscription(subscription);
         consumption.setService(service);
         consumption.setEntitlement(entitlement);
-        consumption.setPeriodStart(LocalDate.now());
+        consumption.setPeriodStart(LocalDate.now(businessClock));
         consumption.setEntitledQuantity(entitlement.getQuantity());
         consumption.setConsumedQuantity(
                 requestedQty);

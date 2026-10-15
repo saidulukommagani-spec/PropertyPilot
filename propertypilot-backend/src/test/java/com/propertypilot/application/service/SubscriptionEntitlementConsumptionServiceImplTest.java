@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 import java.time.LocalDate;
+import java.time.Clock;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 @ExtendWith(MockitoExtension.class)
 class SubscriptionEntitlementConsumptionServiceImplTest {
     @Mock private SecurityService securityService;
+    @Mock private Clock businessClock;
 
     @Mock
     private SubscriptionEntitlementConsumptionRepository
@@ -67,6 +69,10 @@ class SubscriptionEntitlementConsumptionServiceImplTest {
 
     @BeforeEach
     void setUp() {
+
+        Clock systemClock = Clock.systemDefaultZone();
+        lenient().when(businessClock.instant()).thenAnswer(invocation -> systemClock.instant());
+        lenient().when(businessClock.getZone()).thenReturn(systemClock.getZone());
 
         subscriptionId = UUID.randomUUID();
         serviceId = UUID.randomUUID();

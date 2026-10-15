@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -20,15 +21,18 @@ public class SubscriptionExpiryScheduler {
 
     private final CustomerSubscriptionRepository
             customerSubscriptionRepository;
+    private final Clock businessClock;
 
     public SubscriptionExpiryScheduler(
-            CustomerSubscriptionRepository customerSubscriptionRepository) {
+            CustomerSubscriptionRepository customerSubscriptionRepository,
+            Clock businessClock) {
 
         this.customerSubscriptionRepository =
                 customerSubscriptionRepository;
+        this.businessClock = businessClock;
     }
 
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "${propertypilot.subscription-expiry.cron:0 0 1 * * *}")
     @Transactional
     public void expireSubscriptions() {
 
@@ -36,7 +40,7 @@ public class SubscriptionExpiryScheduler {
                 customerSubscriptionRepository
                         .findByStatusAndEndDateBefore(
                                 "ACTIVE",
-                                LocalDate.now());
+                                LocalDate.now(businessClock));
 
         if (subscriptions.isEmpty()) {
 
